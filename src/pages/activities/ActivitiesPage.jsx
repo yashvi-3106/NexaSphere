@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { activities } from '../../data/activitiesData';
+import { BannerOrbs } from '../../shared/MotionLayer';
 
 const activityDetails = {
   'Hackathon': {
@@ -61,20 +62,22 @@ function ActivityCard({ a, idx, onNavigate }) {
     const rect = c.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - .5;
     const y = (e.clientY - rect.top) / rect.height - .5;
-    c.style.transform = `translateY(-8px) rotateX(${-y * 10}deg) rotateY(${x * 10}deg) scale(1.02)`;
+    c.style.transform = `translateY(-10px) rotateX(${-y * 10}deg) rotateY(${x * 10}deg) scale(1.02)`;
   };
   const onLeave = () => { if (ref.current) ref.current.style.transform = ''; };
   const click = () => {
     const c = ref.current;
-    if (c) { c.style.transform = 'scale(.95)'; setTimeout(() => { c.style.transform = ''; }, 140); }
+    if (c) { c.style.transform = 'scale(.93)'; setTimeout(() => { c.style.transform = ''; }, 140); }
     setTimeout(() => onNavigate('activity', a.title), 160);
   };
 
   return (
-    <div ref={ref}
+    <div
+      ref={ref}
       onClick={click}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
+      className={`ns-reveal ns-act-card ns-d${(idx % 6) + 1}`}
       style={{
         background: 'var(--card)',
         border: `1px solid var(--bdr)`,
@@ -84,18 +87,17 @@ function ActivityCard({ a, idx, onNavigate }) {
         position: 'relative',
         overflow: 'hidden',
         perspective: '800px',
-        transition: 'border-color .28s, box-shadow .28s',
         animation: `ag 7s ease-in-out ${[-0, -2.1, -4.2, -1.0, -3.3, -5.5, -0.7][idx % 7]}s infinite`,
       }}
     >
-      {/* Color accent top bar */}
+      {/* Accent top bar */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
         background: details.color || 'var(--c1)',
         borderRadius: 'var(--r3) var(--r3) 0 0',
       }} />
 
-      <div style={{ fontSize: '2.4rem', marginBottom: '14px' }}>{a.icon}</div>
+      <div className="ns-act-icon" style={{ fontSize: '2.4rem', marginBottom: '14px', display:'inline-block' }}>{a.icon}</div>
       <div style={{
         fontFamily: "'Orbitron', monospace", fontSize: '.8rem', fontWeight: 700,
         color: details.color || 'var(--c1)', marginBottom: '10px', letterSpacing: '.06em',
@@ -105,7 +107,6 @@ function ActivityCard({ a, idx, onNavigate }) {
         {details.longDesc || a.description}
       </p>
 
-      {/* Skills */}
       {details.skills && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '18px' }}>
           {details.skills.map(s => (
@@ -114,12 +115,15 @@ function ActivityCard({ a, idx, onNavigate }) {
               background: `${details.color}18`, color: details.color,
               border: `1px solid ${details.color}35`,
               fontFamily: "'Space Mono', monospace", fontWeight: 600,
-            }}>{s}</span>
+              transition: 'transform .2s, background .2s',
+            }}
+              onMouseEnter={e => { e.target.style.transform = 'translateY(-2px)'; e.target.style.background = `${details.color}30`; }}
+              onMouseLeave={e => { e.target.style.transform = ''; e.target.style.background = `${details.color}18`; }}
+            >{s}</span>
           ))}
         </div>
       )}
 
-      {/* Highlights */}
       {details.highlights && (
         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 18px' }}>
           {details.highlights.map(h => (
@@ -134,8 +138,11 @@ function ActivityCard({ a, idx, onNavigate }) {
         display: 'flex', alignItems: 'center', gap: '6px',
         fontSize: '.72rem', fontWeight: 700, color: details.color || 'var(--c1)',
         textTransform: 'uppercase', letterSpacing: '.1em', opacity: .7,
-        transition: 'opacity .2s',
-      }}>
+        transition: 'opacity .2s, letter-spacing .2s',
+      }}
+        onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.letterSpacing = '.16em'; }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = '.7'; e.currentTarget.style.letterSpacing = '.1em'; }}
+      >
         <span>View Sessions</span><span>→</span>
       </div>
 
@@ -157,33 +164,41 @@ export default function ActivitiesPage({ onNavigate, onBack }) {
 
   return (
     <div id="activities-page" style={{ minHeight: '100vh', padding: '60px 0 100px' }}>
-      {/* Hero banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(0,212,255,.06), rgba(123,111,255,.04))',
-        borderBottom: '1px solid var(--bdr)',
-        padding: '60px 0 50px',
-        textAlign: 'center',
-        marginBottom: '60px',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,212,255,.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
-        <button onClick={onBack} style={{
-          position: 'absolute', top: '24px', left: '28px',
-          background: 'var(--card)', border: '1px solid var(--bdr)',
-          borderRadius: '50px', padding: '7px 16px',
-          color: 'var(--t2)', fontSize: '.8rem', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: '6px',
-          fontFamily: "'Rajdhani', sans-serif", fontWeight: 600,
-          transition: 'all .2s',
+      {/* Hero banner — page-banner class triggers CSS entrance */}
+      <div
+        className="page-banner"
+        style={{
+          background: 'linear-gradient(135deg, rgba(0,212,255,.07), rgba(123,111,255,.05))',
+          borderBottom: '1px solid var(--bdr)',
+          padding: '60px 0 50px',
+          textAlign: 'center',
+          marginBottom: '60px',
+          position: 'relative',
+          overflow: 'hidden',
         }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--c1)'; e.currentTarget.style.color = 'var(--c1)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bdr)'; e.currentTarget.style.color = 'var(--t2)'; }}
+      >
+        {/* Animated bg line */}
+        <div className="page-banner-line" style={{
+          position:'absolute', top:0, left:0, right:0, height:'3px',
+          background:'linear-gradient(90deg,var(--c1),var(--c2),var(--c3))',
+        }}/>
+        <BannerOrbs color="rgba(0,212,255,.06)"/>
+        <button
+          onClick={onBack}
+          className="ns-back-btn"
+          style={{
+            position: 'absolute', top: '24px', left: '28px',
+            background: 'var(--card)', border: '1px solid var(--bdr)',
+            borderRadius: '50px', padding: '7px 16px',
+            color: 'var(--t2)', fontSize: '.8rem', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '6px',
+            fontFamily: "'Rajdhani', sans-serif", fontWeight: 600,
+          }}
         >← Back</button>
 
-        <span className="cin-section-label pop-in">NexaSphere · GL Bajaj</span>
-        <h1 className="section-title pop-word" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)' }}>Our Activities</h1>
-        <p className="section-subtitle pop-in" style={{ animationDelay: '.1s', maxWidth: '580px', margin: '0 auto' }}>
+        <span className="cin-section-label pop-in" style={{position:'relative',zIndex:1}}>NexaSphere · GL Bajaj</span>
+        <h1 className="section-title pop-word" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)', position:'relative', zIndex:1 }}>Our Activities</h1>
+        <p className="section-subtitle pop-in" style={{ animationDelay: '.1s', maxWidth: '580px', margin: '0 auto', position:'relative', zIndex:1 }}>
           Every format is designed to sharpen a different skill. Explore what excites you — then dive in.
         </p>
       </div>

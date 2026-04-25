@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { teamMembers } from '../../data/teamData';
 import TeamMemberModal from './TeamMemberModal';
 import { IconArrowRight, IconSpark } from '../../shared/Icons';
+import { BannerOrbs } from '../../shared/MotionLayer';
 
 function MemberCard({ member, idx, onClick }) {
   const ref = useRef(null);
@@ -28,9 +29,9 @@ function MemberCard({ member, idx, onClick }) {
 
   return (
     <div ref={ref}
-      className="team-card shimmer"
+      className="team-card shimmer mag-card"
       style={{
-        cursor: 'none', perspective: '800px',
+        cursor: 'pointer', perspective: '800px',
         animation: `ag 7s ease-in-out ${agDelays[idx % 12]}s infinite`,
         willChange: 'transform',
         animationFillMode: 'both',
@@ -66,7 +67,7 @@ export default function TeamPage({ onBack, onApply }) {
   return (
     <div id="team-page" style={{ minHeight: '100vh', padding: '0 0 100px' }}>
       {/* Hero */}
-      <div style={{
+      <div className="page-banner" style={{
         background: 'linear-gradient(135deg, rgba(123,111,255,.07), rgba(189,92,255,.04))',
         borderBottom: '1px solid var(--bdr)',
         padding: '70px 0 50px',
@@ -74,36 +75,22 @@ export default function TeamPage({ onBack, onApply }) {
         marginBottom: '60px',
         position: 'relative', overflow: 'hidden',
       }}>
-        {[...Array(3)].map((_, i) => (
-          <div key={i} style={{
-            position: 'absolute',
-            width: `${200 + i * 100}px`, height: `${200 + i * 100}px`,
-            borderRadius: '50%',
-            background: `radial-gradient(circle, rgba(123,111,255,${.04 - i * .01}) 0%, transparent 70%)`,
-            left: `${[15, 70, 45][i]}%`, top: `${[30, 20, 70][i]}%`,
-            transform: 'translate(-50%,-50%)',
-            animation: `ag ${6 + i * 2}s ease-in-out ${-i * 2}s infinite`,
-            pointerEvents: 'none',
-          }} />
-        ))}
-
-        <button onClick={onBack} style={{
+        <div className="page-banner-line" style={{ position:'absolute',top:0,left:0,right:0,height:'3px',background:'linear-gradient(90deg,var(--c2),var(--c3),var(--c1))' }}/>
+        <BannerOrbs color="rgba(123,111,255,.07)"/>
+        <button onClick={onBack} className="ns-back-btn" style={{
           position: 'absolute', top: '24px', left: '28px',
           background: 'var(--card)', border: '1px solid var(--bdr)',
           borderRadius: '50px', padding: '7px 16px',
-          color: 'var(--t2)', fontSize: '.8rem', cursor: 'none',
+          color: 'var(--t2)', fontSize: '.8rem', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: '6px',
           fontFamily: "'Rajdhani', sans-serif", fontWeight: 600,
-        }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--c2)'; e.currentTarget.style.color = 'var(--c2)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bdr)'; e.currentTarget.style.color = 'var(--t2)'; }}
-        >← Back</button>
+        }}>← Back</button>
 
-        <span className="cin-section-label" style={{ display: 'block', textAlign: 'center', marginBottom: '8px', fontFamily: "'Space Mono', monospace", fontSize: '.6rem', color: 'var(--t3)', letterSpacing: '.3em', textTransform: 'uppercase' }}>
+        <span className="cin-section-label" style={{ display: 'block', textAlign: 'center', marginBottom: '8px', fontFamily: "'Space Mono', monospace", fontSize: '.6rem', color: 'var(--t3)', letterSpacing: '.3em', textTransform: 'uppercase', position:'relative',zIndex:1 }}>
           GL Bajaj Group of Institutions · Mathura
         </span>
-        <h1 className="section-title" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)' }}>Core Team</h1>
-        <p className="section-subtitle" style={{ maxWidth: '500px', margin: '0 auto' }}>
+        <h1 className="section-title" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)', position:'relative',zIndex:1 }}>Core Team</h1>
+        <p className="section-subtitle" style={{ maxWidth: '500px', margin: '0 auto', position:'relative',zIndex:1 }}>
           The minds and hands behind NexaSphere — meet the people driving the vision forward.
         </p>
       </div>
@@ -144,7 +131,7 @@ export default function TeamPage({ onBack, onApply }) {
         </div>
 
         {/* Join CTA */}
-        <div style={{
+        <div className="ns-reveal-scale" style={{
           textAlign: 'center', padding: '32px',
           background: 'var(--card)', border: '1px solid var(--bdr)',
           borderRadius: 'var(--r3)', maxWidth: '520px', margin: '0 auto',

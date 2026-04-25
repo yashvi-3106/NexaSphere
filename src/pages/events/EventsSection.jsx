@@ -13,8 +13,10 @@ export default function EventsSection({ onEventClick }) {
   return (
     <section className="section" id="section-events">
       <div className="container">
-        <h2 className="section-title pop-word">Our Events</h2>
-        <p className="section-subtitle pop-in" style={{animationDelay:'.1s'}}>Where Ideas Come to Life</p>
+        <div className="ns-reveal">
+          <h2 className="section-title pop-word">Our Events</h2>
+          <p className="section-subtitle pop-in" style={{animationDelay:'.1s'}}>Where Ideas Come to Life</p>
+        </div>
         <div className="events-timeline">
           {events.map((ev,i)=>{
             const isKSS = ev.id === 1;

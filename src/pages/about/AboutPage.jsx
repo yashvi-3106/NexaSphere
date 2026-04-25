@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { BannerOrbs } from '../../shared/MotionLayer';
 
 const WHATSAPP = 'https://chat.whatsapp.com/Jjc5cuUKENu0RC1vWSEs20';
 const LINKEDIN = 'https://www.linkedin.com/showcase/glbajaj-nexasphere/';
@@ -32,7 +33,7 @@ export default function AboutPage({ onBack }) {
   return (
     <div id="about-page" style={{ minHeight: '100vh', padding: '0 0 100px' }}>
       {/* Hero */}
-      <div style={{
+      <div className="page-banner" style={{
         background: 'linear-gradient(135deg, rgba(0,212,255,.06), rgba(123,111,255,.04))',
         borderBottom: '1px solid var(--bdr)',
         padding: '70px 0 50px',
@@ -40,22 +41,20 @@ export default function AboutPage({ onBack }) {
         marginBottom: '60px',
         position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 30% 50%, rgba(0,212,255,.04) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(123,111,255,.04) 0%, transparent 50%)', pointerEvents: 'none' }} />
-        <button onClick={onBack} style={{
+        <div className="page-banner-line" style={{ position:'absolute',top:0,left:0,right:0,height:'3px',background:'linear-gradient(90deg,var(--c1),var(--c2),var(--c3))' }}/>
+        <BannerOrbs color="rgba(0,212,255,.06)"/>
+        <button onClick={onBack} className="ns-back-btn" style={{
           position: 'absolute', top: '24px', left: '28px',
           background: 'var(--card)', border: '1px solid var(--bdr)',
           borderRadius: '50px', padding: '7px 16px',
-          color: 'var(--t2)', fontSize: '.8rem', cursor: 'none',
+          color: 'var(--t2)', fontSize: '.8rem', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: '6px',
           fontFamily: "'Rajdhani', sans-serif", fontWeight: 600,
-        }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--c1)'; e.currentTarget.style.color = 'var(--c1)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bdr)'; e.currentTarget.style.color = 'var(--t2)'; }}
-        >← Back</button>
+        }}>← Back</button>
 
-        <span className="cin-section-label pop-in">GL Bajaj Group of Institutions · Mathura</span>
-        <h1 className="section-title pop-word" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)' }}>About NexaSphere</h1>
-        <p className="section-subtitle pop-in" style={{ animationDelay: '.1s', maxWidth: '540px', margin: '0 auto' }}>
+        <span className="cin-section-label pop-in" style={{position:'relative',zIndex:1}}>GL Bajaj Group of Institutions · Mathura</span>
+        <h1 className="section-title pop-word" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)', position:'relative',zIndex:1 }}>About NexaSphere</h1>
+        <p className="section-subtitle pop-in" style={{ animationDelay: '.1s', maxWidth: '540px', margin: '0 auto', position:'relative',zIndex:1 }}>
           Building Tomorrow's Tech Leaders Today
         </p>
       </div>
@@ -118,18 +117,16 @@ export default function AboutPage({ onBack }) {
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
             {values.map((v, i) => (
-              <div key={v.label} style={{
-                animationDelay: `${i * .07}s`,
-                background: 'var(--card)', border: '1px solid var(--bdr)',
-                borderRadius: 'var(--r2)', padding: '22px',
-                opacity: 1,
-                transition: 'border-color .25s, box-shadow .25s, transform .25s',
-                animation: `ag 7s ease-in-out ${-i * 1.4}s infinite`,
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--c1b)'; e.currentTarget.style.boxShadow = 'var(--sh1)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bdr)'; e.currentTarget.style.boxShadow = ''; }}
+              <div key={v.label}
+                className="ns-value-card"
+                style={{
+                  animationDelay: `${i * .07}s`,
+                  background: 'var(--card)', border: '1px solid var(--bdr)',
+                  borderRadius: 'var(--r2)', padding: '22px', opacity: 1,
+                  animation: `ag 7s ease-in-out ${-i * 1.4}s infinite`,
+                }}
               >
-                <div style={{ fontSize: '1.8rem', marginBottom: '10px' }}>{v.icon}</div>
+                <div className="ns-value-icon" style={{ fontSize: '1.8rem', marginBottom: '10px', display:'inline-block' }}>{v.icon}</div>
                 <div style={{ fontFamily: "'Orbitron', monospace", fontSize: '.72rem', fontWeight: 700, color: 'var(--c1)', marginBottom: '6px', letterSpacing: '.06em', textTransform: 'uppercase' }}>{v.label}</div>
                 <p style={{ fontSize: '.82rem', color: 'var(--t2)', lineHeight: 1.65 }}>{v.desc}</p>
               </div>
@@ -138,7 +135,7 @@ export default function AboutPage({ onBack }) {
         </div>
 
         {/* Milestones */}
-        <div style={{ marginBottom: '60px' }}>
+        <div className="ns-reveal" style={{ marginBottom: '60px' }}>
           <h2 style={{ fontFamily: "'Orbitron', monospace", fontSize: '1.2rem', fontWeight: 700, color: 'var(--t1)', textAlign: 'center', marginBottom: '32px' }}>
             Our <span style={{ color: 'var(--c2)' }}>Journey</span>
           </h2>
@@ -162,7 +159,7 @@ export default function AboutPage({ onBack }) {
         </div>
 
         {/* CTA */}
-        <div style={{ textAlign: 'center', paddingTop: '20px' }}>
+        <div className="ns-reveal-scale" style={{ textAlign: 'center', paddingTop: '20px' }}>
           <div style={{ marginBottom: '20px', fontFamily: "'Orbitron', monospace", fontSize: '.72rem', color: 'var(--t3)', letterSpacing: '.2em', textTransform: 'uppercase' }}>
             Connect With Us
           </div>

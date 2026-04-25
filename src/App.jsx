@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import './styles/globals.css';
 import './styles/animations.css';
 import './styles/components.css';
+import './styles/motion.css';
 
 import ParticleBackground  from './shared/ParticleBackground';
 import Navbar              from './shared/Navbar';
@@ -14,6 +15,11 @@ import Footer              from './shared/Footer';
 import ActivityDetailPage  from './pages/activities/ActivityDetailPage';
 import EventDetailPage     from './pages/events/EventDetailPage';
 import CinematicOpening    from './shared/CinematicOpening';
+import {
+  AmbientOrbs, SectionDivider, PageFlash, BannerOrbs,
+  useScrollProgress, useNsReveal, useHeroParallax,
+  useNavScrollTint, useGlobalMouseParallax, useMagneticCards,
+} from './shared/MotionLayer';
 import ActivitiesPage      from './pages/activities/ActivitiesPage';
 import EventsPage          from './pages/events/EventsPage';
 import AboutPage           from './pages/about/AboutPage';
@@ -35,6 +41,10 @@ function Wipe({ on, ph }) {
     <>
       <div style={{position:'fixed',inset:0,zIndex:8000,background:'var(--bg)',animation:`${ph==='out'?'wipeDown .27s':'wipeUp .30s'} cubic-bezier(.77,0,.18,1) forwards`,pointerEvents:'all'}}/>
       <div style={{position:'fixed',inset:0,zIndex:8001,background:'linear-gradient(90deg,var(--c1),var(--c2),var(--c3))',opacity:.07,animation:`${ph==='out'?'wipeDown .20s .04s':'wipeUp .24s .04s'} cubic-bezier(.77,0,.18,1) forwards`,pointerEvents:'none'}}/>
+      {/* Enhanced shimmer sweep over wipe */}
+      {ph==='out'&&<div className="wipe-shimmer" aria-hidden="true"/>}
+      {/* Page flash glow on navigate */}
+      {ph==='in'&&<PageFlash/>}
       {ph==='out'&&<div style={{position:'fixed',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:8002,pointerEvents:'none',opacity:0,animation:'splashIn .16s .1s ease forwards'}}>
         <img src={nexasphereLogo} style={{height:'46px',mixBlendMode:'screen',filter:'drop-shadow(0 0 12px var(--c1))',opacity:.6}} alt=""/>
       </div>}
@@ -273,6 +283,14 @@ export default function App() {
     return()=>{obs.disconnect();window.removeEventListener('mousemove',onMove);};
   },[cinDone,page]);
 
+  // ── NEW: Motion layer hooks (non-destructive extensions) ──
+  useScrollProgress();
+  useNsReveal([cinDone, page]);
+  useHeroParallax();
+  useNavScrollTint();
+  useGlobalMouseParallax();
+  useMagneticCards();
+
   // Navigation with wipe transition
   const nav=useCallback((fn)=>{
     setWipeOn(true);setWipePh('out');
@@ -357,8 +375,8 @@ export default function App() {
       <Cursor/>
       <Wipe on={wipeOn} ph={wipePh}/>
 
-
-      {/* Theme toggle — simple pill, no animation */}
+      {/* Ambient depth orbs — layered behind everything */}
+      {cinDone&&<AmbientOrbs theme={theme}/>}
 
       {cinDone&&<ParticleBackground theme={theme}/>}
       {cinDone&&<Navbar activeTab={activeTab} onTabChange={onTab} onToggleTheme={toggleTheme}/>}
@@ -424,9 +442,13 @@ export default function App() {
         {!page&&cinDone&&(
           <PageIn k="main">
             <HeroSection onTabChange={onTab} onApply={openApply} onJoin={openJoin} theme={theme}/>
+            <SectionDivider/>
             <ActivitiesSection onNavigate={onNavigate}/>
+            <SectionDivider/>
             <EventsSection onEventClick={onKSSClick}/>
+            <SectionDivider/>
             <AboutSection/>
+            <SectionDivider/>
             <TeamSection onApply={openApply}/>
             <Footer/>
           </PageIn>

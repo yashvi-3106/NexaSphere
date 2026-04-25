@@ -28,7 +28,7 @@ function MemberCard({ member, idx, onClick }) {
 
   return (
     <div ref={ref}
-      className="team-card shimmer"
+      className="team-card shimmer mag-card"
       style={{
         cursor:'pointer',perspective:'800px',
         animation:`ag 7s ease-in-out ${agDelay[idx%12]}s infinite`,
@@ -77,16 +77,18 @@ export default function TeamSection({ onApply }) {
   return (
     <section className="section" id="section-team">
       <div className="container">
-        <span className="cin-section-label pop-in">GL Bajaj Group of Institutions · Mathura</span>
-        <h2 className="section-title pop-word">Core Team</h2>
-        <p className="section-subtitle pop-in" style={{animationDelay:'.1s'}}>The Minds Behind NexaSphere</p>
+        <div className="ns-reveal">
+          <span className="cin-section-label pop-in">GL Bajaj Group of Institutions · Mathura</span>
+          <h2 className="section-title pop-word">Core Team</h2>
+          <p className="section-subtitle pop-in" style={{animationDelay:'.1s'}}>The Minds Behind NexaSphere</p>
+        </div>
 
         <div className="team-grid cin-container">
           {teamMembers.map((m,i)=><MemberCard key={m.id} member={m} idx={i} onClick={setSel}/>)}
         </div>
 
         {/* Join core team CTA */}
-        <div className="pop-in" style={{
+        <div className="pop-in ns-reveal-scale" style={{
           textAlign:'center',marginTop:'56px',padding:'28px',
           background:'var(--card)',border:'1px solid var(--bdr)',
           borderRadius:'var(--r3)',maxWidth:'520px',margin:'56px auto 0',

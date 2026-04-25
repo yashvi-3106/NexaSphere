@@ -19,11 +19,13 @@ export default function AboutSection() {
     <section className="section" id="section-about" style={{position:'relative',overflow:'hidden'}}>
       <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'480px',height:'480px',borderRadius:'50%',background:'radial-gradient(circle,rgba(123,111,255,.03) 0%,transparent 70%)',pointerEvents:'none'}}/>
       <div className="container" style={{position:'relative',zIndex:1}}>
-        <h2 className="section-title pop-word">About NexaSphere</h2>
-        <p className="section-subtitle pop-in" style={{animationDelay:'.1s'}}>Building Tomorrow&apos;s Tech Leaders Today</p>
+        <div className="ns-reveal">
+          <h2 className="section-title pop-word">About NexaSphere</h2>
+          <p className="section-subtitle pop-in" style={{animationDelay:'.1s'}}>Building Tomorrow&apos;s Tech Leaders Today</p>
+        </div>
 
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'44px',alignItems:'center',maxWidth:'920px',margin:'0 auto 44px'}}>
-          <div>
+          <div className="ns-reveal-left">
             <p className="about-text pop-left" style={{animationDelay:'.08s'}}>
               <strong style={{color:'var(--c1)'}}>NexaSphere</strong> is a student-driven tech ecosystem at{' '}
               <strong style={{color:'var(--c2)'}}>GL Bajaj Group of Institutions, Mathura</strong>.

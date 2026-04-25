@@ -33,7 +33,7 @@ function ActivityCard({ a, idx, onNav }) {
   return (
     <div
       ref={ref}
-      className="activity-card shimmer"
+      className="activity-card shimmer mag-card"
       style={{
         cursor: 'pointer',
         perspective: '800px',
@@ -45,6 +45,8 @@ function ActivityCard({ a, idx, onNav }) {
       onMouseLeave={onLeave}
       onClick={click}
     >
+      {/* Accent top line — appears on hover via CSS */}
+      <div className="card-accent-line"/>
       <div className="card-num">{String(idx + 1).padStart(2, '0')}</div>
       <div className="activity-icon">{a.icon}</div>
       <div className="activity-title">{a.title}</div>
@@ -70,10 +72,12 @@ export default function ActivitiesSection({ onNavigate }) {
   return (
     <section className="section" id="section-activities">
       <div className="container">
-        <h2 className="section-title pop-word">Our Activities</h2>
-        <p className="section-subtitle pop-in" style={{ animationDelay: '.1s' }}>
-          Click any activity to explore sessions &amp; events
-        </p>
+        <div className="reveal-stagger">
+          <h2 className="section-title pop-word">Our Activities</h2>
+          <p className="section-subtitle pop-in" style={{ animationDelay: '.1s' }}>
+            Click any activity to explore sessions &amp; events
+          </p>
+        </div>
         <div className="activity-grid cin-container">
           {activities.map((a, i) => (
             <ActivityCard key={a.id} a={a} idx={i} onNav={onNavigate}/>

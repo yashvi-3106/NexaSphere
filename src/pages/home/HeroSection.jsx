@@ -38,6 +38,7 @@ function OrbitRings({ isLight }) {
   const tilts=['rotate(-22 250 250)','rotate(14 250 250)','rotate(55 250 250)','rotate(-35 250 250)'];
   return (
     <svg width="280" height="280" viewBox="0 0 500 500"
+      data-parallax="8"
       style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',pointerEvents:'none',zIndex:0,overflow:'visible'}}>
       {rings.map((rg,i)=>(
         <g key={i} transform={tilts[i]}>
@@ -172,7 +173,7 @@ export default function HeroSection({ onTabChange, onApply, onJoin, theme = 'dar
           ? 'brightness(.55) saturate(2.2) hue-rotate(220deg) opacity(0.22)'
           : 'brightness(.08) saturate(1.2)',
         transform:'scale(1.04)',
-      }}/>
+      }} className="hero-bg-parallax"/>
       <div className="hero-overlay"/>
       <Atmosphere isLight={isLight}/>
 
@@ -231,7 +232,7 @@ export default function HeroSection({ onTabChange, onApply, onJoin, theme = 'dar
       {/* Scroll indicator — sits inside bottom fade */}
       <div style={{position:'absolute',bottom:'16px',left:'50%',transform:'translateX(-50%)',zIndex:2,display:'flex',flexDirection:'column',alignItems:'center',gap:'4px',opacity:.42,animation:'float 2.5s ease-in-out infinite'}}>
         <div style={{fontSize:'.56rem',color:isLight?'#78716c':'var(--t2)',letterSpacing:'.22em',fontFamily:"'Space Mono',monospace"}}>SCROLL</div>
-        <div style={{width:'1px',height:'28px',background:`linear-gradient(to bottom,var(--c1),transparent)`}}/>
+        <div className="scroll-indicator-line" style={{width:'1px',height:'28px',background:`linear-gradient(to bottom,var(--c1),transparent)`}}/>
       </div>
     </section>
   );

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { events } from '../../data/eventsData';
+import { BannerOrbs } from '../../shared/MotionLayer';
 
 export default function EventsPage({ onBack, onEventClick }) {
   useEffect(() => {
@@ -14,7 +15,7 @@ export default function EventsPage({ onBack, onEventClick }) {
   return (
     <div id="events-page" style={{ minHeight: '100vh', padding: '0 0 100px' }}>
       {/* Hero */}
-      <div style={{
+      <div className="page-banner" style={{
         background: 'linear-gradient(135deg, rgba(0,212,255,.06), rgba(123,111,255,.04))',
         borderBottom: '1px solid var(--bdr)',
         padding: '70px 0 50px',
@@ -22,28 +23,26 @@ export default function EventsPage({ onBack, onEventClick }) {
         marginBottom: '60px',
         position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(123,111,255,.05) 0%, transparent 60%)', pointerEvents: 'none' }} />
-        <button onClick={onBack} style={{
+        <div className="page-banner-line" style={{ position:'absolute',top:0,left:0,right:0,height:'3px',background:'linear-gradient(90deg,var(--c1),var(--c2),var(--c3))' }}/>
+        <BannerOrbs color="rgba(123,111,255,.06)"/>
+        <button onClick={onBack} className="ns-back-btn" style={{
           position: 'absolute', top: '24px', left: '28px',
           background: 'var(--card)', border: '1px solid var(--bdr)',
           borderRadius: '50px', padding: '7px 16px',
-          color: 'var(--t2)', fontSize: '.8rem', cursor: 'none',
+          color: 'var(--t2)', fontSize: '.8rem', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: '6px',
           fontFamily: "'Rajdhani', sans-serif", fontWeight: 600,
-        }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--c1)'; e.currentTarget.style.color = 'var(--c1)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bdr)'; e.currentTarget.style.color = 'var(--t2)'; }}
-        >← Back</button>
+        }}>← Back</button>
 
-        <span className="cin-section-label pop-in">NexaSphere · GL Bajaj</span>
-        <h1 className="section-title pop-word" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)' }}>Our Events</h1>
-        <p className="section-subtitle pop-in" style={{ animationDelay: '.1s', maxWidth: '520px', margin: '0 auto' }}>
+        <span className="cin-section-label pop-in" style={{position:'relative',zIndex:1}}>NexaSphere · GL Bajaj</span>
+        <h1 className="section-title pop-word" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)', position:'relative',zIndex:1 }}>Our Events</h1>
+        <p className="section-subtitle pop-in" style={{ animationDelay: '.1s', maxWidth: '520px', margin: '0 auto', position:'relative',zIndex:1 }}>
           Where ideas come to life. Every event is a milestone in the NexaSphere journey.
         </p>
       </div>
 
       <div className="container">
-        <div className="events-timeline">
+        <div className="events-timeline ns-reveal">
           {events.map((ev, i) => {
             const isKSS = ev.id === 1; // KSS is clickable
             return (
