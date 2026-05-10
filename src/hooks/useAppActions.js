@@ -2,16 +2,27 @@ import { useCallback } from 'react';
 import { NAV_HEIGHTS, SCROLL_TIMEOUT } from '../data/config';
 
 export function useAppActions(nav, setPage, setActiveTab, mobile) {
+  const scrollTop = (behavior = 'smooth') => window.scrollTo({ top: 0, behavior });
+
   const onNavigate = useCallback((type, title) => {
-    if (type === 'activity') nav(() => setPage({ type: 'activity', activityKey: title }));
+    if (type === 'activity') nav(() => {
+      setPage({ type: 'activity', activityKey: title });
+      scrollTop();
+    });
   }, [nav, setPage]);
 
   const onEvent = useCallback((ev) => {
-    nav(() => setPage(p => ({ ...p, type: 'event', event: ev })));
+    nav(() => {
+      setPage(p => ({ ...p, type: 'event', event: ev }));
+      scrollTop();
+    });
   }, [nav, setPage]);
 
   const onKSSClick = useCallback((ev) => {
-    nav(() => setPage({ type: 'event', activityKey: 'Insight Session', event: ev }));
+    nav(() => {
+      setPage({ type: 'event', activityKey: 'Insight Session', event: ev });
+      scrollTop();
+    });
   }, [nav, setPage]);
 
   const onBackActivity = useCallback(() => {
@@ -39,12 +50,20 @@ export function useAppActions(nav, setPage, setActiveTab, mobile) {
   }, [nav, setPage, setActiveTab]);
 
   const openApply = useCallback(() => {
-    nav(() => setPage({ type: 'apply' }));
-  }, [nav, setPage]);
+    setActiveTab('Home');
+    nav(() => {
+      setPage({ type: 'apply' });
+      scrollTop();
+    });
+  }, [nav, setPage, setActiveTab]);
 
   const openJoin = useCallback(() => {
-    nav(() => setPage({ type: 'join' }));
-  }, [nav, setPage]);
+    setActiveTab('Home');
+    nav(() => {
+      setPage({ type: 'join' });
+      scrollTop();
+    });
+  }, [nav, setPage, setActiveTab]);
 
   return {
     onNavigate,

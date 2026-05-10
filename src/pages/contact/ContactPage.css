@@ -85,11 +85,11 @@
 .contact-card-label {
   font-family: 'Orbitron', monospace;
   font-size: 0.72rem;
-  fontWeight: 700;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-bottom: 8px;
-  textAlign: center;
+  text-align: center;
 }
 
 .contact-card-value {
@@ -136,8 +136,8 @@
   font-family: 'Orbitron', monospace;
   font-size: clamp(1.1rem, 3vw, 1.6rem);
   font-weight: 700;
-  marginTop: 8px;
-  marginBottom: 6px;
+  margin-top: 8px;
+  margin-bottom: 6px;
   background: linear-gradient(135deg, var(--c1), var(--c2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -191,7 +191,7 @@
   text-align: center;
   margin-top: 56px;
   padding: 24px;
-  maxWidth: 520px;
+  max-width: 520px;
   margin: 56px auto 0;
   background: var(--card);
   border: 1px solid var(--border);

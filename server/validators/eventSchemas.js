@@ -21,7 +21,7 @@ export const eventSchema = z
     date: z.string().trim().min(1).max(80),
     description: z.string().trim().min(1).max(1200),
     status: z.enum(['upcoming', 'completed']).optional().default('completed'),
-    icon: z.string().trim().max(8).optional().default('📌'),
+    icon: z.string().trim().max(32).optional().default('Pin'),
     tags: tagsSchema,
   })
   .transform((data) => {
@@ -42,7 +42,7 @@ export const eventSchema = z
       date: String(data.date),
       name: String(data.name),
       description: String(data.description),
-      icon: String(data.icon || '📌').slice(0, 8),
+      icon: String(data.icon || 'Pin').slice(0, 32),
       tags: Array.isArray(data.tags) ? data.tags : [],
     };
   });
