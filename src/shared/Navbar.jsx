@@ -81,19 +81,20 @@ export default function Navbar({ activeTab, onTabChange, onToggleTheme, theme, o
           <span className="ns-nav-brand">NexaSphere</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ul className="ns-nav-tabs">
-            {TABS.map(t => (
-              <li key={t}>
-                <button
-                  className={`ns-nav-tab${activeTab === t ? ' active' : ''}${t === 'Contact' ? ' contact-nav-tab' : ''}`}
-                  onClick={() => handleTab(t)}
-                >
-                  {t}
-                </button>
-              </li>
-            ))}
-          </ul>
+        <ul className="ns-nav-tabs">
+          {TABS.map(t => (
+            <li key={t}>
+              <button
+                className={`ns-nav-tab${activeTab === t ? ' active' : ''}${t === 'Contact' ? ' contact-nav-tab' : ''}`}
+                onClick={() => handleTab(t)}
+              >
+                {t}
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifySelf: 'end' }}>
           <div className="ns-nav-ctas">
             <button className="btn btn-sm btn-outline ns-nav-cta-btn" onClick={onJoin} aria-label="Join as Member">Join</button>
             <button className="btn btn-sm btn-primary ns-nav-cta-btn" onClick={onApply} aria-label="Apply for Core Team">Apply</button>
