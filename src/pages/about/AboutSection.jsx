@@ -11,7 +11,16 @@ export default function AboutSection() {
 
   useEffect(()=>{
     const obs=new IntersectionObserver(entries=>{
-      entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('fired');obs.unobserve(e.target);}});
+      entries.forEach(e=>{
+        if(e.isIntersecting && !e.target.classList.contains('fired')){
+          e.target.classList.add('fired');
+          e.target.addEventListener('animationend', () => {
+            e.target.style.opacity = '1';
+            e.target.style.transform = 'none';
+          }, { once: true });
+          obs.unobserve(e.target);
+        }
+      });
     },{threshold:.09});
     document.querySelectorAll('#section-about .pop-in,#section-about .pop-left,#section-about .pop-right,#section-about .pop-word').forEach(el=>obs.observe(el));
     return()=>obs.disconnect();
@@ -27,7 +36,7 @@ export default function AboutSection() {
     <section className="section" id="section-about" style={{position:'relative',overflow:'hidden'}}>
       <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'480px',height:'480px',borderRadius:'50%',background:'radial-gradient(circle,rgba(123,111,255,.03) 0%,transparent 70%)',pointerEvents:'none'}}/>
       <div className="container" style={{position:'relative',zIndex:1}}>
-        <div className="ns-reveal">
+        <div>
           <h2 className="section-title pop-word">About NexaSphere</h2>
           <p className="section-subtitle pop-in" style={{animationDelay:'.1s'}}>Building Tomorrow&apos;s Tech Leaders Today</p>
         </div>
@@ -40,16 +49,16 @@ export default function AboutSection() {
           maxWidth:'920px',
           margin:'0 auto 44px'
         }}>
-          <div className="ns-reveal-left">
+          <div>
             <p className="about-text pop-left" style={{animationDelay:'.08s'}}>
               <strong style={{color:'var(--c1)'}}>NexaSphere</strong> is a student-driven tech ecosystem at{' '}
               <strong style={{color:'var(--c2)'}}>GL Bajaj Group of Institutions, Mathura</strong>.
               Founded to bridge the gap between academic learning and real-world technology, we run hackathons, workshops, knowledge-sharing sessions, and career guidance events.
             </p>
             <p className="about-text pop-left" style={{marginTop:'12px',animationDelay:'.16s'}}>
-              We've hosted KSS #153 on the Impact of AI, are running an Industry Insider career guidance session on March 13, and a Git &amp; GitHub workshop is coming soon. NexaSphere is where curiosity meets real opportunity.
+              From peer-led Knowledge Sharing Sessions and hands-on workshops to Industry Insider career guidance and competitive hackathons — NexaSphere runs events that connect curiosity with real opportunity, all year round.
             </p>
-            {/* Contact */}
+            
             <div className="pop-left" style={{marginTop:'16px',animationDelay:'.22s'}}>
               <div style={{fontFamily:'Orbitron,monospace',fontSize:'.7rem',color:'var(--c1)',fontWeight:700,letterSpacing:'.1em',marginBottom:'4px',textTransform:'uppercase'}}>Contact Us</div>
               <a href={`mailto:${NEXASPHERE_EMAIL}`} style={{color:'var(--c1)',fontSize:'.88rem',fontWeight:600}}>{NEXASPHERE_EMAIL}</a>
@@ -92,3 +101,4 @@ export default function AboutSection() {
     </section>
   );
 }
+

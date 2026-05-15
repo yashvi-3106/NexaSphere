@@ -4,10 +4,10 @@
 
 const promptathon = {
   id: 'promptathon',
-  icon: '🤖',
+  icon: 'Bot',
   title: 'Promptathon',
   tagline: 'Prompt. Engineer. Dominate.',
-  color: '#8b5cf6',
+  color: '#f97316',
   gradient: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
   description:
     'The art of talking to AI — turned into a competitive sport. Craft the sharpest, most creative prompts to solve real-world problems, generate stunning outputs, and outsmart your peers in the age of generative intelligence.',
@@ -46,22 +46,22 @@ const promptathon = {
 
   highlights: [
     {
-      icon: '🧠',
+      icon: 'Brain',
       title: 'Prompt Engineering',
       desc: 'Learn to write precise, creative prompts that unlock AI\'s full potential across text, code, and images.',
     },
     {
-      icon: '⚔️',
+      icon: 'Zap',
       title: 'Competitive Rounds',
       desc: 'Multi-round battles where prompts are judged on creativity, accuracy, efficiency, and output quality.',
     },
     {
-      icon: '🎯',
+      icon: 'Target',
       title: 'Real-World Tasks',
       desc: 'Tackle genuine challenges — from content generation to data analysis — using only natural language.',
     },
     {
-      icon: '🏆',
+      icon: 'Star',
       title: 'Leaderboard & Prizes',
       desc: 'Top prompt engineers earn recognition, certificates, and exclusive NexaSphere rewards.',
     },

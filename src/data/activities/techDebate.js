@@ -4,10 +4,10 @@
 
 const techDebate = {
   id: 'tech-debate',
-  icon: '🎙️',
+  icon: 'Mic2',
   title: 'Tech Debate',
   tagline: 'Argue. Defend. Evolve.',
-  color: '#ef4444',
+  color: '#06b6d4',
   gradient: 'linear-gradient(135deg, #ef4444, #dc2626)',
   description:
     'Structured battles of ideas where technology meets rhetoric. Defend your stance, challenge assumptions, and walk away sharper than when you arrived.',

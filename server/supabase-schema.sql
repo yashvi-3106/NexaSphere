@@ -1,5 +1,18 @@
 create extension if not exists pgcrypto;
 
+create table if not exists admin_sessions (
+  token_hash text primary key,
+  username text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  revoked_at timestamptz
+);
+
+create index if not exists idx_admin_sessions_expires_at on admin_sessions (expires_at);
+create index if not exists idx_admin_sessions_revoked_at on admin_sessions (revoked_at);
+
 create table if not exists events (
   id text primary key,
   name text not null,
@@ -32,8 +45,15 @@ create index if not exists idx_activity_events_key_created on activity_events (a
 create table if not exists core_team_members (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  role text not null,
+  year text not null,
+  branch text not null,
+  section text not null,
   email text not null,
-  phone text not null,
+  whatsapp text not null,
+  linkedin text,
+  instagram text,
+  photo_url text,
   created_at timestamptz not null default now()
 );
 

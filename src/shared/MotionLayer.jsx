@@ -74,8 +74,6 @@ export function BannerOrbs({ color = 'rgba(0,212,255,.06)' }) {
     </>
   );
 }
-
-/* ── useScrollProgress ───────────────────────────────── */
 export function useScrollProgress() {
   useEffect(() => {
     const bar = document.getElementById('scroll-progress');
@@ -93,22 +91,30 @@ export function useScrollProgress() {
 /* ── useNsReveal — fires .ns-visible on scroll ────────── */
 export function useNsReveal(deps = []) {
   useEffect(() => {
-    // small delay so elements are in DOM after page mount
+    
     const t = setTimeout(() => {
       const SEL = '.ns-reveal,.ns-reveal-left,.ns-reveal-right,.ns-reveal-scale';
       const els = document.querySelectorAll(SEL);
       if (!els.length) return;
       const obs = new IntersectionObserver(
         entries => entries.forEach(e => {
-          if (e.isIntersecting) { e.target.classList.add('ns-visible'); obs.unobserve(e.target); }
+          if (e.isIntersecting && !e.target.classList.contains('ns-visible')) {
+            e.target.classList.add('ns-visible');
+            e.target.addEventListener('transitionend', () => {
+              e.target.style.opacity = '1';
+              e.target.style.transform = 'none';
+            }, { once: true });
+            obs.unobserve(e.target);
+          }
         }),
         { threshold:0.05, rootMargin:'0px 0px -20px 0px' }
       );
-      // Elements already in viewport should fire immediately
       els.forEach(el => {
         const r = el.getBoundingClientRect();
         if (r.top < window.innerHeight + 80) {
           el.classList.add('ns-visible');
+          el.style.opacity = '1';
+          el.style.transform = 'none';
         } else {
           obs.observe(el);
         }
@@ -116,7 +122,7 @@ export function useNsReveal(deps = []) {
       return () => obs.disconnect();
     }, 80);
     return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, deps);
 }
 
@@ -203,3 +209,4 @@ export function useMagneticCards() {
     return () => { window.removeEventListener('mousemove', apply); window.removeEventListener('mouseleave', reset); };
   }, []);
 }
+

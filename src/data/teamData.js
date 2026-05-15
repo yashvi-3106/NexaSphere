@@ -29,6 +29,11 @@ export const teamMembers = [
     email: 'ayush.sharmaa@hotmail.com',
     whatsapp: '8923995135',
     instagram: null,
+    achievements: ['Hackathon Winner', 'Best Organizer Award'],
+    testimonials: [
+      { text: 'Ayush is a fantastic leader!', author: 'Tanishk Bansal' },
+      { text: 'Always ready to help the team.', author: 'Tushar Goswami' }
+    ],
   },
   {
     id: 2,

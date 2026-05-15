@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { DynamicIcon } from '../../shared/Icons';
 
-// ── Animated Counter ──
 function Counter({ value, suffix = '' }) {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
@@ -31,7 +31,6 @@ function Counter({ value, suffix = '' }) {
   return <span ref={ref}>{count}{suffix}</span>;
 }
 
-// ── Glitch Text Effect ──
 function GlitchText({ text, color }) {
   return (
     <span style={{ position: 'relative', display: 'inline-block' }}
@@ -69,7 +68,6 @@ function GlitchText({ text, color }) {
   );
 }
 
-// ── Floating Orbs Background ──
 function FloatingOrbs({ color }) {
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
@@ -90,8 +88,7 @@ function FloatingOrbs({ color }) {
   );
 }
 
-// ── Scan Line Effect ──
-function ScanLine() {
+function ScanLine({ color }) {
   return (
     <>
       <style>{`
@@ -102,7 +99,7 @@ function ScanLine() {
       `}</style>
       <div style={{
         position: 'absolute', left: 0, right: 0, height: '2px',
-        background: 'linear-gradient(90deg, transparent, var(--cyan), transparent)',
+        background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
         opacity: 0.3, pointerEvents: 'none', zIndex: 0,
         animation: 'scanline 4s linear infinite',
       }} />
@@ -110,7 +107,6 @@ function ScanLine() {
   );
 }
 
-// ── Event Card ──
 function EventCard({ event, activityColor, onSelect, onDelete }) {
   const [hovered, setHovered] = useState(false);
 
@@ -134,7 +130,7 @@ function EventCard({ event, activityColor, onSelect, onDelete }) {
         overflow: 'hidden',
       }}
     >
-      {/* Shimmer on hover */}
+      
       {hovered && (
         <div style={{
           position: 'absolute', top: 0, left: '-100%', width: '60%', height: '100%',
@@ -166,10 +162,10 @@ function EventCard({ event, activityColor, onSelect, onDelete }) {
                 background: 'rgba(34,197,94,0.12)', color: '#22c55e',
                 border: '1px solid rgba(34,197,94,0.3)', fontWeight: 700,
                 textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0,
-              }}>✅ Completed</span>
+              }}><DynamicIcon name="CheckCircle" size={14} /> Completed</span>
             )}
           </div>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '10px' }}>📅 {event.date}</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '10px' }}><DynamicIcon name="Calendar" size={14} /> {event.date}</div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: '0 0 12px', lineHeight: 1.6 }}>
             {event.tagline || event.description}
           </p>
@@ -205,7 +201,6 @@ function EventCard({ event, activityColor, onSelect, onDelete }) {
   );
 }
 
-// ── Upcoming Card ──
 function UpcomingCard({ event, color }) {
   return (
     <div style={{
@@ -229,15 +224,14 @@ function UpcomingCard({ event, color }) {
           fontSize: '0.68rem', padding: '2px 8px', borderRadius: '20px',
           background: `${color}15`, color, border: `1px solid ${color}40`,
           fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0,
-        }}>🔜 Upcoming</span>
+        }}><DynamicIcon name="Flame" size={14} /> Upcoming</span>
       </div>
-      <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginBottom: '6px' }}>📅 {event.date}</div>
+      <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginBottom: '6px' }}><DynamicIcon name="Calendar" size={14} /> {event.date}</div>
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>{event.description}</p>
     </div>
   );
 }
 
-// hex to rgb helper
 function hexToRgb(hex) {
   const r = parseInt(hex.slice(1,3),16);
   const g = parseInt(hex.slice(3,5),16);
@@ -245,7 +239,6 @@ function hexToRgb(hex) {
   return `${r},${g},${b}`;
 }
 
-// ════════════════════════════════════════
 export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) {
   const [mounted, setMounted] = useState(false);
   const [manualEvents, setManualEvents] = useState([]);
@@ -336,19 +329,19 @@ export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '100px', overflow: 'hidden' }}>
 
-      {/* ── Hero Banner ── */}
+      
       <div style={{
         position: 'relative',
-        background: `linear-gradient(180deg, rgba(${rgb},0.10) 0%, rgba(${rgb},0.03) 60%, transparent 100%)`,
-        borderBottom: `1px solid rgba(${rgb},0.2)`,
+        background: `linear-gradient(180deg, rgba(${rgb},0.15) 0%, rgba(${rgb},0.06) 60%, transparent 100%)`,
+        borderBottom: `1px solid rgba(${rgb},0.3)`,
         padding: '60px 0 52px',
         overflow: 'hidden',
       }}>
         <FloatingOrbs color={color} />
-        <ScanLine />
+        <ScanLine color={color} />
 
         <div className="container" style={{ position: 'relative', zIndex: 1 }}>
-          {/* Back */}
+          
           <button
             onClick={onBack}
             style={{
@@ -364,7 +357,7 @@ export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) 
             ← Back to Activities
           </button>
 
-          {/* Icon + Title */}
+          
           <div style={{
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'translateY(0)' : 'translateY(30px)',
@@ -376,7 +369,7 @@ export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) 
               animation: 'float 4s ease-in-out infinite',
               display: 'inline-block',
             }}>
-              {activity.icon}
+              <DynamicIcon name={activity.icon} size={80} />
             </div>
             <h1 style={{
               fontFamily: 'Orbitron, monospace',
@@ -411,10 +404,10 @@ export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) 
         </div>
       </div>
 
-      {/* ── Content ── */}
+      
       <div className="container" style={{ paddingTop: '56px' }}>
 
-        {/* Conducted Events */}
+        
         {((activity.conductedEvents && activity.conductedEvents.length > 0) || manualEvents.length > 0) && (
           <div style={{ marginBottom: '56px' }}>
             <h2 style={{
@@ -448,18 +441,18 @@ export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) 
           </div>
         )}
 
-        {/* Upcoming Events */}
+        
         {activity.upcomingEvents && activity.upcomingEvents.length > 0 && (
           <div style={{ maxWidth: '760px' }}>
             <h2 style={{
               fontFamily: 'Orbitron, monospace', fontSize: '1.1rem', fontWeight: 700,
-              color: 'var(--text-secondary)', marginBottom: '24px', letterSpacing: '0.08em',
+              color, marginBottom: '24px', letterSpacing: '0.08em',
               textTransform: 'uppercase',
               display: 'flex', alignItems: 'center', gap: '10px',
             }}>
               <span style={{
                 display: 'inline-block', width: '32px', height: '2px',
-                background: 'linear-gradient(90deg, var(--text-secondary), transparent)',
+                background: `linear-gradient(90deg, ${color}, transparent)`,
               }} />
               Coming Up
             </h2>
@@ -471,7 +464,7 @@ export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) 
           </div>
         )}
 
-        {/* Empty state */}
+        
         {(!activity.conductedEvents || activity.conductedEvents.length === 0) &&
          (!manualEvents || manualEvents.length === 0) &&
          (!activity.upcomingEvents || activity.upcomingEvents.length === 0) && (
@@ -484,3 +477,4 @@ export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) 
     </div>
   );
 }
+

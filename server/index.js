@@ -1,11 +1,17 @@
 import 'dotenv/config';
 import express from 'express';
+import { EventEmitter } from 'events';
 import cors from 'cors';
 import { google } from 'googleapis';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import { sendWelcomeVerificationEmail } from './services/emailService.js';
+import { ZodError } from 'zod';
+import { normalizeFormSubmission } from './validators/formSchemas.js';
+import * as adminAuthMiddleware from './middleware/adminAuthMiddleware.js';
+import analyticsRouter from './routes/analytics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,7 +25,33 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '512kb' }));
 
-const sessions = new Map();
+function requestLogger(req, res, next) {
+  const start = process.hrtime.bigint();
+  const { method, path } = req;
+
+  res.on('finish', () => {
+    const duration = Number(process.hrtime.bigint() - start) / 1e6;
+    const status = res.statusCode;
+    const message = `[${method}] ${path} → ${status} (${Math.round(duration)}ms)`;
+
+    if (status >= 500) {
+      console.error(message);
+    } else if (status >= 400) {
+      console.warn(message);
+    } else {
+      console.log(message);
+    }
+  });
+
+  next();
+}
+
+app.use(requestLogger);
+
+const adminAuth = adminAuthMiddleware.requireAdmin;
+const adminEvents = new EventEmitter();
+adminEvents.on('CORE_TEAM_MEMBER_ADDED', (event) => console.log(`[EVENT] CORE_TEAM_MEMBER_ADDED:`, event));
+adminEvents.on('CORE_TEAM_MEMBER_REMOVED', (event) => console.log(`[EVENT] CORE_TEAM_MEMBER_REMOVED:`, event));
 
 const defaultContent = {
   events: [
@@ -30,18 +62,19 @@ const defaultContent = {
       date: 'March 14, 2025',
       description: 'NexaSphere\'s inaugural Knowledge Sharing Session focused on the impact of AI.',
       status: 'completed',
-      icon: '🧠',
+      icon: 'Brain',
       tags: ['AI', 'Learning', 'Community'],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
   ],
   activityEvents: {},
+  coreTeam: [],
 };
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
-const HAS_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_SERVICE_KEY);
+export const HAS_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_SERVICE_KEY);
 
 function requiredEnv(name) {
   const v = process.env[name];
@@ -74,7 +107,7 @@ async function writeContent(content) {
   await fs.writeFile(CONTENT_FILE, JSON.stringify(content, null, 2), 'utf8');
 }
 
-async function supabaseRequest(pathname, { method = 'GET', body } = {}) {
+export async function supabaseRequest(pathname, { method = 'GET', body } = {}) {
   if (!HAS_SUPABASE) throw new Error('Supabase is not configured');
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathname}`, {
     method,
@@ -95,22 +128,20 @@ async function supabaseRequest(pathname, { method = 'GET', body } = {}) {
   return text ? JSON.parse(text) : [];
 }
 
-function parseBearer(authHeader = '') {
-  if (!authHeader.startsWith('Bearer ')) return '';
-  return authHeader.slice(7).trim();
-}
-
-function adminAuth(req, res, next) {
-  const bearer = parseBearer(req.headers.authorization || '');
-  if (!bearer || !sessions.has(bearer)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  req.adminSession = sessions.get(bearer);
-  return next();
-}
-
 function toSafeString(value, max = 4000) {
   return String(value ?? '').trim().slice(0, max);
+}
+
+function validateWhatsApp(str) {
+  const v = String(str || '').trim();
+  if (!/^\d{10}$/.test(v)) throw new Error('WhatsApp must be exactly 10 digits');
+  return v;
+}
+
+function validateSection(str) {
+  const v = String(str || '').trim().toUpperCase();
+  if (!/^[A-Z]$/.test(v)) throw new Error('Section must be a single letter (A-Z)');
+  return v;
 }
 
 function sanitizeEvent(input = {}) {
@@ -129,20 +160,10 @@ function sanitizeEvent(input = {}) {
     date: toSafeString(input.date, 80),
     description: toSafeString(input.description, 1200),
     status,
-    icon: toSafeString(input.icon || '📌', 8),
+    icon: toSafeString(input.icon || 'Pin', 32),
     tags,
   };
 }
-
-const coreTeamMembers = [
-  { name: 'Ayush Sharma', email: 'ayush.sharmaa@hotmail.com', phone: '8923995135' },
-  { name: 'Tanishk Bansal', email: 'tb1093612@gmail.com', phone: '8534998412' },
-  { name: 'Tushar Goswami', email: 'tushh45@gmail.com', phone: '7253948594' },
-  { name: 'Swayam Dwivedi', email: 'swayamdwivedi88@gmail.com', phone: '7307391343' },
-  { name: 'Aryan Singh', email: 'aryan.singh2025@glbajajgroup.org', phone: '8423067765' },
-  { name: 'Vartika Sharma', email: 'vartika.sharma2025@glbajajgroup.org', phone: '9458030331' },
-  { name: 'Vikas Kumar Sharma', email: 'vks184953@gmail.com', phone: '7983419487' },
-];
 
 function normalizePhone(value) {
   return String(value || '').replace(/[^\d]/g, '');
@@ -155,40 +176,36 @@ async function canManageActivityEvent({ name, email, phone, password }) {
   const e = String(email || '').trim().toLowerCase();
   const p = normalizePhone(phone);
 
-  if (HAS_SUPABASE) {
-    try {
-      const rows = await supabaseRequest(`core_team_members?name=eq.${encodeURIComponent(name)}&email=eq.${encodeURIComponent(email)}&phone=eq.${encodeURIComponent(p)}&select=name,email,phone`);
-      if (Array.isArray(rows) && rows.length > 0) return true;
-    } catch {
-      // fallback below
-    }
-  }
-
-  return coreTeamMembers.some(m =>
+  const members = await listCoreTeamStore();
+  return members.some(m =>
     m.name.toLowerCase() === n &&
     m.email.toLowerCase() === e &&
-    normalizePhone(m.phone) === p
+    normalizePhone(m.whatsapp) === p
   );
 }
 
 async function listEventsStore() {
   if (HAS_SUPABASE) {
     const rows = await supabaseRequest('events?select=*&order=created_at.desc');
-    return rows.map(r => ({
+    return rows.map(r => sanitizeEventRecord({
       id: r.id,
       name: r.name,
       shortName: r.short_name || r.shortName || r.name,
       date: r.date_text || r.date,
       description: r.description,
       status: r.status,
-      icon: r.icon || '📌',
+      icon: r.icon || 'Pin',
       tags: Array.isArray(r.tags) ? r.tags : [],
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     }));
   }
   const content = await readContent();
-  return content.events || [];
+  return (content.events || []).map((event) => sanitizeEventRecord(event));
+}
+
+function sanitizeEventRecord(event) {
+  return event;
 }
 
 async function createEventStore(event) {
@@ -211,23 +228,23 @@ async function createEventStore(event) {
       payload = { ...payload, id: `${event.id}-${Date.now()}` };
       [row] = await supabaseRequest('events', { method: 'POST', body: [payload] });
     }
-    return {
+    return sanitizeEventRecord({
       id: row.id,
       name: row.name,
       shortName: row.short_name || row.name,
       date: row.date_text,
       description: row.description,
       status: row.status,
-      icon: row.icon || '📌',
+      icon: row.icon || 'Pin',
       tags: Array.isArray(row.tags) ? row.tags : [],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-    };
+    });
   }
   const content = await readContent();
   content.events.unshift({ ...event, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
   await writeContent(content);
-  return content.events[0];
+  return sanitizeEventRecord(content.events[0]);
 }
 
 async function updateEventStore(id, patch) {
@@ -246,25 +263,25 @@ async function updateEventStore(id, patch) {
       },
     });
     if (!row) return null;
-    return {
+    return sanitizeEventRecord({
       id: row.id,
       name: row.name,
       shortName: row.short_name || row.name,
       date: row.date_text,
       description: row.description,
       status: row.status,
-      icon: row.icon || '📌',
+      icon: row.icon || 'Pin',
       tags: Array.isArray(row.tags) ? row.tags : [],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-    };
+    });
   }
   const content = await readContent();
   const idx = content.events.findIndex(e => e.id === id);
   if (idx < 0) return null;
   content.events[idx] = { ...content.events[idx], ...patch, id, updatedAt: new Date().toISOString() };
   await writeContent(content);
-  return content.events[idx];
+  return sanitizeEventRecord(content.events[idx]);
 }
 
 async function deleteEventStore(id) {
@@ -283,7 +300,7 @@ async function deleteEventStore(id) {
 async function listActivityEventsStore(activityKey) {
   if (HAS_SUPABASE) {
     const rows = await supabaseRequest(`activity_events?activity_key=eq.${encodeURIComponent(activityKey)}&select=*&order=created_at.desc`);
-    return rows.map(r => ({
+    return rows.map(r => sanitizeActivityEventRecord({
       id: r.id,
       name: r.name,
       date: r.date_text || r.date,
@@ -294,7 +311,11 @@ async function listActivityEventsStore(activityKey) {
     }));
   }
   const content = await readContent();
-  return content.activityEvents?.[activityKey] || [];
+  return (content.activityEvents?.[activityKey] || []).map((event) => sanitizeActivityEventRecord(event));
+}
+
+function sanitizeActivityEventRecord(event) {
+  return event;
 }
 
 async function createActivityEventStore(activityKey, event) {
@@ -314,7 +335,7 @@ async function createActivityEventStore(activityKey, event) {
         created_by_phone: event.createdBy?.phone || '',
       }],
     });
-    return {
+    return sanitizeActivityEventRecord({
       id: row.id,
       name: row.name,
       date: row.date_text,
@@ -322,14 +343,14 @@ async function createActivityEventStore(activityKey, event) {
       description: row.description,
       status: row.status || 'completed',
       createdAt: row.created_at,
-    };
+    });
   }
   const content = await readContent();
   content.activityEvents = content.activityEvents || {};
   content.activityEvents[activityKey] = content.activityEvents[activityKey] || [];
   content.activityEvents[activityKey].unshift(event);
   await writeContent(content);
-  return event;
+  return sanitizeActivityEventRecord(event);
 }
 
 async function deleteActivityEventStore(activityKey, eventId) {
@@ -343,6 +364,64 @@ async function deleteActivityEventStore(activityKey, eventId) {
   const next = list.filter(e => e.id !== eventId);
   if (next.length === list.length) return false;
   content.activityEvents[activityKey] = next;
+  await writeContent(content);
+  return true;
+}
+
+async function listCoreTeamStore() {
+  if (HAS_SUPABASE) {
+    const rows = await supabaseRequest('core_team_members?select=*&order=created_at.asc');
+    return rows.map(r => sanitizeCoreTeamMemberRecord({
+      id: r.id, name: r.name, role: r.role, year: r.year,
+      branch: r.branch, section: r.section, email: r.email,
+      whatsapp: r.whatsapp, linkedin: r.linkedin, instagram: r.instagram,
+      photoUrl: r.photo_url, createdAt: r.created_at
+    }));
+  }
+  const content = await readContent();
+  return (content.coreTeam || []).map((member) => sanitizeCoreTeamMemberRecord(member));
+}
+
+function sanitizeCoreTeamMemberRecord(member) {
+  return member;
+}
+
+async function createCoreTeamStore(member) {
+  if (HAS_SUPABASE) {
+    const [row] = await supabaseRequest('core_team_members', {
+      method: 'POST',
+      body: [{
+        name: member.name, role: member.role, year: member.year,
+        branch: member.branch, section: member.section, email: member.email,
+        whatsapp: member.whatsapp, linkedin: member.linkedin,
+        instagram: member.instagram, photo_url: member.photoUrl
+      }]
+    });
+    return sanitizeCoreTeamMemberRecord({
+      id: row.id, name: row.name, role: row.role, year: row.year,
+      branch: row.branch, section: row.section, email: row.email,
+      whatsapp: row.whatsapp, linkedin: row.linkedin, instagram: row.instagram,
+      photoUrl: row.photo_url, createdAt: row.created_at
+    });
+  }
+  const content = await readContent();
+  content.coreTeam = content.coreTeam || [];
+  const newMember = { ...member, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+  content.coreTeam.push(newMember);
+  await writeContent(content);
+  return sanitizeCoreTeamMemberRecord(newMember);
+}
+
+async function deleteCoreTeamStore(id) {
+  if (HAS_SUPABASE) {
+    const rows = await supabaseRequest(`core_team_members?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+    return Array.isArray(rows) && rows.length > 0;
+  }
+  const content = await readContent();
+  content.coreTeam = content.coreTeam || [];
+  const before = content.coreTeam.length;
+  content.coreTeam = content.coreTeam.filter(m => String(m.id) !== String(id));
+  if (content.coreTeam.length === before) return false;
   await writeContent(content);
   return true;
 }
@@ -489,17 +568,9 @@ app.delete('/api/content/activity-events/:activityKey/:eventId', async (req, res
   }
 });
 
-app.post('/api/admin/login', (req, res) => {
-  const username = process.env.ADMIN_USERNAME || 'admin';
-  const password = process.env.ADMIN_PASSWORD || 'admin123';
-  const u = String(req.body?.username || '').trim();
-  const p = String(req.body?.password || '');
-
-  if (u !== username || p !== password) return res.status(401).json({ error: 'Invalid credentials' });
-  const token = crypto.randomBytes(24).toString('hex');
-  sessions.set(token, { username: u, createdAt: Date.now() });
-  return res.json({ token, username: u });
-});
+app.post('/api/admin/login', adminAuthMiddleware.login);
+app.post('/api/admin/logout', adminAuthMiddleware.logout);
+app.use('/api/admin/analytics', adminAuth, analyticsRouter);
 
 app.get('/api/admin/events', adminAuth, async (req, res) => {
   return res.json({ events: await listEventsStore() });
@@ -541,21 +612,103 @@ app.delete('/api/admin/events/:id', adminAuth, async (req, res) => {
   }
 });
 
-async function handleForm(formType, req, res) {
+app.get('/api/content/core-team', async (req, res) => {
+  try {
+    return res.json(await listCoreTeamStore());
+  } catch (e) {
+    return res.status(500).json({ error: e?.message || 'Failed to load core team' });
+  }
+});
+
+app.get('/api/admin/core-team', adminAuth, async (req, res) => {
+  try {
+    return res.json(await listCoreTeamStore());
+  } catch (e) {
+    return res.status(500).json({ error: e?.message || 'Failed to load core team' });
+  }
+});
+
+app.post('/api/admin/core-team', adminAuth, async (req, res) => {
   try {
     const body = req.body || {};
-    if (!toSafeString(body.fullName, 120)) return res.status(400).json({ error: 'fullName is required' });
-    if (!isEmail(body.collegeEmail)) return res.status(400).json({ error: 'Invalid email address' });
-    if (!isPhoneish(body.whatsapp)) return res.status(400).json({ error: 'Invalid contact number' });
+    const adminEmail = req.adminSession?.username || 'admin';
+    
+    const member = {
+      name: toSafeString(body.name, 100),
+      role: toSafeString(body.role, 100),
+      year: toSafeString(body.year, 20),
+      branch: toSafeString(body.branch, 100),
+      section: validateSection(body.section),
+      email: toSafeString(body.email, 140),
+      whatsapp: validateWhatsApp(body.whatsapp),
+      linkedin: toSafeString(body.linkedin, 255) || null,
+      instagram: toSafeString(body.instagram, 255) || null,
+      photoUrl: toSafeString(body.photoUrl, 500) || null,
+    };
+    
+    if (!member.name || !member.role || !member.year || !member.branch || !member.email) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    if (!isEmail(member.email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+    
+    const saved = await createCoreTeamStore(member);
+    adminEvents.emit('CORE_TEAM_MEMBER_ADDED', { adminEmail, member: saved, timestamp: new Date().toISOString() });
+    
+    return res.status(201).json(saved);
+  } catch (e) {
+    return res.status(400).json({ error: e?.message || 'Validation failed' });
+  }
+});
 
-    const savedToSupabase = await appendToSupabaseForms(formType, body);
+app.delete('/api/admin/core-team/:id', adminAuth, async (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    const adminEmail = req.adminSession?.username || 'admin';
+    
+    const deleted = await deleteCoreTeamStore(id);
+    if (!deleted) return res.status(404).json({ error: 'Member not found' });
+    
+    adminEvents.emit('CORE_TEAM_MEMBER_REMOVED', { adminEmail, memberId: id, timestamp: new Date().toISOString() });
+    
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ error: e?.message || 'Unable to delete member' });
+  }
+});
+
+async function handleForm(formType, req, res) {
+  try {
+    const payload = normalizeFormSubmission(formType, req.body || {});
+
+    const savedToSupabase = await appendToSupabaseForms(formType, payload);
     try {
-      await appendFormToSheet(formType, body);
+      await appendFormToSheet(formType, payload);
     } catch (sheetErr) {
       if (!savedToSupabase) throw sheetErr;
     }
+
+    // NEW: Send a welcome email to the user
+    try {
+      const verifyUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/verify?email=${encodeURIComponent(req.body.collegeEmail)}`;
+      await sendWelcomeVerificationEmail(req.body.collegeEmail, req.body.fullName, verifyUrl);
+    } catch (emailErr) {
+      console.error('[Form Handler] Failed to send welcome email:', emailErr);
+      // We don't fail the whole request if email fails, but we log it.
+    }
+
     return res.json({ ok: true });
   } catch (e) {
+    if (e instanceof ZodError) {
+      return res.status(400).json({
+        error: 'Invalid form submission',
+        issues: e.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          message: issue.message,
+        })),
+      });
+    }
     return res.status(500).json({ error: e?.message || 'Submission failed' });
   }
 }
@@ -572,6 +725,12 @@ if (!process.env.VERCEL) {
       // eslint-disable-next-line no-console
       console.log(`NexaSphere server listening on http://localhost:${port}`);
     });
+  });
+} else {
+  // Vercel/Render style deployments rely on the platform to start the server.
+  app.listen(port, () => {
+    // eslint-disable-next-line no-console
+    console.log(`NexaSphere server listening on http://localhost:${port}`);
   });
 }
 

@@ -4,10 +4,10 @@
 
 const insightSession = {
   id: 'insight-session',
-  icon: '🔍',
+  icon: 'Telescope',
   title: 'Insight Session',
   tagline: 'Share. Inspire. Elevate.',
-  color: '#a855f7',
+  color: '#8b5cf6',
   gradient: 'linear-gradient(135deg, #a855f7, #9333ea)',
   description:
     'Peer-to-peer knowledge sharing where every member is both a student and a teacher. Deep-dive talks on tech, careers, and the ideas shaping tomorrow.',
@@ -30,7 +30,7 @@ const insightSession = {
         { label: 'Volunteers', value: '5' },
         { label: 'Session', value: '#153' },
       ],
-      overview: `Knowledge Sharing Session #153 on the topic "Impact of AI" just wrapped up at GL Bajaj Group of Institutions, Mathura — and what a session it was! 🧠💡\n\nThink about it — today, even deciding whether to have chai ☕ or coffee is being influenced by AI. Recommendation engines, smart assistants, predictive habits... AI has quietly slipped into every corner of our lives. And our presenters made sure we felt every bit of that reality.`,
+      overview: `Knowledge Sharing Session #153 on the topic "Impact of AI" just wrapped up at GL Bajaj Group of Institutions, Mathura — and what a session it was!\n\nThink about it — today, even deciding whether to have chai or coffee is being influenced by AI. Recommendation engines, smart assistants, predictive habits... AI has quietly slipped into every corner of our lives. And our presenters made sure we felt every bit of that reality.`,
       topics: [
         {
           title: 'Impact of AI on Everyday Life',
@@ -98,7 +98,7 @@ const insightSession = {
       ],
       photoLink: null,
       videoLink: null,
-      closingNote: `That's the magic of a KSS — it doesn't just inform, it transforms. A big thank you to every presenter, every volunteer, every face in the audience. You are NexaSphere. 🌐✨`,
+      closingNote: `That's the magic of a KSS — it doesn't just inform, it transforms. A big thank you to every presenter, every volunteer, every face in the audience. You are NexaSphere.`,
     },
   ],
 
