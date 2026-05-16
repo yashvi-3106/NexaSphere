@@ -1,6 +1,6 @@
 import { eventsService } from '../services/eventsService.js';
 import { wrapAsync } from '../middleware/asyncHandler.js';
-import { ValidationError, NotFoundError } from '../utils/errors.js';
+import { NotFoundError } from '../utils/errors.js';
 
 export const listEvents = wrapAsync(async (req, res) => {
   const events = await eventsService.listEvents();
@@ -13,11 +13,7 @@ export const adminListEvents = wrapAsync(async (req, res) => {
 });
 
 export const adminCreateEvent = wrapAsync(async (req, res) => {
-  const input = req.body || {};
-  if (!input.name || !input.date || !input.description) {
-    throw new ValidationError('name, date and description are required');
-  }
-  const created = await eventsService.createEvent(input);
+  const created = await eventsService.createEvent(req.body || {});
   return res.status(201).json({ ok: true, event: created });
 });
 
