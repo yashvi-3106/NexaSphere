@@ -53,7 +53,7 @@ import { useDeveloperMode } from './hooks/useDeveloperMode';
 import { BookmarkProvider } from './context/BookmarkContext';
 import BookmarksDrawer from './components/bookmarks/BookmarksDrawer';
 
-const MNH = 88, DNH = 64;
+const MNH = 88, DNH = 86;
 const TABS = ['Home','Activities','Events','Projects','Roadmaps','Portfolio','Collab','About','Team','Contact'];
 
 /* ── Page wipe transition ── */
