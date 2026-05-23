@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { projectsData } from '../../data/projectsData';
 import { roadmapData } from '../../data/roadmapData';
+import ResumePrintTemplate from '../../components/portfolio/ResumePrintTemplate';
+import '../../styles/print.css';
 
 export default function PublicPortfolio({ username, onBack }) {
   const [portfolio, setPortfolio] = useState(null);
@@ -87,9 +90,19 @@ export default function PublicPortfolio({ username, onBack }) {
 
   }, [portfolio]);
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const [isExporting, setIsExporting] = useState(false);
+  const printRef = useRef();
+
+  const handlePrint = useReactToPrint({
+    content: () => printRef.current,
+    documentTitle: `${username}_Resume`,
+    onBeforeGetContent: () => {
+      setIsExporting(true);
+      return Promise.resolve();
+    },
+    onAfterPrint: () => setIsExporting(false),
+    removeAfterPrint: true,
+  });
 
   if (isLoading) {
     return (
@@ -140,18 +153,21 @@ export default function PublicPortfolio({ username, onBack }) {
 
   return (
     <div className={`portfolio-presentation-container theme-${theme}`}>
+      <div style={{ display: 'none' }}>
+        <ResumePrintTemplate ref={printRef} portfolio={portfolio} />
+      </div>
       {/* Dynamic floating toolbar above showcase */}
       <div className="action-floating-header">
         <button className="btn btn-outline" onClick={onBack} aria-label="Back to main page">
           ← Back
         </button>
-        <button className="btn btn-outline" onClick={handlePrint} aria-label="Export portfolio to PDF">
+        <button className="btn btn-outline" onClick={handlePrint} disabled={isExporting} aria-label="Export portfolio to PDF">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: '6px', verticalAlign: 'middle' }}>
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
-          Export PDF
+          {isExporting ? 'Exporting...' : 'Export PDF'}
         </button>
         <button className="btn btn-primary" onClick={onBack} aria-label="Build your own developer showcase">
           Build Yours
