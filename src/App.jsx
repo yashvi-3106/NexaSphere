@@ -22,6 +22,7 @@ import EventDetailPage from './pages/events/EventDetailPage';
 import CinematicOpening from './shared/CinematicOpening';
 import Chatbot from './shared/Chatbot';
 import DashboardPage from './pages/dashboard/DashboardPage';
+import GamificationDashboard from './components/gamification/GamificationDashboard';
 
 import {
   AmbientOrbs, SectionDivider,
@@ -53,7 +54,7 @@ import { useAppActions } from './hooks/useAppActions';
 
 import { NAV_HEIGHTS, SCROLL_TIMEOUT } from './data/config';
 
-const NAV_TABS = ['Home', 'Activities', 'Events', 'About', 'Team', 'Contact', 'Dashboard'];
+const NAV_TABS = ['Home', 'Activities', 'Events', 'About', 'Team', 'Contact', 'Dashboard', 'Gamification'];
 
 export default function App() {
   const [cinDone, setCinDone] = useState(false);
@@ -180,6 +181,12 @@ export default function App() {
           {page?.type === 'join' && (
             <PageIn k="pg-join">
               <MembershipPage onBack={actions.onBackHome} />
+            </PageIn>
+          )}
+
+          {page?.type === 'gamification' && (
+            <PageIn k="pg-gamification">
+              <GamificationDashboard />
             </PageIn>
           )}
 

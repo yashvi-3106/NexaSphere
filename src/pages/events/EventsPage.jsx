@@ -3,10 +3,12 @@ import { events as fallbackEvents } from '../../data/eventsData';
 import { BannerOrbs } from '../../shared/MotionLayer';
 import Footer from '../../shared/Footer';
 import { DynamicIcon } from '../../shared/Icons';
+import PersonalizedFeed from '../../components/recommendation/PersonalizedFeed';
 import EventCalendarView from '../../components/calendar/EventCalendarView';
 
 export default function EventsPage({ onBack, onEventClick, events = fallbackEvents }) {
   const [view, setView] = useState('timeline');
+  const [recommendationView, setRecommendationView] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -45,26 +47,30 @@ export default function EventsPage({ onBack, onEventClick, events = fallbackEven
           Where ideas come to life. Every event is a milestone in the NexaSphere journey.
         </p>
 
-        {/* View Toggle Buttons - Only addition */}
+        {/* View Toggle Buttons */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center', 
-          gap: '16px', 
+          gap: '12px', 
           marginTop: '32px',
           position: 'relative',
-          zIndex: 2
+          zIndex: 2,
+          flexWrap: 'wrap'
         }}>
           <button
-            onClick={() => setView('timeline')}
+            onClick={() => {
+              setView('timeline');
+              setRecommendationView(false);
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '6px',
               padding: '8px 20px',
-              background: view === 'timeline' ? 'var(--c1)' : 'transparent',
-              border: view === 'timeline' ? 'none' : '1px solid var(--bdr)',
+              background: !recommendationView && view === 'timeline' ? 'var(--c1)' : 'transparent',
+              border: !recommendationView && view === 'timeline' ? 'none' : '1px solid var(--bdr)',
               borderRadius: '100px',
-              color: view === 'timeline' ? 'white' : 'var(--t2)',
+              color: !recommendationView && view === 'timeline' ? 'white' : 'var(--t2)',
               cursor: 'pointer',
               fontSize: '13px',
               fontWeight: 500,
@@ -76,16 +82,19 @@ export default function EventsPage({ onBack, onEventClick, events = fallbackEven
             Timeline View
           </button>
           <button
-            onClick={() => setView('calendar')}
+            onClick={() => {
+              setView('calendar');
+              setRecommendationView(false);
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '6px',
               padding: '8px 20px',
-              background: view === 'calendar' ? 'var(--c1)' : 'transparent',
-              border: view === 'calendar' ? 'none' : '1px solid var(--bdr)',
+              background: !recommendationView && view === 'calendar' ? 'var(--c1)' : 'transparent',
+              border: !recommendationView && view === 'calendar' ? 'none' : '1px solid var(--bdr)',
               borderRadius: '100px',
-              color: view === 'calendar' ? 'white' : 'var(--t2)',
+              color: !recommendationView && view === 'calendar' ? 'white' : 'var(--t2)',
               cursor: 'pointer',
               fontSize: '13px',
               fontWeight: 500,
@@ -96,11 +105,37 @@ export default function EventsPage({ onBack, onEventClick, events = fallbackEven
             <DynamicIcon name="Calendar" size={16} />
             Calendar View
           </button>
+          <button
+            onClick={() => {
+              setRecommendationView(true);
+              setView('timeline');
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 20px',
+              background: recommendationView ? 'var(--c1)' : 'transparent',
+              border: recommendationView ? 'none' : '1px solid var(--bdr)',
+              borderRadius: '100px',
+              color: recommendationView ? 'white' : 'var(--t2)',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 500,
+              transition: 'all 0.2s ease',
+              fontFamily: "'Rajdhani', sans-serif"
+            }}
+          >
+            <DynamicIcon name="Sparkles" size={16} />
+            For You
+          </button>
         </div>
       </div>
 
       <div className="container">
-        {view === 'timeline' ? (
+        {recommendationView ? (
+          <PersonalizedFeed events={events} onEventClick={onEventClick} />
+        ) : view === 'timeline' ? (
           <div className="events-timeline ns-reveal">
             {events.map((ev, i) => {
               const isKSS = ev.id === 1 || ev.id === 'kss-153' || String(ev.shortName || '').toLowerCase().includes('kss');
