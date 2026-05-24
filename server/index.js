@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import { sendWelcomeVerificationEmail } from './services/emailService.js';
 import { ZodError } from 'zod';
 import { normalizeFormSubmission } from './validators/formSchemas.js';
+import { normalizeSubscription } from './validators/notificationSchemas.js';
 import { adminAuthMiddleware } from './middleware/adminAuthMiddleware.js';
 import analyticsRouter from './routes/analytics.js';
 import { initializeSocketIO, emitToRoom, getRoom } from './config/socket.js';
@@ -819,29 +820,62 @@ app.post('/api/forms/membership', formRateLimiter, (req, res) => handleForm('mem
 app.post('/api/forms/recruitment', formRateLimiter, (req, res) => handleForm('recruitment', req, res));
 app.post('/api/core-team/apply', formRateLimiter, (req, res) => handleForm('core_team', req, res));
 // Real-time notification subscriber channels
+const PUSH_SUB_MAX = 10000;
 const pushSubscriptions = new Set();
-app.post('/api/notifications/subscribe', (req, res) => {
+
+function requireNotificationAuth(req, res, next) {
+  const key = process.env.NOTIFICATIONS_API_KEY;
+  if (!key) return next();
+  const provided = req.headers['x-notification-key'] || '';
+  if (provided !== key) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+const notificationRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many notification requests, please try again later' },
+});
+
+function evictOldestSubscription() {
+  if (pushSubscriptions.size >= PUSH_SUB_MAX) {
+    const oldest = pushSubscriptions.values().next().value;
+    pushSubscriptions.delete(oldest);
+  }
+}
+
+app.post('/api/notifications/subscribe', requireNotificationAuth, notificationRateLimiter, (req, res) => {
   try {
-    const { subscription } = req.body;
-        if (subscription) {
-      pushSubscriptions.add(JSON.stringify(subscription));
-      // Prevent memory leak by capping maximum subscriptions to 10,000
-      if (pushSubscriptions.size > 10000) {
-        const oldest = pushSubscriptions.values().next().value;
-        pushSubscriptions.delete(oldest);
-      }
-    }
+    const data = normalizeSubscription(req.body);
+    const key = JSON.stringify(data);
+    pushSubscriptions.add(key);
+    evictOldestSubscription();
     return res.json({ success: true });
   } catch (err) {
+    if (err.name === 'ZodError') {
+      return res.status(400).json({
+        error: 'Invalid subscription payload',
+        issues: err.issues.map(i => ({ path: i.path.join('.'), message: i.message })),
+      });
+    }
     return res.status(500).json({ error: err.message });
   }
 });
-app.post('/api/notifications/unsubscribe', (req, res) => {
+
+app.post('/api/notifications/unsubscribe', requireNotificationAuth, notificationRateLimiter, (req, res) => {
   try {
-    const { subscription } = req.body;
-    if (subscription) pushSubscriptions.delete(JSON.stringify(subscription));
+    const data = normalizeSubscription(req.body);
+    pushSubscriptions.delete(JSON.stringify(data));
     return res.json({ success: true });
   } catch (err) {
+    if (err.name === 'ZodError') {
+      return res.status(400).json({
+        error: 'Invalid subscription payload',
+        issues: err.issues.map(i => ({ path: i.path.join('.'), message: i.message })),
+      });
+    }
     return res.status(500).json({ error: err.message });
   }
 });
