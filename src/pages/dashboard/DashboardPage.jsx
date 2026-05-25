@@ -97,7 +97,7 @@ export default function DashboardPage({ onBack }) {
             {interests.length === 0 ? (
               <p style={{ color: 'var(--t2)' }}>Select some interests above to see recommendations!</p>
             ) : loadingRecs ? (
-              <p style={{ color: 'var(--t2)' }}>Curating your shelf...</p>
+              <DashboardCardSkeleton count={3} />
             ) : recommendations.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {recommendations.map((rec, i) => (
