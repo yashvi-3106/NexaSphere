@@ -654,6 +654,9 @@ function MainApp() {
           "Roadmaps",
           "Portfolio",
           "Collab",
+          "About",
+          "Team",
+          "Contact",
         ].includes(tab)
       ) {
         nav(() => {

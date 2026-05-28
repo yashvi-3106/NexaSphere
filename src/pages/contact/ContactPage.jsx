@@ -18,7 +18,7 @@ const WHATSAPP = "https://chat.whatsapp.com/Jjc5cuUKENu0RC1vWSEs20";
 
 /* GL Bajaj Group of Institutions, Mathura coordinates */
 const MAP_EMBED =
-  "https://www.google.com/maps?q=27.6472,77.5517&z=16&output=embed";
+  "https://maps.google.com/maps?q=GL+Bajaj+Group+of+Institutions,+Mathura,+Uttar+Pradesh&t=&z=15&ie=UTF8&iwloc=&output=embed";
 
 /* ── Particle burst on hover ── */
 function useBurst(ref) {
