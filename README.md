@@ -746,5 +746,16 @@ MIT License © 2026 NexaSphere — GL Bajaj Group of Institutions, Mathura
 ⭐ **Star this repo** if you find it useful — it helps others discover the project!
 
 [Report Bug](https://github.com/Ayushh-Sharmaa/NexaSphere/issues/new?template=bug_report.md) · [Request Feature](https://github.com/Ayushh-Sharmaa/NexaSphere/issues/new?template=feature_request.md) · [Join Discussion](https://github.com/Ayushh-Sharmaa/NexaSphere/discussions)
+<!-- CONTRIBUTORS_START -->
+<a href="https://github.com/ionfwsrijan"><img src="https://github.com/ionfwsrijan.png" width="50px" alt="ionfwsrijan" title="ionfwsrijan" /></a>
+<a href="https://github.com/anshika1179"><img src="https://github.com/anshika1179.png" width="50px" alt="anshika1179" title="anshika1179" /></a>
+<a href="https://github.com/atul-upadhyay-7"><img src="https://github.com/atul-upadhyay-7.png" width="50px" alt="atul-upadhyay-7" title="atul-upadhyay-7" /></a>
+<a href="https://github.com/OmanshiRaj"><img src="https://github.com/OmanshiRaj.png" width="50px" alt="OmanshiRaj" title="OmanshiRaj" /></a>
+<a href="https://github.com/Pratikshya32"><img src="https://github.com/Pratikshya32.png" width="50px" alt="Pratikshya32" title="Pratikshya32" /></a>
+<a href="https://github.com/Meenbudha"><img src="https://github.com/Meenbudha.png" width="50px" alt="Meenbudha" title="Meenbudha" /></a>
+<a href="https://github.com/pithva007"><img src="https://github.com/pithva007.png" width="50px" alt="pithva007" title="pithva007" /></a>
+<a href="https://github.com/advikdivekar"><img src="https://github.com/advikdivekar.png" width="50px" alt="advikdivekar" title="advikdivekar" /></a>
+<a href="https://github.com/rajesh-puripanda"><img src="https://github.com/rajesh-puripanda.png" width="50px" alt="rajesh-puripanda" title="rajesh-puripanda" /></a>
+<!-- CONTRIBUTORS_END -->
 
 </div>
