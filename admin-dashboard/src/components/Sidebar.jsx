@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { AdminIcon } from './AdminIcon';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { PermissionGuard } from './PermissionGuard';
 
 /* Public website URL */
 const WEBSITE_URL =
@@ -20,10 +21,19 @@ const links = [
     label: 'Events',
     icon: 'Calendar',
   },
+  { to: '/dashboard', label: 'Dashboard', icon: 'Dashboard' },
+  { to: '/dashboard/events', label: 'Events', icon: 'Calendar', requiredScope: 'events:read' },
   {
     to: '/dashboard/activity-events',
     label: 'Activity Events',
     icon: 'Target',
+    requiredScope: 'events:read',
+  },
+  {
+    to: '/dashboard/core-team',
+    label: 'Core Team',
+    icon: 'Users',
+    requiredScope: 'settings:admin',
   },
   {
     to: '/dashboard/core-team',
@@ -50,6 +60,10 @@ const links = [
     label: 'Announcements',
     icon: 'Megaphone',
   },
+  { to: '/dashboard/membership', label: 'Membership', icon: 'FileText' },
+  { to: '/dashboard/recruitment', label: 'Recruitment', icon: 'UserPlus' },
+  { to: '/dashboard/certificates', label: 'Certificates', icon: 'Award' },
+  { to: '/dashboard/announcements', label: 'Announcements', icon: 'Megaphone' },
 ];
 
 export function Sidebar() {
@@ -334,6 +348,30 @@ export function Sidebar() {
               );
             }
           )}
+        <nav className="sidebar-nav">
+          {links.map(({ to, label, icon, requiredScope }) => {
+            const LinkElement = (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/dashboard'}
+                className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                onClick={close}
+              >
+                <AdminIcon name={icon} size={16} aria-hidden="true" />
+                {label}
+              </NavLink>
+            );
+
+            if (requiredScope) {
+              return (
+                <PermissionGuard key={to} requiredScope={requiredScope}>
+                  {LinkElement}
+                </PermissionGuard>
+              );
+            }
+            return LinkElement;
+          })}
         </nav>
 
         {/* Footer */}
@@ -359,4 +397,3 @@ export function Sidebar() {
     </>
   );
 }
-```
