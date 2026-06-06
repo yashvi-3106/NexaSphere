@@ -46,6 +46,14 @@ const vikasImg = teamImg('vikas.png');
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
+const safeJsonParse = (str, defaultVal) => {
+  try {
+    return str ? JSON.parse(str) : defaultVal;
+  } catch {
+    return defaultVal;
+  }
+};
+
 // Migration: upgrade pre-v2 localStorage seed to the full 12-member official team.
 // Uses a version key so migrations are idempotent — they run exactly once per browser.
 // If the schema version is already >= 2, skip entirely to avoid touching real data.
