@@ -590,6 +590,7 @@ function MainRouter({
       '/gamification': 'Gamification',
       '/apply': 'Apply',
       '/join': 'Join',
+      '/explore': 'Explore',
     };
     const tab = pathMap[location.pathname] || 'Home';
     setActiveTab(tab);
@@ -654,6 +655,7 @@ function MainRouter({
         Roadmaps: '/roadmaps',
         Portfolio: '/portfolio',
         Collab: '/collab',
+        Explore: '/explore',
         About: '/about',
         'Core Team': '/team',
         Contact: '/contact',
@@ -803,6 +805,16 @@ function MainRouter({
             <Route
               path="/events/:eventId"
               element={<EventDetailWrapper onBack={() => nav('/events')} events={eventsData} />}
+            />
+
+            {/* ── Discover / Explore ── */}
+            <Route
+              path="/explore"
+              element={
+                <PageIn k="explore">
+                  <ExplorePage onBack={onBackHome} eventsData={eventsData} />
+                </PageIn>
+              }
             />
 
             {/* ── Dashboard ── */}
