@@ -108,6 +108,7 @@ const ForumThreadPage = lazy(() => import('./pages/forum/ForumThreadPage'));
 const LoginPage = lazy(() => import('./pages/login/LoginPage'));
 const MentorsPage = lazy(() => import('./pages/mentorship/MentorsPage'));
 const MentorshipDashboard = lazy(() => import('./pages/mentorship/MentorshipDashboard'));
+const StatusPage = lazy(() => import('./pages/StatusPage'));
 
 const MNH = 88,
   DNH = 64;
@@ -1023,6 +1024,16 @@ function MainRouter({
               element={
                 <PageIn k="login">
                   <LoginPage />
+                </PageIn>
+              }
+            />
+
+            {/* ── Status Page ── */}
+            <Route
+              path="/status"
+              element={
+                <PageIn k="status">
+                  <StatusPage />
                 </PageIn>
               }
             />
