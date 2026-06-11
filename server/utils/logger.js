@@ -4,14 +4,13 @@
  */
 
 import winston from 'winston';
-import { appContext } from '../config/appContext.js';
 import path from 'path';
 import DailyRotateFile from 'winston-daily-rotate-file';
+import { getLogContext } from './logContext.js';
 
-// Create logs directory if it doesn't exist
 // Create logs directory if it doesn't exist (with permission handling)
-import fs from "fs";
-const logsDir = path.join(process.cwd(), "logs");
+import fs from 'fs';
+const logsDir = path.join(process.cwd(), 'logs');
 
 function ensureLogsDirectory() {
   try {
@@ -20,11 +19,11 @@ function ensureLogsDirectory() {
     }
     return true;
   } catch (error) {
-    const fallbackCodes = ["EACCES", "EROFS", "EPERM"];
+    const fallbackCodes = ['EACCES', 'EROFS', 'EPERM'];
     if (fallbackCodes.includes(error.code)) {
       console.warn(
         `[Logger Warning]: Storage is read-only or restricted (${error.code}). ` +
-        `Falling back gracefully to console logging.`
+          `Falling back gracefully to console logging.`
       );
     } else {
       console.error(`[Logger Error]: Unexpected filesystem failure: ${error.message}`);
@@ -55,10 +54,31 @@ const colors = {
 
 winston.addColors(colors);
 
-// Define transports
-// 1. Define the base format WITHOUT colorize
-const baseFileFormat = winston.format.combine(
-  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss:ms" }),
+const LOG_FORMAT = (process.env.LOG_FORMAT || 'text').toLowerCase();
+
+const correlationFormat = winston.format((info) => {
+  const ctx = getLogContext();
+  Object.assign(info, ctx);
+  return info;
+});
+
+const jsonFormat = winston.format.combine(
+  winston.format.timestamp(),
+  winston.format.errors({ stack: true }),
+  correlationFormat(),
+  winston.format.json()
+);
+
+const logLayout = winston.format.printf((info) => {
+  const { timestamp, level, message, ...args } = info;
+  const ts = timestamp ? timestamp.slice(0, 19).replace('T', ' ') : '';
+  return `${ts} [${level}]: ${message} ${
+    Object.keys(args).length ? JSON.stringify(args, null, 2) : ''
+  }`;
+});
+
+const textFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.errors({ stack: true }),
   winston.format.splat(),
   winston.format.printf((info) => {
@@ -80,61 +100,82 @@ const baseFileFormat = winston.format.combine(
   })
 );
 
-// Define transports safely based on storage permissions
+const baseFileFormat = LOG_FORMAT === 'json' ? jsonFormat : textFormat;
+
+const consoleLevel = process.env.LOG_LEVEL_CONSOLE || 'info';
+const fileBaselineLevel = process.env.LOG_LEVEL_FILE || 'info';
+const globalGatekeeperLevel = process.env.LOG_LEVEL_GLOBAL || 'debug';
+
 const activeTransports = [
   new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize({ all: true }),
-      baseFileFormat
-    ),
+    level: consoleLevel,
+    format:
+      LOG_FORMAT === 'json'
+        ? baseFileFormat
+        : winston.format.combine(
+            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+            winston.format.errors({ stack: true }),
+            winston.format.colorize({ all: true }),
+            correlationFormat(),
+            logLayout
+          ),
   }),
 ];
 
 if (isStorageWritable) {
   activeTransports.push(
     new winston.transports.File({
-      filename: path.join(logsDir, "error.log"),
-      level: "error",
+      filename: path.join(logsDir, 'error.log'),
+      level: 'error',
       format: winston.format.uncolorize(),
     }),
     new winston.transports.File({
-      filename: path.join(logsDir, "combined.log"),
+      filename: path.join(logsDir, 'combined.log'),
+      level: fileBaselineLevel,
       format: winston.format.uncolorize(),
     }),
     new DailyRotateFile({
-      filename: path.join(logsDir, "application-%DATE%.log"),
-      datePattern: "YYYY-MM-DD",
-      maxSize: "20m",
-      maxFiles: "14d",
+      filename: path.join(logsDir, 'application-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      level: fileBaselineLevel,
+      maxSize: '20m',
+      maxFiles: '14d',
       format: winston.format.uncolorize(),
       utc: true,
     })
   );
 }
+
 // Create logger instance
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: globalGatekeeperLevel,
   levels,
-  format,
-  transports: activeTransports, 
-  exceptionHandlers: isStorageWritable ? [
-    new DailyRotateFile({
-      filename: path.join(logsDir, "exceptions-%DATE%.log"),
-      datePattern: "YYYY-MM-DD",
-      maxSize: "20m",
-      maxFiles: "14d",
-      format: baseFileFormat, //  FIX: Ensures clean exception dumps
-      utc: true,
-    }),
-  ] : undefined, 
-  rejectionHandlers: isStorageWritable ? [
-    new DailyRotateFile({
-      filename: path.join(logsDir, "rejections-%DATE%.log"),
-      datePattern: "YYYY-MM-DD",
-      maxSize: "20m",
-      maxFiles: "14d",
-      format: baseFileFormat, //  FIX: Ensures clean rejection dumps
-      utc: true,
-    }),
-  ] : undefined, 
+  format: baseFileFormat,
+  transports: activeTransports,
+  exceptionHandlers: isStorageWritable
+    ? [
+        new DailyRotateFile({
+          filename: path.join(logsDir, 'exceptions-%DATE%.log'),
+          datePattern: 'YYYY-MM-DD',
+          maxSize: '20m',
+          maxFiles: '14d',
+          format: baseFileFormat,
+          utc: true,
+        }),
+      ]
+    : undefined,
+  rejectionHandlers: isStorageWritable
+    ? [
+        new DailyRotateFile({
+          filename: path.join(logsDir, 'rejections-%DATE%.log'),
+          datePattern: 'YYYY-MM-DD',
+          maxSize: '20m',
+          maxFiles: '14d',
+          format: baseFileFormat,
+          utc: true,
+        }),
+      ]
+    : undefined,
 });
+
+export default logger;

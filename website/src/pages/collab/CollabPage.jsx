@@ -64,10 +64,20 @@ export default function CollabPage({ onBack }) {
       })
       .finally(() => setLoading(false));
   }, []);
-
+  useEffect(() => {
+    if (activeTab !== 'find-team') {
+      setSearch('');
+    }
+  }, [activeTab]);
   const handleJoinSubmit = async (requestData) => {
+    if (isDemo) {
+      alert('Demo mode: Join requests are disabled.');
+      return;
+    }
+
     const requestsUrl = buildUrl(getApiBase(), '/api/collab/requests');
     if (!requestsUrl) return;
+
     await fetch(requestsUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -232,6 +242,7 @@ export default function CollabPage({ onBack }) {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
                 gap: '24px',
+                alignItems: 'stretch',
               }}
             >
               {filteredTeams.map((team) => (
