@@ -1,5 +1,5 @@
 # Stage 1: Install production dependencies
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
@@ -18,7 +18,7 @@ COPY --chown=node:node package*.json ./
 RUN npm ci --omit=dev --prefer-offline
 
 # Stage 2: Production runtime image
-FROM node:20-alpine AS production
+FROM node:22-alpine AS production
 
 ENV NODE_ENV=production
 
