@@ -72,20 +72,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CONTENT_FILE = path.join(__dirname, 'data', 'content.json');
 
-const REQUIRED_ENV_VARS = [
-  'CORS_ORIGIN',
-  'ADMIN_EVENT_PASSWORD',
-];
+const REQUIRED_ENV_VARS = ['CORS_ORIGIN', 'ADMIN_EVENT_PASSWORD'];
 
 function validateEnvironment() {
-  const missing = REQUIRED_ENV_VARS.filter(
-    (env) => !process.env[env]
-  );
+  const missing = REQUIRED_ENV_VARS.filter((env) => !process.env[env]);
 
   if (missing.length > 0) {
-    throw new Error(
-      `Missing required environment variables: ${missing.join(', ')}`
-    );
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
 
   console.log('Environment validation passed');
@@ -377,13 +370,13 @@ export async function runWithFileLock(callback) {
 
 async function readContent() {
   await ensureContentFile();
-  const raw = await fs.readFile(CONTENT_FILE, "utf8");
+  const raw = await fs.readFile(CONTENT_FILE, 'utf8');
   return JSON.parse(raw);
 }
 
 async function writeContent(content) {
   await ensureContentFile();
-  await fs.writeFile(CONTENT_FILE, JSON.stringify(content, null, 2), "utf8");
+  await fs.writeFile(CONTENT_FILE, JSON.stringify(content, null, 2), 'utf8');
 }
 
 let contentLock = Promise.resolve();
@@ -398,15 +391,15 @@ function withContentLock(fn) {
   return current.then(() => fn()).finally(() => release());
 }
 
-export async function supabaseRequest(pathname, { method = "GET", body } = {}) {
-  if (!HAS_SUPABASE) throw new Error("Supabase is not configured");
+export async function supabaseRequest(pathname, { method = 'GET', body } = {}) {
+  if (!HAS_SUPABASE) throw new Error('Supabase is not configured');
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathname}`, {
     method,
     headers: {
       apikey: SUPABASE_SERVICE_KEY,
       Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: method === "GET" ? "count=exact" : "return=representation",
+      'Content-Type': 'application/json',
+      Prefer: method === 'GET' ? 'count=exact' : 'return=representation',
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -423,17 +416,17 @@ export async function supabaseRequest(pathname, { method = "GET", body } = {}) {
 // the total row count from the Content-Range response header (sent when
 // Prefer: count=exact is set). Returns { rows, total } instead of a bare array.
 async function supabasePaginatedRequest(pathname, page, limit) {
-  if (!HAS_SUPABASE) throw new Error("Supabase is not configured");
+  if (!HAS_SUPABASE) throw new Error('Supabase is not configured');
   const offset = (page - 1) * limit;
-  const separator = pathname.includes("?") ? "&" : "?";
+  const separator = pathname.includes('?') ? '&' : '?';
   const url = `${SUPABASE_URL}/rest/v1/${pathname}${separator}limit=${limit}&offset=${offset}`;
   const res = await fetch(url, {
-    method: "GET",
+    method: 'GET',
     headers: {
       apikey: SUPABASE_SERVICE_KEY,
       Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: "count=exact",
+      'Content-Type': 'application/json',
+      Prefer: 'count=exact',
     },
   });
   if (!res.ok) {
@@ -443,7 +436,7 @@ async function supabasePaginatedRequest(pathname, page, limit) {
   const text = await res.text();
   const rows = text ? JSON.parse(text) : [];
   // Content-Range format from PostgREST: "0-19/150" or "*/0" when empty
-  const contentRange = res.headers.get("content-range") || "";
+  const contentRange = res.headers.get('content-range') || '';
   const totalMatch = contentRange.match(/\/(\d+)$/);
   const total = totalMatch ? parseInt(totalMatch[1], 10) : rows.length;
   return { rows, total };
@@ -458,36 +451,34 @@ function parsePagination(query) {
 }
 
 function toSafeString(value, max = 4000) {
-  return String(value ?? "")
+  return String(value ?? '')
     .trim()
     .slice(0, max);
 }
 
 function validateWhatsApp(str) {
-  const v = String(str || "").trim();
-  if (!/^\d{10}$/.test(v))
-    throw new Error("WhatsApp must be exactly 10 digits");
+  const v = String(str || '').trim();
+  if (!/^\d{10}$/.test(v)) throw new Error('WhatsApp must be exactly 10 digits');
   return v;
 }
 
 function validateSection(str) {
-  const v = String(str || "")
+  const v = String(str || '')
     .trim()
     .toUpperCase();
-  if (!/^[A-Z]$/.test(v))
-    throw new Error("Section must be a single letter (A-Z)");
+  if (!/^[A-Z]$/.test(v)) throw new Error('Section must be a single letter (A-Z)');
   return v;
 }
 
 function sanitizeEvent(input = {}) {
-  const status = input.status === "upcoming" ? "upcoming" : "completed";
+  const status = input.status === 'upcoming' ? 'upcoming' : 'completed';
   const tags = Array.isArray(input.tags)
     ? input.tags
         .map((t) => toSafeString(t, 40))
         .filter(Boolean)
         .slice(0, 12)
-    : String(input.tags || "")
-        .split(",")
+    : String(input.tags || '')
+        .split(',')
         .map((t) => t.trim())
         .filter(Boolean)
         .slice(0, 12);
@@ -496,32 +487,32 @@ function sanitizeEvent(input = {}) {
     id:
       toSafeString(input.id || input.shortName || input.name, 80)
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || `event-${Date.now()}`,
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || `event-${Date.now()}`,
     name: toSafeString(input.name, 120),
     shortName: toSafeString(input.shortName || input.name, 60),
     date: toSafeString(input.date, 80),
     description: toSafeString(input.description, 1200),
     status,
-    icon: toSafeString(input.icon || "Pin", 32),
+    icon: toSafeString(input.icon || 'Pin', 32),
     tags,
   };
 }
 
 function normalizePhone(value) {
-  return String(value || "").replace(/[^\d]/g, "");
+  return String(value || '').replace(/[^\d]/g, '');
 }
 
 async function canManageActivityEvent({ name, email, phone, password }) {
   const expectedPassword = process.env.ADMIN_EVENT_PASSWORD;
   // Use constant-time comparison to prevent timing-based password recovery.
-  if (!timingSafeStringEqual(String(password ?? ""), expectedPassword)) {
+  if (!timingSafeStringEqual(String(password ?? ''), expectedPassword)) {
     return false;
   }
-  const n = String(name || "")
+  const n = String(name || '')
     .trim()
     .toLowerCase();
-  const e = String(email || "")
+  const e = String(email || '')
     .trim()
     .toLowerCase();
   const p = normalizePhone(phone);
@@ -529,18 +520,16 @@ async function canManageActivityEvent({ name, email, phone, password }) {
   const members = await listCoreTeamStore();
   return members.some(
     (m) =>
-      m.name.toLowerCase() === n &&
-      m.email.toLowerCase() === e &&
-      normalizePhone(m.whatsapp) === p,
+      m.name.toLowerCase() === n && m.email.toLowerCase() === e && normalizePhone(m.whatsapp) === p
   );
 }
 
 async function listEventsStore({ page = 1, limit = 20 } = {}) {
   if (HAS_SUPABASE) {
     const { rows, total } = await supabasePaginatedRequest(
-      "events?select=*&order=created_at.desc",
+      'events?select=*&order=created_at.desc',
       page,
-      limit,
+      limit
     );
     return {
       events: rows.map((r) =>
@@ -551,11 +540,11 @@ async function listEventsStore({ page = 1, limit = 20 } = {}) {
           date: r.date_text || r.date,
           description: r.description,
           status: r.status,
-          icon: r.icon || "Pin",
+          icon: r.icon || 'Pin',
           tags: Array.isArray(r.tags) ? r.tags : [],
           createdAt: r.created_at,
           updatedAt: r.updated_at,
-        }),
+        })
       ),
       total,
     };
@@ -586,15 +575,15 @@ async function createEventStore(event) {
 
     let row;
     try {
-      [row] = await supabaseRequest("events", {
-        method: "POST",
+      [row] = await supabaseRequest('events', {
+        method: 'POST',
         body: [payload],
       });
     } catch (e) {
       // Retry with suffix if id collision occurs.
       payload = { ...payload, id: `${event.id}-${Date.now()}` };
-      [row] = await supabaseRequest("events", {
-        method: "POST",
+      [row] = await supabaseRequest('events', {
+        method: 'POST',
         body: [payload],
       });
     }
@@ -605,7 +594,7 @@ async function createEventStore(event) {
       date: row.date_text,
       description: row.description,
       status: row.status,
-      icon: row.icon || "Pin",
+      icon: row.icon || 'Pin',
       tags: Array.isArray(row.tags) ? row.tags : [],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -626,22 +615,19 @@ async function createEventStore(event) {
 }
 async function updateEventStore(id, patch) {
   if (HAS_SUPABASE) {
-    const [row] = await supabaseRequest(
-      `events?id=eq.${encodeURIComponent(id)}`,
-      {
-        method: "PATCH",
-        body: {
-          name: patch.name,
-          short_name: patch.shortName,
-          date_text: patch.date,
-          description: patch.description,
-          status: patch.status,
-          icon: patch.icon,
-          tags: patch.tags,
-          updated_at: new Date().toISOString(),
-        },
+    const [row] = await supabaseRequest(`events?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: {
+        name: patch.name,
+        short_name: patch.shortName,
+        date_text: patch.date,
+        description: patch.description,
+        status: patch.status,
+        icon: patch.icon,
+        tags: patch.tags,
+        updated_at: new Date().toISOString(),
       },
-    );
+    });
     if (!row) return null;
     return sanitizeEventRecord({
       id: row.id,
@@ -650,7 +636,7 @@ async function updateEventStore(id, patch) {
       date: row.date_text,
       description: row.description,
       status: row.status,
-      icon: row.icon || "Pin",
+      icon: row.icon || 'Pin',
       tags: Array.isArray(row.tags) ? row.tags : [],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -673,10 +659,9 @@ async function updateEventStore(id, patch) {
 
 async function deleteEventStore(id) {
   if (HAS_SUPABASE) {
-    const rows = await supabaseRequest(
-      `events?id=eq.${encodeURIComponent(id)}`,
-      { method: "DELETE" },
-    );
+    const rows = await supabaseRequest(`events?id=eq.${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
     return Array.isArray(rows) && rows.length > 0;
   }
   return withContentLock(async () => {
@@ -694,7 +679,7 @@ async function listActivityEventsStore(activityKey, { page = 1, limit = 20 } = {
     const { rows, total } = await supabasePaginatedRequest(
       `activity_events?activity_key=eq.${encodeURIComponent(activityKey)}&select=*&order=created_at.desc`,
       page,
-      limit,
+      limit
     );
     return {
       events: rows.map((r) =>
@@ -704,16 +689,16 @@ async function listActivityEventsStore(activityKey, { page = 1, limit = 20 } = {
           date: r.date_text || r.date,
           tagline: r.tagline,
           description: r.description,
-          status: r.status || "completed",
+          status: r.status || 'completed',
           createdAt: r.created_at,
-        }),
+        })
       ),
       total,
     };
   }
   const content = await readContent();
   const all = (content.activityEvents?.[activityKey] || []).map((event) =>
-    sanitizeActivityEventRecord(event),
+    sanitizeActivityEventRecord(event)
   );
   const total = all.length;
   const start = (page - 1) * limit;
@@ -721,15 +706,15 @@ async function listActivityEventsStore(activityKey, { page = 1, limit = 20 } = {
 }
 
 function sanitizeActivityEventRecord(event) {
-  if (!event || typeof event !== "object") return event;
+  if (!event || typeof event !== 'object') return event;
   const { createdBy, ...safe } = event;
   return safe;
 }
 
 async function createActivityEventStore(activityKey, event) {
   if (HAS_SUPABASE) {
-    const [row] = await supabaseRequest("activity_events", {
-      method: "POST",
+    const [row] = await supabaseRequest('activity_events', {
+      method: 'POST',
       body: [
         {
           id: event.id,
@@ -739,9 +724,9 @@ async function createActivityEventStore(activityKey, event) {
           tagline: event.tagline,
           description: event.description,
           status: event.status,
-          created_by_name: event.createdBy?.name || "",
-          created_by_email: event.createdBy?.email || "",
-          created_by_phone: event.createdBy?.phone || "",
+          created_by_name: event.createdBy?.name || '',
+          created_by_email: event.createdBy?.email || '',
+          created_by_phone: event.createdBy?.phone || '',
         },
       ],
     });
@@ -751,15 +736,14 @@ async function createActivityEventStore(activityKey, event) {
       date: row.date_text,
       tagline: row.tagline,
       description: row.description,
-      status: row.status || "completed",
+      status: row.status || 'completed',
       createdAt: row.created_at,
     });
   }
   return withContentLock(async () => {
     const content = await readContent();
     content.activityEvents = content.activityEvents || {};
-    content.activityEvents[activityKey] =
-      content.activityEvents[activityKey] || [];
+    content.activityEvents[activityKey] = content.activityEvents[activityKey] || [];
     content.activityEvents[activityKey].unshift(event);
     await writeContent(content);
     return sanitizeActivityEventRecord(event);
@@ -770,7 +754,7 @@ async function deleteActivityEventStore(activityKey, eventId) {
   if (HAS_SUPABASE) {
     const rows = await supabaseRequest(
       `activity_events?activity_key=eq.${encodeURIComponent(activityKey)}&id=eq.${encodeURIComponent(eventId)}`,
-      { method: "DELETE" },
+      { method: 'DELETE' }
     );
     return Array.isArray(rows) && rows.length > 0;
   }
@@ -788,9 +772,7 @@ async function deleteActivityEventStore(activityKey, eventId) {
 
 async function listCoreTeamStore() {
   if (HAS_SUPABASE) {
-    const rows = await supabaseRequest(
-      "core_team_members?select=*&order=created_at.asc",
-    );
+    const rows = await supabaseRequest('core_team_members?select=*&order=created_at.asc');
     return rows.map((r) =>
       sanitizeCoreTeamMemberRecord({
         id: r.id,
@@ -805,13 +787,11 @@ async function listCoreTeamStore() {
         instagram: r.instagram,
         photoUrl: r.photo_url,
         createdAt: r.created_at,
-      }),
+      })
     );
   }
   const content = await readContent();
-  return (content.coreTeam || []).map((member) =>
-    sanitizeCoreTeamMemberRecord(member),
-  );
+  return (content.coreTeam || []).map((member) => sanitizeCoreTeamMemberRecord(member));
 }
 
 function sanitizeCoreTeamMemberRecord(member) {
@@ -820,8 +800,8 @@ function sanitizeCoreTeamMemberRecord(member) {
 
 async function createCoreTeamStore(member) {
   if (HAS_SUPABASE) {
-    const [row] = await supabaseRequest("core_team_members", {
-      method: "POST",
+    const [row] = await supabaseRequest('core_team_members', {
+      method: 'POST',
       body: [
         {
           name: member.name,
@@ -868,19 +848,16 @@ async function createCoreTeamStore(member) {
 
 async function deleteCoreTeamStore(id) {
   if (HAS_SUPABASE) {
-    const rows = await supabaseRequest(
-      `core_team_members?id=eq.${encodeURIComponent(id)}`,
-      { method: "DELETE" },
-    );
+    const rows = await supabaseRequest(`core_team_members?id=eq.${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
     return Array.isArray(rows) && rows.length > 0;
   }
   return withContentLock(async () => {
     const content = await readContent();
     content.coreTeam = content.coreTeam || [];
     const before = content.coreTeam.length;
-    content.coreTeam = content.coreTeam.filter(
-      (m) => String(m.id) !== String(id),
-    );
+    content.coreTeam = content.coreTeam.filter((m) => String(m.id) !== String(id));
     if (content.coreTeam.length === before) return false;
     await writeContent(content);
     return true;
@@ -890,8 +867,8 @@ async function deleteCoreTeamStore(id) {
 async function appendToSupabaseForms(formType, payload) {
   if (!HAS_SUPABASE) return false;
   try {
-    await supabaseRequest("form_submissions", {
-      method: "POST",
+    await supabaseRequest('form_submissions', {
+      method: 'POST',
       body: [
         {
           form_type: formType,
@@ -914,11 +891,11 @@ async function appendToSupabaseForms(formType, payload) {
 // leading characters match. Returns false immediately if either value is empty,
 // so callers cannot exploit a zero-length buffer edge case.
 function timingSafeStringEqual(a, b) {
-  const sa = String(a ?? "");
-  const sb = String(b ?? "");
+  const sa = String(a ?? '');
+  const sb = String(b ?? '');
   if (!sa.length || !sb.length) return sa === sb;
-  const ba = Buffer.from(sa, "utf8");
-  const bb = Buffer.from(sb, "utf8");
+  const ba = Buffer.from(sa, 'utf8');
+  const bb = Buffer.from(sb, 'utf8');
   // Buffers must be the same byte length for timingSafeEqual. Pad the shorter
   // one so the comparison always runs the full loop.
   if (ba.length !== bb.length) {
@@ -1060,10 +1037,26 @@ app.get('/api/content/team', async (req, res) => {
 });
 
 // Admin Team Management
-app.get('/api/admin/core-team', adminAuthMiddleware.requireScope('settings:admin'), coreTeamController.adminListCoreTeamMembers);
-app.post('/api/admin/core-team', adminAuthMiddleware.requireScope('settings:admin'), coreTeamController.adminAddCoreTeamMember);
-app.put('/api/admin/core-team/:id', adminAuthMiddleware.requireScope('settings:admin'), coreTeamController.adminUpdateCoreTeamMember);
-app.delete('/api/admin/core-team/:id', adminAuthMiddleware.requireScope('settings:admin'), coreTeamController.adminDeleteCoreTeamMember);
+app.get(
+  '/api/admin/core-team',
+  adminAuthMiddleware.requireScope('settings:admin'),
+  coreTeamController.adminListCoreTeamMembers
+);
+app.post(
+  '/api/admin/core-team',
+  adminAuthMiddleware.requireScope('settings:admin'),
+  coreTeamController.adminAddCoreTeamMember
+);
+app.put(
+  '/api/admin/core-team/:id',
+  adminAuthMiddleware.requireScope('settings:admin'),
+  coreTeamController.adminUpdateCoreTeamMember
+);
+app.delete(
+  '/api/admin/core-team/:id',
+  adminAuthMiddleware.requireScope('settings:admin'),
+  coreTeamController.adminDeleteCoreTeamMember
+);
 
 // Dynamic forms
 app.post('/api/forms/membership', formRateLimiter, formsController.makeHandleForm('membership'));
@@ -1246,24 +1239,31 @@ function requireNotificationAuth(req, res, next) {
   });
 }
 
-app.post('/api/notifications/mark-read', requireNotificationAuth, notificationRateLimiter, async (req, res) => {
-  try {
-    const { id, userId } = req.body || {};
-    if (!id) return res.status(400).json({ error: 'id required' });
-    let uid = userId || 'global';
-    if (req.studentUser) {
-      const studentId = req.studentUser.sub || req.studentUser.id;
-      if (userId && userId !== studentId) {
-        return res.status(403).json({ error: 'Forbidden: Cannot modify other users notifications' });
+app.post(
+  '/api/notifications/mark-read',
+  requireNotificationAuth,
+  notificationRateLimiter,
+  async (req, res) => {
+    try {
+      const { id, userId } = req.body || {};
+      if (!id) return res.status(400).json({ error: 'id required' });
+      let uid = userId || 'global';
+      if (req.studentUser) {
+        const studentId = req.studentUser.sub || req.studentUser.id;
+        if (userId && userId !== studentId) {
+          return res
+            .status(403)
+            .json({ error: 'Forbidden: Cannot modify other users notifications' });
+        }
+        uid = studentId;
       }
-      uid = studentId;
+      const ok = await notificationsService.markAsRead(uid, id);
+      return res.json({ success: ok });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
     }
-    const ok = await notificationsService.markAsRead(uid, id);
-    return res.json({ success: ok });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
   }
-});
+);
 
 app.post(
   '/api/notifications/mark-all-read',
@@ -1288,41 +1288,51 @@ app.post(
   }
 );
 
-app.delete('/api/notifications/:id', requireNotificationAuth, notificationRateLimiter, async (req, res) => {
-  try {
-    const id = req.params.id;
-    let uid = req.query.userId || 'global';
-    if (req.studentUser) {
-      const studentId = req.studentUser.sub || req.studentUser.id;
-      if (req.query.userId && req.query.userId !== studentId) {
-        return res.status(403).json({ error: 'Forbidden' });
+app.delete(
+  '/api/notifications/:id',
+  requireNotificationAuth,
+  notificationRateLimiter,
+  async (req, res) => {
+    try {
+      const id = req.params.id;
+      let uid = req.query.userId || 'global';
+      if (req.studentUser) {
+        const studentId = req.studentUser.sub || req.studentUser.id;
+        if (req.query.userId && req.query.userId !== studentId) {
+          return res.status(403).json({ error: 'Forbidden' });
+        }
+        uid = studentId;
       }
-      uid = studentId;
+      const removed = await notificationsService.removeNotification(uid, id);
+      if (!removed) return res.status(404).json({ error: 'Notification not found' });
+      return res.json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
     }
-    const removed = await notificationsService.removeNotification(uid, id);
-    if (!removed) return res.status(404).json({ error: 'Notification not found' });
-    return res.json({ success: true });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
   }
-});
+);
 
-app.delete('/api/notifications', requireNotificationAuth, notificationRateLimiter, async (req, res) => {
-  try {
-    let uid = req.query.userId || 'global';
-    if (req.studentUser) {
-      const studentId = req.studentUser.sub || req.studentUser.id;
-      if (req.query.userId && req.query.userId !== studentId) {
-        return res.status(403).json({ error: 'Forbidden' });
+app.delete(
+  '/api/notifications',
+  requireNotificationAuth,
+  notificationRateLimiter,
+  async (req, res) => {
+    try {
+      let uid = req.query.userId || 'global';
+      if (req.studentUser) {
+        const studentId = req.studentUser.sub || req.studentUser.id;
+        if (req.query.userId && req.query.userId !== studentId) {
+          return res.status(403).json({ error: 'Forbidden' });
+        }
+        uid = studentId;
       }
-      uid = studentId;
+      await notificationsService.clearAll(uid);
+      return res.json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
     }
-    await notificationsService.clearAll(uid);
-    return res.json({ success: true });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
   }
-});
+);
 
 app.post('/api/notifications', adminAuth, notificationRateLimiter, async (req, res) => {
   try {
@@ -1532,12 +1542,17 @@ app.get('/api/notifications/preferences', async (req, res) => {
 app.put('/api/notifications/preferences', async (req, res) => {
   try {
     const userId = req.body.userId || 'global';
-    const { category, email, push, in_app } = req.body;
+    const { category, email, push, in_app, sms, frequency, quiet_start, quiet_end, dnd } = req.body;
     if (!category) return res.status(400).json({ error: 'category is required' });
     const pref = await notificationPreferencesRepository.set(userId, category, {
       email,
       push,
       in_app,
+      sms,
+      frequency,
+      quiet_start,
+      quiet_end,
+      dnd,
     });
     return res.json({ preference: pref });
   } catch (err) {
@@ -1554,6 +1569,18 @@ app.put('/api/notifications/preferences/bulk', async (req, res) => {
     }
     const results = await notificationPreferencesRepository.setBulk(userId, preferences);
     return res.json({ preferences: results });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Notification analytics (lightweight collector)
+app.post('/api/notifications/analytics', async (req, res) => {
+  try {
+    const event = req.body || {};
+    // Minimal validation — in future route can forward to analytics pipeline
+    console.log('[notification-analytics]', event.type || 'unknown', event);
+    return res.json({ ok: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
