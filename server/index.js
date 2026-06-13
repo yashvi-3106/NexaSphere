@@ -37,7 +37,6 @@ import {
   notificationRateLimiter,
   activityAuthRateLimiter,
   portfolioRateLimiter,
-  searchRateLimiter,
   validateLimiters,
 } from './middleware/rateLimiter.js';
 import {
@@ -1646,9 +1645,9 @@ app.get('/api/admin/mentorships', adminAuth, mentorshipController.adminListAll);
 app.get('/api/admin/mentors', adminAuth, mentorshipController.adminListMentors);
 
 // ── Search, Discovery & Recommendation Engine ──
-app.get('/api/search', searchRateLimiter, searchController.search);
-app.get('/api/search/trending', searchRateLimiter, searchController.trending);
-app.get('/api/recommendations', searchRateLimiter, searchController.recommendations);
+app.get('/api/search', searchController.search);
+app.get('/api/search/trending', searchController.trending);
+app.get('/api/recommendations', searchController.recommendations);
 // Must be registered after all routes.
 app.use(notFoundHandler);
 addSentryErrorHandler(app);
