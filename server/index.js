@@ -71,6 +71,7 @@ import { studentAuthService } from './services/studentAuthService.js';
 import * as mentorshipController from './controllers/mentorshipController.js';
 import { xssSanitizer } from './middleware/xssSanitizer.js';
 import { tierRateLimiter } from './middleware/tierRateLimiter.js';
+import { csrfProtection } from './middleware/csrfMiddleware.js';
 import compression from 'compression';
 import syncRouter from './routes/sync.js';
 
@@ -280,6 +281,9 @@ if (!useStructuredHttpLog) {
 }
 app.use(performanceMonitor);
 app.use(cookieParser());
+
+// CSRF protection — double-submit cookie pattern for all state-changing endpoints
+app.use(csrfProtection);
 
 // Global API rate limiter — protects all /api routes from request flooding
 app.use('/api', tierRateLimiter());
