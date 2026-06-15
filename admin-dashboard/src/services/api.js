@@ -416,6 +416,71 @@ async function fetchWithAuth(url, options = {}) {
         }
       }
 
+      // /api/admin/events/:id/waiting-room
+      else if (url.match(/\/api\/admin\/events\/[^\/]+\/waiting-room/)) {
+        const eventId = url.split('/')[4];
+        const action = url.split('/')[6];
+        let queue = getDb(`waiting_${eventId}`, [
+          {
+            id: 'wr_mock_1',
+            fullName: 'Anjali Sharma',
+            email: 'anjali@example.com',
+            isPriority: false,
+            joinedAt: new Date(Date.now() - 120000).toISOString(),
+          },
+          {
+            id: 'wr_mock_2',
+            fullName: 'Rahul Verma',
+            email: 'rahul@example.com',
+            isPriority: false,
+            joinedAt: new Date(Date.now() - 90000).toISOString(),
+          },
+          {
+            id: 'wr_mock_3',
+            fullName: 'Priya Kapoor',
+            email: 'priya@example.com',
+            isPriority: true,
+            joinedAt: new Date(Date.now() - 60000).toISOString(),
+          },
+        ]);
+        if (method === 'GET') resolve({ queue, total: queue.length });
+        if (method === 'POST' && !action) {
+          const newEntry = { ...body, id: `wr_${Date.now()}`, joinedAt: new Date().toISOString() };
+          queue = [...queue, newEntry];
+          setDb(`waiting_${eventId}`, queue);
+          resolve(newEntry);
+        }
+        if (method === 'POST' && action === 'admit-one') {
+          const [admitted, ...rest] = queue;
+          setDb(`waiting_${eventId}`, rest);
+          resolve({ admitted });
+        }
+        if (method === 'POST' && action === 'admit-all') {
+          const count = queue.length;
+          setDb(`waiting_${eventId}`, []);
+          resolve({ count, admitted: true });
+        }
+        if (method === 'POST' && action === 'move-front') {
+          const entryId = url.split('/')[5];
+          const idx = queue.findIndex((e) => e.id === entryId);
+          if (idx >= 0) {
+            const [entry] = queue.splice(idx, 1);
+            queue.unshift({ ...entry, isPriority: true });
+            setDb(`waiting_${eventId}`, queue);
+          }
+          resolve({ ok: true });
+        }
+        if (method === 'POST' && action === 'message') {
+          resolve({ ok: true });
+        }
+        if (method === 'DELETE') {
+          const entryId = url.split('/')[5];
+          queue = queue.filter((e) => e.id !== entryId);
+          setDb(`waiting_${eventId}`, queue);
+          resolve({ ok: true });
+        }
+      }
+
       // /api/admin/announcements
       else if (url.startsWith('/api/admin/announcements')) {
         let announcements = getDb('announcements', []);
@@ -891,6 +956,34 @@ export const api = {
     retry: (name) =>
       fetchWithAuth(`/api/admin/circuit-breaker/retry/${encodeURIComponent(name)}`, {
         method: 'POST',
+      }),
+  },
+
+  waitingRoom: {
+    getQueue: (eventId) =>
+      fetchWithAuth(`/api/admin/events/${encodeURIComponent(eventId)}/waiting-room`),
+    admitOne: (eventId) =>
+      fetchWithAuth(`/api/admin/events/${encodeURIComponent(eventId)}/waiting-room/admit-one`, {
+        method: 'POST',
+      }),
+    admitAll: (eventId) =>
+      fetchWithAuth(`/api/admin/events/${encodeURIComponent(eventId)}/waiting-room/admit-all`, {
+        method: 'POST',
+      }),
+    remove: (eventId, entryId) =>
+      fetchWithAuth(
+        `/api/admin/events/${encodeURIComponent(eventId)}/waiting-room/${encodeURIComponent(entryId)}`,
+        { method: 'DELETE' }
+      ),
+    moveToFront: (eventId, entryId) =>
+      fetchWithAuth(
+        `/api/admin/events/${encodeURIComponent(eventId)}/waiting-room/${encodeURIComponent(entryId)}/move-front`,
+        { method: 'POST' }
+      ),
+    sendMessage: (eventId, message) =>
+      fetchWithAuth(`/api/admin/events/${encodeURIComponent(eventId)}/waiting-room/message`, {
+        method: 'POST',
+        body: JSON.stringify({ message }),
       }),
   },
 

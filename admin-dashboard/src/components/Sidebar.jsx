@@ -22,6 +22,12 @@ const links = [
   { to: '/dashboard', label: 'Dashboard', icon: 'Dashboard' },
   { to: '/dashboard/events', label: 'Events', icon: 'Calendar', requiredScope: 'events:read' },
   {
+    to: '/dashboard/waiting-room',
+    label: 'Waiting Room',
+    icon: 'Clock',
+    requiredScope: 'events:read',
+  },
+  {
     to: '/dashboard/event-registrations',
     label: 'Registrations',
     icon: 'FileText',

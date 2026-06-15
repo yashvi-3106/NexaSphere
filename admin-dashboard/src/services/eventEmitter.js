@@ -88,6 +88,8 @@ export const EVENTS = {
 
   ANNOUNCEMENT_DELETED: 'announcement:deleted',
 
+  WAITING_ROOM_UPDATED: 'waiting-room:updated',
+
   // Offline / reconnect events
   CACHE_STALE: 'cache:stale',
 
