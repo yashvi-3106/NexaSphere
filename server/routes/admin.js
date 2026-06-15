@@ -197,4 +197,12 @@ router.get('/api/admin/dependency-report', adminAuth, async (req, res) => {
   // dependency monitoring report
 });
 
+router.get("/api/admin/security-analytics", adminAuth, async (req,res)=>{
+   res.json({
+      blockedIPs,
+      riskScores,
+      suspiciousRequests
+   });
+});
+
 export default router;
