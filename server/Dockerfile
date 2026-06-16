@@ -15,7 +15,7 @@ WORKDIR /app
 COPY --chown=node:node package*.json ./
 
 # Install dependencies (only production)
-RUN npm install --omit=dev --legacy-peer-deps
+RUN npm ci --omit=dev --legacy-peer-deps
 
 # Stage 2: Production runtime image
 FROM node:22-alpine AS production
