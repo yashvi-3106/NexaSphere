@@ -107,7 +107,9 @@ const Chatbot = () => {
         // Only save if the bot message is more recent than the last saved one
         if (lastBotIndex > lastUserIndex) {
           savePrompt(lastUserMsg.text, lastBotMsg.text, currentWorkspace).catch((err) => {
-            console.error('Error saving prompt:', err);
+            if (import.meta.env.DEV) {
+              console.error('[Chatbot] Error saving prompt:', err.message);
+            }
           });
         }
       }
@@ -154,7 +156,9 @@ const Chatbot = () => {
         { id: `msg-${Date.now()}-bot`, role: 'bot', text: data.reply },
       ]);
     } catch (e) {
-      console.error('AI chat request failed', e);
+      if (import.meta.env.DEV) {
+        console.error('[Chatbot] AI chat request failed:', e.message);
+      }
       sendFallbackResponse(currentInput);
     } finally {
       setIsSending(false);
