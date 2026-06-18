@@ -77,6 +77,7 @@ import multer from 'multer';
 import * as resourcesController from './controllers/resourcesController.js';
 import scheduledTasksRouter from './routes/scheduledTasks.js';
 import { schedulerService } from './services/schedulerService.js';
+import lifecycleRouter from './routes/lifecycleRoutes.js';
 
 validateLimiters();
 
@@ -324,6 +325,7 @@ app.use('/api', portfolioRouter);
 app.use('/api', notificationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/', syncRouter);
+app.use('/api/lifecycle', lifecycleRouter);
 
 const adminAuth = [apiRateLimiter, adminAuthMiddleware.requireAdmin];
 
