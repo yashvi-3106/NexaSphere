@@ -1052,14 +1052,22 @@ app.post('/api/streams', adminAuth, streamController.createStream);
 app.put('/api/streams/:id', adminAuth, streamController.updateStream);
 app.patch('/api/streams/:id/status', adminAuth, streamController.setStreamStatus);
 app.delete('/api/streams/:id', adminAuth, streamController.deleteStream);
-app.post('/api/streams/:id/chat', streamController.addChatMessage);
+app.post('/api/streams/:id/chat', apiRateLimiter, streamController.addChatMessage);
 app.get('/api/streams/:id/chat', streamController.listChatMessages);
+app.post('/api/streams/:id/ban', adminAuth, streamController.banUser);
 app.post('/api/streams/:id/polls', streamController.createPoll);
 app.get('/api/streams/:id/polls', streamController.listPolls);
 app.post('/api/streams/polls/:pollId/vote', streamController.votePoll);
 app.patch('/api/streams/polls/:pollId/close', adminAuth, streamController.closePoll);
 app.patch('/api/streams/chat/:messageId/moderate', adminAuth, streamController.moderateChatMessage);
 app.get('/api/admin/streams', adminAuth, streamController.adminListAll);
+
+// Streaming Engagement: Q&A and Reactions
+app.post('/api/streams/:id/questions', streamController.addQuestion);
+app.get('/api/streams/:id/questions', streamController.listQuestions);
+app.patch('/api/streams/questions/:qId/answer', adminAuth, streamController.answerQuestion);
+app.post('/api/streams/:id/reactions', streamController.addReaction);
+app.get('/api/streams/:id/reactions', streamController.getReactions);
 
 // Public listings
 app.get('/api/content/team', async (req, res) => {
