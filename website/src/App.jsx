@@ -112,6 +112,7 @@ const MentorshipDashboard = lazy(() => import('./pages/mentorship/MentorshipDash
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const LiveStreamPage = lazy(() => import('./pages/streaming/LiveStreamPage'));
 const SponsorsPage = lazy(() => import('./pages/sponsors/SponsorsPage'));
+const EmailCampaignsPage = lazy(() => import('./pages/email-campaigns/EmailCampaignsPage'));
 
 const MNH = 88,
   DNH = 64;
@@ -1124,6 +1125,18 @@ function MainRouter({
                 <ErrorBoundary>
                   <PageIn k="admin">
                     <AdminPage onBack={onBackHome} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* ── Email Campaigns ── */}
+            <Route
+              path="/email-campaigns"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="email-campaigns">
+                    <EmailCampaignsPage />
                   </PageIn>
                 </ErrorBoundary>
               }

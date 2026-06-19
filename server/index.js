@@ -77,6 +77,7 @@ import syncRouter from './routes/sync.js';
 import multer from 'multer';
 import * as resourcesController from './controllers/resourcesController.js';
 import scheduledTasksRouter from './routes/scheduledTasks.js';
+import emailCampaignsRouter from './routes/emailCampaigns.js';
 import { schedulerService } from './services/schedulerService.js';
 
 validateLimiters();
@@ -326,6 +327,7 @@ app.use('/api', notificationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/', syncRouter);
 app.use('/api', financialsRouter);
+app.use('/api', emailCampaignsRouter);
 
 const adminAuth = [apiRateLimiter, adminAuthMiddleware.requireAdmin];
 
