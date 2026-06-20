@@ -8,18 +8,14 @@ export class FinancialService {
 
     const { role, id: userId } = user;
 
-    // Admin and Treasurer have full access to everything
     if (role === 'admin' || role === 'treasurer') {
       return true;
     }
 
-    // Event organizer has limited access
     if (role === 'organizer') {
       if (!resource) {
-        // Can list or create general things for themselves
         return true;
       }
-      // Can only view/edit if they created it
       if (
         resource.createdBy === userId ||
         resource.submittedBy === userId ||
@@ -30,7 +26,6 @@ export class FinancialService {
       throw new Error('Forbidden: Insufficient permissions for this resource');
     }
 
-    // Regular students/members have no access to financial endpoints
     throw new Error('Forbidden: Insufficient permissions');
   }
 
@@ -69,7 +64,6 @@ export class FinancialService {
     this.checkAccess(user, 'list_budgets');
     const allBudgets = await financialRepository.getBudgets();
 
-    // Filter for organizers
     if (user.role === 'organizer') {
       return allBudgets.filter((b) => b.createdBy === user.id);
     }
@@ -155,11 +149,6 @@ export class FinancialService {
       changes: { new: newExpense },
     });
 
-    // Check budget limit alerts after adding an expense
-    if (newExpense.budgetId) {
-      await this.checkBudgetAlerts(newExpense.budgetId);
-    }
-
     return newExpense;
   }
 
@@ -189,7 +178,6 @@ export class FinancialService {
     }
     this.checkAccess(user, 'edit_expense', expense);
 
-    // Only admin/treasurer can approve or reimburse
     if (patch.status && patch.status !== expense.status) {
       if (user.role !== 'admin' && user.role !== 'treasurer') {
         throw new Error('Forbidden: Only admins or treasurers can update expense status');
@@ -208,10 +196,6 @@ export class FinancialService {
       userId: user.id,
       changes: { old: expense, new: updated },
     });
-
-    if (updated.budgetId) {
-      await this.checkBudgetAlerts(updated.budgetId);
-    }
 
     return updated;
   }
@@ -289,45 +273,10 @@ export class FinancialService {
   }
 
   // --- Reports & Calculations ---
-  async checkBudgetAlerts(budgetId) {
-    const budget = await financialRepository.getBudgetById(budgetId);
-    if (!budget) return null;
-
-    const expenses = await financialRepository.getExpensesByBudgetId(budgetId);
-    const approvedExpensesSum = expenses
-      .filter((e) => e.status === 'approved' || e.status === 'reimbursed')
-      .reduce((sum, e) => sum + e.amount, 0);
-
-    const ratio = budget.totalAmount > 0 ? approvedExpensesSum / budget.totalAmount : 0;
-
-    let alertLevel = null;
-    if (ratio >= 1.0) {
-      alertLevel = '100%';
-    } else if (ratio >= 0.9) {
-      alertLevel = '90%';
-    } else if (ratio >= 0.8) {
-      alertLevel = '80%';
-    }
-
-    if (alertLevel) {
-      // In a real app, send socket notification or email. We will return the alert state
-      return {
-        budgetId,
-        budgetName: budget.name,
-        totalAmount: budget.totalAmount,
-        spentAmount: approvedExpensesSum,
-        ratio,
-        alertLevel,
-      };
-    }
-    return null;
-  }
-
   async getBudgetVariance(budgetId, user) {
     const budget = await this.getBudgetById(budgetId, user);
     const expenses = await financialRepository.getExpensesByBudgetId(budgetId);
 
-    // Sum actual spending per category (only approved/reimbursed count as actual spending)
     const actualByCategory = {};
     expenses
       .filter((e) => e.status === 'approved' || e.status === 'reimbursed')
@@ -336,7 +285,6 @@ export class FinancialService {
       });
 
     const categories = Object.keys(budget.categoryAllocations);
-    // Include categories from actual expenses if not in budget definitions
     Object.keys(actualByCategory).forEach((cat) => {
       if (!categories.includes(cat)) {
         categories.push(cat);
@@ -360,15 +308,12 @@ export class FinancialService {
     const totalActual = comparisons.reduce((sum, c) => sum + c.actual, 0);
     const totalVariance = totalBudgeted - totalActual;
 
-    const alertStatus = await this.checkBudgetAlerts(budgetId);
-
     return {
       budgetId,
       budgetName: budget.name,
       totalBudgeted,
       totalActual,
       totalVariance,
-      alert: alertStatus,
       comparisons,
     };
   }
@@ -392,59 +337,6 @@ export class FinancialService {
       totalExpenses,
       netProfitOrLoss,
       statementType: netProfitOrLoss >= 0 ? 'Profit' : 'Loss',
-    };
-  }
-
-  async getCashFlowStatement(budgetId, user) {
-    const budget = await this.getBudgetById(budgetId, user);
-    const revenues = await financialRepository.getRevenuesByBudgetId(budgetId);
-    const expenses = await financialRepository.getExpensesByBudgetId(budgetId);
-
-    const flows = [];
-
-    // Add revenues as positive flow
-    revenues.forEach((r) => {
-      flows.push({
-        type: 'revenue',
-        name: r.source,
-        description: r.description,
-        amount: r.amount,
-        date: r.receivedAt,
-      });
-    });
-
-    // Add approved/reimbursed expenses as negative flow
-    expenses
-      .filter((e) => e.status === 'approved' || e.status === 'reimbursed')
-      .forEach((e) => {
-        flows.push({
-          type: 'expense',
-          name: e.name,
-          description: `Category: ${e.category}`,
-          amount: -e.amount,
-          date: e.createdAt,
-        });
-      });
-
-    // Sort chronologically
-    flows.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // Calculate running balance
-    let balance = 0;
-    const flowsWithBalance = flows.map((f) => {
-      balance += f.amount;
-      return {
-        ...f,
-        runningBalance: balance,
-      };
-    });
-
-    return {
-      budgetId,
-      budgetName: budget.name,
-      initialBalance: 0,
-      finalBalance: balance,
-      flows: flowsWithBalance,
     };
   }
 
@@ -473,41 +365,6 @@ export class FinancialService {
     return report;
   }
 
-  async getYearOverYearComparison(user) {
-    this.checkAccess(user, 'list_budgets');
-    const budgets = await financialRepository.getBudgets();
-
-    const yearStats = {};
-
-    for (const budget of budgets) {
-      const date = budget.startDate ? new Date(budget.startDate) : new Date(budget.createdAt);
-      const year = date.getFullYear();
-
-      if (!yearStats[year]) {
-        yearStats[year] = {
-          year,
-          totalBudgetLimit: 0,
-          totalSpent: 0,
-          totalRevenue: 0,
-        };
-      }
-
-      yearStats[year].totalBudgetLimit += budget.totalAmount;
-
-      const expenses = await financialRepository.getExpensesByBudgetId(budget.id);
-      const spent = expenses
-        .filter((e) => e.status === 'approved' || e.status === 'reimbursed')
-        .reduce((sum, e) => sum + e.amount, 0);
-      yearStats[year].totalSpent += spent;
-
-      const revenues = await financialRepository.getRevenuesByBudgetId(budget.id);
-      const rev = revenues.reduce((sum, r) => sum + r.amount, 0);
-      yearStats[year].totalRevenue += rev;
-    }
-
-    return Object.values(yearStats).sort((a, b) => b.year - a.year);
-  }
-
   async exportReport(budgetId, format, user) {
     const budget = await this.getBudgetById(budgetId, user);
 
@@ -525,8 +382,7 @@ export class FinancialService {
     if (format.toLowerCase() === 'json') {
       const variance = await this.getBudgetVariance(budgetId, user);
       const income = await this.getIncomeStatement(budgetId, user);
-      const cashFlow = await this.getCashFlowStatement(budgetId, user);
-      return JSON.stringify({ budget, variance, income, cashFlow }, null, 2);
+      return JSON.stringify({ budget, variance, income }, null, 2);
     }
 
     throw new Error(`Unsupported export format: ${format}`);

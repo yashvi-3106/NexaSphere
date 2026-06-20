@@ -133,20 +133,14 @@ export const deleteRevenue = wrapAsync(async (req, res) => {
 
 // --- Reports & Calculations ---
 export const getBudgetVariance = wrapAsync(async (req, res) => {
-  const { id } = req.params; // budgetId
+  const { id } = req.params;
   const report = await financialService.getBudgetVariance(id, req.studentUser);
   return res.status(200).json(report);
 });
 
 export const getIncomeStatement = wrapAsync(async (req, res) => {
-  const { id } = req.params; // budgetId
+  const { id } = req.params;
   const report = await financialService.getIncomeStatement(id, req.studentUser);
-  return res.status(200).json(report);
-});
-
-export const getCashFlowStatement = wrapAsync(async (req, res) => {
-  const { id } = req.params; // budgetId
-  const report = await financialService.getCashFlowStatement(id, req.studentUser);
   return res.status(200).json(report);
 });
 
@@ -155,13 +149,8 @@ export const getBudgetsUtilizationReport = wrapAsync(async (req, res) => {
   return res.status(200).json({ budgets: report });
 });
 
-export const getYearOverYearComparison = wrapAsync(async (req, res) => {
-  const report = await financialService.getYearOverYearComparison(req.studentUser);
-  return res.status(200).json({ comparison: report });
-});
-
 export const exportReport = wrapAsync(async (req, res) => {
-  const { id } = req.params; // budgetId
+  const { id } = req.params;
   const { format = 'csv' } = req.query;
 
   const result = await financialService.exportReport(id, format, req.studentUser);

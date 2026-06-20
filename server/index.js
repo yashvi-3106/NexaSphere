@@ -82,7 +82,7 @@ import multer from 'multer';
 import * as resourcesController from './controllers/resourcesController.js';
 import * as backupController from './controllers/backupController.js';
 import scheduledTasksRouter from './routes/scheduledTasks.js';
-import emailCampaignsRouter from './routes/emailCampaigns.js';
+import financialsRouter from './routes/financials.js';
 import { schedulerService } from './services/schedulerService.js';
 import dynamicPricingRouter from './routes/dynamicPricing.js';
 
@@ -342,7 +342,7 @@ app.use('/api', portfolioRouter);
 app.use('/api/portfolio-export', portfolioExportRouter);
 app.use('/api', notificationsRouter);
 app.use('/api/admin', adminRouter);
-app.use('/', rbacRouter);
+app.use('/api', financialsRouter);
 app.use('/', syncRouter);
 app.use('/api', financialsRouter);
 app.use('/api', emailCampaignsRouter);

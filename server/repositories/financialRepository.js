@@ -96,16 +96,6 @@ export const financialRepository = {
     });
   },
 
-  async getBudgetByEventId(eventId) {
-    return withDb(async (client) => {
-      const { rows } = await client.query('SELECT * FROM event_budgets WHERE event_id = $1', [
-        eventId,
-      ]);
-      if (!rows.length) return null;
-      return mapBudgetRow(rows[0]);
-    });
-  },
-
   async getBudgets() {
     return withDb(async (client) => {
       const { rows } = await client.query('SELECT * FROM event_budgets ORDER BY created_at DESC');
@@ -186,16 +176,6 @@ export const financialRepository = {
     });
   },
 
-  async getExpensesByEventId(eventId) {
-    return withDb(async (client) => {
-      const { rows } = await client.query(
-        'SELECT * FROM expenses WHERE event_id = $1 ORDER BY created_at DESC',
-        [eventId]
-      );
-      return rows.map(mapExpenseRow);
-    });
-  },
-
   async updateExpense(id, patch) {
     return withDb(async (client) => {
       const { rows } = await client.query(
@@ -265,16 +245,6 @@ export const financialRepository = {
       const { rows } = await client.query(
         'SELECT * FROM revenue_entries WHERE budget_id = $1 ORDER BY received_at DESC',
         [budgetId]
-      );
-      return rows.map(mapRevenueRow);
-    });
-  },
-
-  async getRevenuesByEventId(eventId) {
-    return withDb(async (client) => {
-      const { rows } = await client.query(
-        'SELECT * FROM revenue_entries WHERE event_id = $1 ORDER BY received_at DESC',
-        [eventId]
       );
       return rows.map(mapRevenueRow);
     });

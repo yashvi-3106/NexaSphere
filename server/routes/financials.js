@@ -29,9 +29,7 @@ router.delete('/revenues/:id', financialController.deleteRevenue);
 // Reports & Calculations
 router.get('/budgets/:id/variance', financialController.getBudgetVariance);
 router.get('/budgets/:id/income-statement', financialController.getIncomeStatement);
-router.get('/budgets/:id/cash-flow', financialController.getCashFlowStatement);
 router.get('/budgets-utilization', financialController.getBudgetsUtilizationReport);
-router.get('/financial-yoy', financialController.getYearOverYearComparison);
 router.get('/budgets/:id/export', financialController.exportReport);
 
 export default router;

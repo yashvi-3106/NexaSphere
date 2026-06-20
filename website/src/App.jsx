@@ -114,7 +114,7 @@ const LiveStreamPage = lazy(() => import('./pages/streaming/LiveStreamPage'));
 const ResourcesPage = lazy(() => import('./pages/resources/ResourcesPage'));
 const NotificationHistoryPage = lazy(() => import('./pages/notifications/NotificationHistoryPage'));
 const SponsorsPage = lazy(() => import('./pages/sponsors/SponsorsPage'));
-const EmailCampaignsPage = lazy(() => import('./pages/email-campaigns/EmailCampaignsPage'));
+const EventBudgetPage = lazy(() => import('./pages/finance/EventBudgetPage'));
 
 const MNH = 88,
   DNH = 64;
@@ -1134,13 +1134,13 @@ function MainRouter({
               }
             />
 
-            {/* ── Email Campaigns ── */}
+            {/* ── Event Budget Management ── */}
             <Route
-              path="/email-campaigns"
+              path="/finance"
               element={
                 <ErrorBoundary>
-                  <PageIn k="email-campaigns">
-                    <EmailCampaignsPage />
+                  <PageIn k="finance">
+                    <EventBudgetPage />
                   </PageIn>
                 </ErrorBoundary>
               }
