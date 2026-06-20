@@ -317,7 +317,7 @@ select,
   color: white;
   font-size: 24px;
   cursor: pointer;
-  z-index: 9999;
+  z-index: 10001;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: 0.3s ease;
 }
