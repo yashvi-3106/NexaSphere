@@ -387,10 +387,9 @@ export default function App() {
 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function AppShell() {
   const location = useLocation();
-  // Skip the cinematic intro immediately for Playwright E2E runs or deep links
-  const isPlaywright =
-    typeof navigator !== 'undefined' && navigator.userAgent.includes('Playwright');
-  const [cinDone, setCinDone] = useState(isPlaywright || location.pathname !== '/');
+  const [cinDone, setCinDone] = useState(() => {
+    return typeof window !== 'undefined' && window.navigator.userAgent.includes('Playwright');
+  });
   const [eventsData, setEventsData] = useState(() => getLocalEvents(fallbackEvents));
   const { resolvedTheme: theme } = useTheme();
   const { isOpen: isTerminalOpen, closeTerminal } = useDeveloperMode();

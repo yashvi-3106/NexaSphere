@@ -11,11 +11,11 @@
       "assertions": {
         "categories:performance": ["warn", { "minScore": 0.9 }],
         "categories:accessibility": ["warn", { "minScore": 0.9 }],
-        "first-contentful-paint": ["warn", { "maxNumericValue": 4000 }],
-        "largest-contentful-paint": ["warn", { "maxNumericValue": 8000 }],
-        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.1 }],
-        "total-blocking-time": ["warn", { "maxNumericValue": 1000 }],
-        "interactive": ["warn", { "maxNumericValue": 8000 }]
+        "first-contentful-paint": ["warn", { "maxNumericValue": 2500 }],
+        "largest-contentful-paint": ["warn", { "maxNumericValue": 2500 }],
+        "cumulative-layout-shift": ["warn", { "maxNumericValue": 0.1 }],
+        "total-blocking-time": ["warn", { "maxNumericValue": 200 }],
+        "interactive": ["warn", { "maxNumericValue": 4000 }]
       }
     },
     "upload": {

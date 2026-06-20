@@ -48,21 +48,10 @@ const TextList = z
 
 const CommonIdentitySchema = z
   .object({
-    fullName: z
-      .string({
-        required_error: 'Full name is required',
-        invalid_type_error: 'Full name is required',
-      })
-      .trim()
-      .min(1, 'Full name is required')
-      .max(120),
+    fullName: z.string().trim().min(1, 'Full name is required').max(120),
     collegeEmail: EmailSchema,
     whatsapp: WhatsAppSchema,
-    branch: z
-      .string({ required_error: 'Branch is required', invalid_type_error: 'Branch is required' })
-      .trim()
-      .min(1, 'Branch is required')
-      .max(100),
+    branch: z.string().trim().min(1, 'Branch is required').max(100),
     section: SectionSchema,
     submittedAt: z.string().trim().max(80).optional(),
     userAgent: z.string().trim().max(255).optional(),
@@ -76,11 +65,7 @@ const CommonIdentitySchema = z
 
 const RecruitmentExtrasSchema = z
   .object({
-    year: z
-      .string({ required_error: 'Year is required', invalid_type_error: 'Year is required' })
-      .trim()
-      .min(1, 'Year is required')
-      .max(40),
+    year: z.string().trim().min(1, 'Year is required').max(40),
     role: OptionalText(80),
     interests: TextList,
     skills: OptionalText(400),
@@ -104,14 +89,7 @@ const MembershipExtrasSchema = z
   .object({
     rollNumber: OptionalText(40),
     course: OptionalText(80),
-    semester: z
-      .string({
-        required_error: 'Semester is required',
-        invalid_type_error: 'Semester is required',
-      })
-      .trim()
-      .min(1, 'Semester is required')
-      .max(40),
+    semester: z.string().trim().min(1, 'Semester is required').max(40),
     groups: TextList,
     whyJoin: z.string().trim().max(1200).optional(),
   })
@@ -147,6 +125,9 @@ const recruitmentSubmissionSchema = CommonIdentitySchema.passthrough()
         path: ['collegeEmail'],
         message: 'Email address is required',
       });
+    }
+    if (!String(data.year || '').trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['year'], message: 'Year is required' });
     }
     if (!data.reason && !data.whyJoin) {
       ctx.addIssue({
