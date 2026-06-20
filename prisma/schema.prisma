@@ -110,6 +110,34 @@ model AuditLog {
   entityId  String
   oldValues Json?
   newValues Json?
+
   timestamp DateTime    @default(now())
 }
 
+// ── Dynamic Event Capacity Pricing ──
+
+model EventPricing {
+  id              String   @id @default(uuid())
+  eventId         String   @unique
+  basePrice       Float    // Original / standard price in INR
+  currentPrice    Float    // Live computed price
+  minPrice        Float    // Floor — never go below this
+  maxPrice        Float    // Cap — never exceed this
+  capacity        Int      // Total seats
+  registrations   Int      @default(0)
+  eventDate       DateTime // Used for time-based tier calculation
+  adminOverride   Float?   // Admin can pin a manual price (null = use algorithm)
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  priceHistory    PriceHistory[]
+}
+
+model PriceHistory {
+  id        String       @id @default(uuid())
+  pricingId String
+  price     Float
+  reason    String       // e.g. "early_bird", "demand_80pct", "admin_override"
+  createdAt DateTime     @default(now())
+
+  pricing   EventPricing @relation(fields: [pricingId], references: [id], onDelete: Cascade)
+}

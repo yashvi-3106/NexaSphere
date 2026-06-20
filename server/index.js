@@ -81,9 +81,7 @@ import multer from 'multer';
 import * as resourcesController from './controllers/resourcesController.js';
 import scheduledTasksRouter from './routes/scheduledTasks.js';
 import { schedulerService } from './services/schedulerService.js';
-import { slackRepository } from './repositories/slackRepository.js';
-import { slackIntegrationService } from './services/slackIntegrationService.js';
-import * as slackController from './controllers/slackController.js';
+import dynamicPricingRouter from './routes/dynamicPricing.js';
 
 validateLimiters();
 
@@ -342,6 +340,7 @@ app.use('/api', notificationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/admin/webhooks', webhookRouter);
 app.use('/', syncRouter);
+app.use('/api/pricing', dynamicPricingRouter);
 
 const adminAuth = [apiRateLimiter, adminAuthMiddleware.requireAdmin];
 
