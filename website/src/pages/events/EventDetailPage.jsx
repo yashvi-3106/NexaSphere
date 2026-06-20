@@ -538,7 +538,7 @@ export default function EventDetailPage({ event, activityColor, activityIcon, on
   const handleCalendarDownload = () => {
     const base = getApiBase();
     const url = `${base}/api/content/events/${event.id}/calendar`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const color = activityColor || '#a855f7';
