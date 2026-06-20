@@ -80,12 +80,13 @@ import { tierRateLimiter } from './middleware/tierRateLimiter.js';
 import compression from 'compression';
 import syncRouter from './routes/sync.js';
 import multer from 'multer';
+import learningPathRouter from './routes/learningPaths.js';
 import * as resourcesController from './controllers/resourcesController.js';
 import * as backupController from './controllers/backupController.js';
 import scheduledTasksRouter from './routes/scheduledTasks.js';
 import financialsRouter from './routes/financials.js';
 import { schedulerService } from './services/schedulerService.js';
-import dynamicPricingRouter from './routes/dynamicPricing.js';
+import { learningPathService } from './services/learningPathService.js';
 
 validateLimiters();
 
@@ -343,8 +344,7 @@ app.use('/api', portfolioRouter);
 app.use('/api/portfolio-export', portfolioExportRouter);
 app.use('/api', notificationsRouter);
 app.use('/api/admin', adminRouter);
-app.use('/api/admin', bulkRouter);
-app.use('/', announcementsRouter);
+app.use('/api', learningPathRouter);
 app.use('/', syncRouter);
 app.use('/', featureFlagsRouter);
 
@@ -1880,7 +1880,11 @@ if (process.env.NODE_ENV !== 'test') {
       server = app.listen(port, () => {
         console.log(`NexaSphere server listening on http://localhost:${port}`);
         schedulerService.init();
-        startWebhookRetryProcessor();
+        
+        // Register Learning Path Nudges (Runs daily)
+        schedulerService.schedule('0 10 * * *', async () => {
+          await learningPathService.runNudgeJob();
+        });
       });
     });
   } else {
