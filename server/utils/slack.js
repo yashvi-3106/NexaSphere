@@ -38,8 +38,8 @@ async function dispatchToSlack(payload, alertContext) {
   }
 
   try {
-    const response = await tracedFetch(webhookUrl, {
-      method: "POST",
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
