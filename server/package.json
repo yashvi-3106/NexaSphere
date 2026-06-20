@@ -70,5 +70,11 @@
     "uuid": "^11.1.1",
     "yaml": "^2.3.4",
     "zod": "^4.4.3"
+  },
+  "overrides": {
+    "ws": "^8.20.2",
+    "form-data": "^4.0.1",
+    "dompurify": "^3.4.9",
+    "engine.io-client": "^6.6.2"
   }
 }

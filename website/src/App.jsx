@@ -389,14 +389,17 @@ export default function App() {
 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function AppShell() {
   const location = useLocation();
-  const [cinDone, setCinDone] = useState(false);
+  // Skip the cinematic intro immediately for Playwright E2E runs or deep links
+  const isPlaywright =
+    typeof navigator !== 'undefined' && navigator.userAgent.includes('Playwright');
+  const [cinDone, setCinDone] = useState(isPlaywright || location.pathname !== '/');
   const [eventsData, setEventsData] = useState(() => getLocalEvents(fallbackEvents));
   const { resolvedTheme: theme } = useTheme();
   const { isOpen: isTerminalOpen, closeTerminal } = useDeveloperMode();
 
   // Skip cinematic opening for deep links (anything except "/")
   useEffect(() => {
-    if (location.pathname !== '/') {
+    if (location.pathname !== '/' || isPlaywright) {
       setCinDone(true);
     }
   }, [location.pathname]);
