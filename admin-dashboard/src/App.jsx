@@ -22,7 +22,7 @@ import { CircuitBreakerManager } from './pages/CircuitBreakerManager';
 import { ResourcesManager } from './pages/ResourcesManager';
 import { ComplianceManager } from './pages/ComplianceManager';
 import { SponsorshipsManager } from './pages/SponsorshipsManager';
-import { SecurityCenter } from './pages/SecurityCenter';
+import { UserEngagementReport } from './pages/UserEngagementReport';
 import './styles/admin.css';
 
 function RequireAuth() {
@@ -81,7 +81,7 @@ export default function App() {
             <Route path="/dashboard/resources" element={<ResourcesManager />} />
             <Route path="/dashboard/compliance" element={<ComplianceManager />} />
             <Route path="/dashboard/sponsorships" element={<SponsorshipsManager />} />
-            <Route path="/dashboard/security" element={<SecurityCenter />} />
+            <Route path="/dashboard/reports" element={<UserEngagementReport />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
