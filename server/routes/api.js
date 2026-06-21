@@ -16,6 +16,7 @@ import { achievementsRepository } from '../repositories/achievementsRepository.j
 import { portfolioService } from '../services/portfolioService.js';
 import * as sponsorshipsController from '../controllers/sponsorshipsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
+import * as analyticsController from '../controllers/analyticsController.js';
 
 const router = Router();
 
@@ -268,6 +269,51 @@ router.delete(
   adminAuthMiddleware.requireScope('events:write'),
   adminAuditMiddleware,
   sponsorshipsController.adminDeleteSponsor
+);
+
+// Analytics APIs (Public ingestion)
+router.post('/api/analytics/session', analyticsController.startSession);
+router.post('/api/analytics/session/:sessionId/end', analyticsController.endSession);
+router.post('/api/analytics/events', analyticsController.ingestEvents);
+router.post('/api/analytics/recordings', analyticsController.saveRecording);
+
+// Analytics APIs (Admin protected)
+router.get(
+  '/api/admin/analytics/recordings',
+  adminAuthMiddleware.requireAdmin,
+  analyticsController.adminGetRecordings
+);
+router.get(
+  '/api/admin/analytics/recordings/:sessionId',
+  adminAuthMiddleware.requireAdmin,
+  analyticsController.adminGetRecording
+);
+router.get(
+  '/api/admin/analytics/heatmap',
+  adminAuthMiddleware.requireAdmin,
+  analyticsController.adminGetHeatmap
+);
+router.get(
+  '/api/admin/analytics/segments',
+  adminAuthMiddleware.requireAdmin,
+  analyticsController.adminGetSegments
+);
+router.post(
+  '/api/admin/analytics/segments',
+  adminAuthMiddleware.requireAdmin,
+  adminAuditMiddleware,
+  analyticsController.adminCreateSegment
+);
+router.post(
+  '/api/admin/analytics/segments/:segmentId/action',
+  adminAuthMiddleware.requireAdmin,
+  adminAuditMiddleware,
+  analyticsController.adminPerformSegmentAction
+);
+router.get(
+  '/api/admin/analytics/cohorts',
+  adminAuthMiddleware.requireAdmin,
+  analyticsController.adminGetCohortAnalysis
 );
 
 export default router;

@@ -61,11 +61,16 @@ function BookmarkToggle({ onToggle }) {
   );
 }
 
+import { useWalkthroughStep } from '../hooks/useWalkthroughStep';
+import { WalkthroughWrapper } from '../components/walkthrough/WalkthroughWrapper';
+
 export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onToggleBookmarks }) {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [compact, setCompact] = useState(window.innerWidth <= 1200);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const eventsTabRef = useWalkthroughStep('search_events');
 
   useEffect(() => {
     const s = () => setScrolled(window.scrollY > 20);
@@ -222,7 +227,9 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
           </div>
 
           <div className="ns-nav-actions">
-            <NotificationBell />
+            <WalkthroughWrapper stepId="notifications" style={{ display: 'flex' }}>
+              <NotificationBell />
+            </WalkthroughWrapper>
             <button
               onClick={() => navigate('/notifications')}
               aria-label="Notification history"
@@ -260,14 +267,16 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
             <ThemeToggle />
 
             {isAuthenticated ? (
-              <span
+              <WalkthroughWrapper
+                stepId="profile"
+                as="span"
                 className="ns-nav-user-badge"
                 onClick={() => navigate('/dashboard')}
                 style={{ cursor: 'pointer', fontSize: '0.9rem', color: 'var(--t1)' }}
                 title={user?.name || user?.email}
               >
                 👤
-              </span>
+              </WalkthroughWrapper>
             ) : (
               <button
                 className="btn btn-sm btn-outline"
@@ -300,6 +309,7 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
                   className={`ns-nav-tab${activeTab === t ? ' active' : ''}${
                     t === 'Contact' ? ' contact-tab contact-nav-tab' : ''
                   }`}
+                  ref={t === 'Events' ? eventsTabRef : null}
                   onClick={() => handleTab(t)}
                   aria-current={activeTab === t ? 'page' : undefined}
                 >

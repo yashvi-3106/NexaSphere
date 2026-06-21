@@ -1,8 +1,11 @@
 import React from 'react';
+import { useWalkthroughStep } from '../hooks/useWalkthroughStep';
 
-const EventCard = React.memo(function EventCard({ event, onClick, id }) {
+const EventCard = React.memo(function EventCard({ event, onClick, id, isFirstForWalkthrough }) {
+  const ref = useWalkthroughStep(isFirstForWalkthrough ? 'register_event' : null);
+
   return (
-    <div className="event-card" onClick={() => onClick(id)} style={{ cursor: 'pointer' }}>
+    <div ref={ref} className="event-card" onClick={() => onClick(id)} style={{ cursor: 'pointer' }}>
       <h3>{event.title}</h3>
       <p>{event.date}</p>
       <p>{event.description}</p>

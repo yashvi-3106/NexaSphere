@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { DynamicIcon } from '../../shared/Icons';
 import EventCountdown from '../../components/events/EventCountdown.jsx';
 import { getEventCountdownStatus, parseDate } from '../../hooks/useCountdown.js';
+import { WalkthroughWrapper } from '../../components/walkthrough/WalkthroughWrapper.jsx';
 import './EventsSection.css';
 
 export default function EventsSection({ onEventClick, events = [] }) {
@@ -81,7 +82,8 @@ export default function EventsSection({ onEventClick, events = [] }) {
                 <div
                   className={`timeline-dot${ev._effectiveStatus !== 'completed' ? ' upcoming' : ''}`}
                 />
-                <div
+                <WalkthroughWrapper
+                  stepId={i === 0 ? 'register_event' : null}
                   className={`timeline-card shimmer ${i % 2 === 0 ? 'pop-left' : 'pop-right'}`}
                   style={{
                     animationDelay: `${i * 0.11}s`,
@@ -258,7 +260,7 @@ export default function EventsSection({ onEventClick, events = [] }) {
                       </span>
                     ))}
                   </div>
-                </div>
+                </WalkthroughWrapper>
               </div>
             );
           })}
