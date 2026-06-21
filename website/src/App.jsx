@@ -18,6 +18,7 @@ import {
   Navigate,
 } from 'react-router-dom';
 
+import ResourcesPage from './pages/resources/ResourcesPage.jsx';
 import './styles/themes.css';
 import './styles/globals.css';
 import './styles/animations.css';
