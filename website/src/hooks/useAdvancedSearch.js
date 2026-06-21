@@ -75,9 +75,20 @@ export const useAdvancedSearch = () => {
   const clearFilters = () => setActiveFilters({});
 
   const saveSearch = () => {
-    const saved = JSON.parse(localStorage.getItem('saved_searches') || '[]');
+    let saved = [];
+    try {
+      saved = JSON.parse(localStorage.getItem('saved_searches') || '[]');
+      if (!Array.isArray(saved)) saved = [];
+    } catch {
+      // Malformed saved_searches in storage — start fresh instead of crashing
+      saved = [];
+    }
     const newSave = { query, filters: activeFilters, timestamp: Date.now() };
-    localStorage.setItem('saved_searches', JSON.stringify([...saved, newSave]));
+    try {
+      localStorage.setItem('saved_searches', JSON.stringify([...saved, newSave]));
+    } catch {
+      // Ignore QuotaExceededError / SecurityError — save action degrades silently
+    }
   };
 
   return {
