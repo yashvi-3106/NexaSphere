@@ -321,6 +321,12 @@ async function login(req, res) {
         email: u,
         createdAt: new Date().toISOString(),
         expiresAt: session.expiresAt,
+        metadata: {
+          userAgent: req.get('user-agent') || '',
+          ip,
+          role,
+          scopes,
+        },
       });
       const redis = getRedisClient();
       await redis.set(redisKey, redisPayload, 'EX', SESSION_TTL_SECONDS);
