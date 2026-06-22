@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import UserTimelineModal from '../components/UserTimelineModal';
 
 const ROLES = ['member', 'moderator', 'admin'];
 
@@ -8,6 +9,9 @@ export default function UserManager() {
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editUser, setEditUser] = useState(null);
+  const [timelineUser, setTimelineUser] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(null);
   const [form, setForm] = useState({
     username: '',
     display_name: '',
@@ -144,6 +148,7 @@ export default function UserManager() {
                 >
                   {deleting === user.id ? 'Deactivating…' : 'Deactivate'}
                 </button>
+                <button onClick={() => setTimelineUser(user)}>Activity</button>
               </td>
             </tr>
           ))}
@@ -215,6 +220,10 @@ export default function UserManager() {
             </div>
           </div>
         </div>
+      )}
+
+      {timelineUser && (
+        <UserTimelineModal user={timelineUser} onClose={() => setTimelineUser(null)} />
       )}
     </div>
   );
