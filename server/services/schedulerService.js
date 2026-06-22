@@ -13,6 +13,7 @@ import notificationsService from './notificationsService.js';
 import { withDb } from '../repositories/db.js';
 import { HAS_SUPABASE } from '../storage/supabaseClient.js';
 import { backupService } from './backupService.js';
+import { sendEmail } from './emailService.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -147,9 +148,17 @@ const TASK_DEFINITIONS = [
     enabled: true,
   },
   {
-    id: 'report-generation',
-    name: 'Report Generation',
-    description: 'Generates weekly activity and membership reports',
+    id: 'daily-attendance-report',
+    name: 'Daily Attendance Report',
+    description: 'Generates daily attendance reports',
+    cron: '0 18 * * *', // Daily at 18:00
+    category: 'reports',
+    enabled: true,
+  },
+  {
+    id: 'weekly-analytics-report',
+    name: 'Weekly Analytics Report',
+    description: 'Generates weekly activity and membership analytics reports',
     cron: '0 9 * * 1', // Mondays at 09:00
     category: 'reports',
     enabled: true,
@@ -310,8 +319,11 @@ class SchedulerService extends EventEmitter {
       case 'automated-recovery-testing':
         await backupService.runAutomatedRecoveryTest();
         break;
-      case 'report-generation':
-        await this._generateReports();
+      case 'daily-attendance-report':
+        await this._generateDailyAttendanceReport();
+        break;
+      case 'weekly-analytics-report':
+        await this._generateWeeklyAnalyticsReport();
         break;
       case 'inactive-user-check':
         await this._flagInactiveUsers();
@@ -420,22 +432,106 @@ class SchedulerService extends EventEmitter {
     logger.info(`[Scheduler] Backup summary: ${tables.length} tables, ${totalRows} total rows`);
   }
 
-  async _generateReports() {
-    logger.info('[Scheduler] Starting weekly report generation');
+  async _generateDailyAttendanceReport() {
+    logger.info('[Scheduler] Starting daily attendance report generation');
     if (!HAS_SUPABASE) {
       logger.info('[Scheduler] No database configured, skipping report generation');
       return;
     }
     await withDb(async (client) => {
+      // Ensure table exists for archiving
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS scheduled_reports (
+          id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+          report_type VARCHAR(100) NOT NULL,
+          content JSONB NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `);
+
+      // Mock attendance data query (replace with actual logic if attendance tables exist)
+      const { rows: attendance } = await client.query(
+        `SELECT COUNT(*) as count FROM events WHERE created_at > NOW() - INTERVAL '1 day'`
+      );
+
+      const reportData = {
+        date: new Date().toISOString(),
+        total_events_today: attendance[0]?.count || 0,
+      };
+
+      // Archive report
+      await client.query(
+        `INSERT INTO scheduled_reports (report_type, content) VALUES ($1, $2)`,
+        ['daily-attendance-report', JSON.stringify(reportData)]
+      );
+
+      // Email report to admins
+      try {
+        await sendEmail({
+          to: 'admin@nexasphere.com',
+          subject: 'Daily Attendance Report',
+          templateName: 'generic',
+          data: {
+            name: 'Administrator',
+            message: `Daily Attendance Report is ready. Total events today: ${reportData.total_events_today}.`,
+          },
+        });
+      } catch (err) {
+        logger.error('[Scheduler] Failed to email daily attendance report:', err.message);
+      }
+    });
+  }
+
+  async _generateWeeklyAnalyticsReport() {
+    logger.info('[Scheduler] Starting weekly analytics report generation');
+    if (!HAS_SUPABASE) {
+      logger.info('[Scheduler] No database configured, skipping report generation');
+      return;
+    }
+    await withDb(async (client) => {
+      // Ensure table exists for archiving
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS scheduled_reports (
+          id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+          report_type VARCHAR(100) NOT NULL,
+          content JSONB NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `);
+
       const { rows: newUsers } = await client.query(
         `SELECT COUNT(*) as count FROM student_users WHERE created_at > NOW() - INTERVAL '7 days'`
       );
       const { rows: newEvents } = await client.query(
         `SELECT COUNT(*) as count FROM events WHERE created_at > NOW() - INTERVAL '7 days'`
       );
-      logger.info(
-        `[Scheduler] Weekly report: ${newUsers[0]?.count || 0} new users, ${newEvents[0]?.count || 0} new events`
+
+      const reportData = {
+        date: new Date().toISOString(),
+        new_users: newUsers[0]?.count || 0,
+        new_events: newEvents[0]?.count || 0,
+      };
+
+      // Archive report
+      await client.query(
+        `INSERT INTO scheduled_reports (report_type, content) VALUES ($1, $2)`,
+        ['weekly-analytics-report', JSON.stringify(reportData)]
       );
+
+      // Email report to admins
+      try {
+        await sendEmail({
+          to: 'admin@nexasphere.com',
+          subject: 'Weekly Analytics Report',
+          templateName: 'generic',
+          data: {
+            name: 'Administrator',
+            message: `Weekly Analytics Report is ready. New users: ${reportData.new_users}, New events: ${reportData.new_events}.`,
+          },
+        });
+      } catch (err) {
+        logger.error('[Scheduler] Failed to email weekly analytics report:', err.message);
+      }
     });
   }
 
