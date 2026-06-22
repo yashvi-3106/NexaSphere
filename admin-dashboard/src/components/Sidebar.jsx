@@ -244,8 +244,21 @@ export function Sidebar() {
         {/* Navigation */}
 
         <nav className="sidebar-nav">
-          {links.map(({ to, label, icon, requiredScope }) => {
-            const LinkElement = (
+          {links.map(({ to, label, icon, requiredScope, external }) => {
+            const LinkElement = external ? (
+              <a
+                key={to}
+                href={to}
+                target="_blank"
+                rel="noreferrer"
+                className="nav-link"
+                onClick={close}
+              >
+                <AdminIcon name={icon} size={16} aria-hidden="true" />
+                {label}
+                <AdminIcon name="ExternalLink" size={12} style={{ marginLeft: 'auto', opacity: 0.5 }} />
+              </a>
+            ) : (
               <NavLink
                 key={to}
                 to={to}

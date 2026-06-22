@@ -11,6 +11,8 @@ import { MentorshipManager } from './pages/MentorshipManager';
 import { DashboardHome } from './pages/DashboardHome';
 import { EventsManager } from './pages/EventsManager';
 import { ActivityEventsManager } from './pages/ActivityEventsManager';
+import ScheduledTasksManager from './pages/ScheduledTasksManager';
+import UserGroups from './pages/UserGroups';
 import { CoreTeamManager } from './pages/CoreTeamManager';
 import { MembershipResponsesManager } from './pages/MembershipResponsesManager';
 import { RecruitmentResponsesManager } from './pages/RecruitmentResponsesManager';
@@ -81,6 +83,7 @@ export default function App() {
             <Route path="/dashboard/streams" element={<StreamManager />} />
             <Route path="/dashboard/circuit-breaker" element={<CircuitBreakerManager />} />
             <Route path="/dashboard/waiting-room" element={<WaitingRoomManager />} />
+            <Route path="/dashboard/groups" element={<UserGroups />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />

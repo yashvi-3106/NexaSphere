@@ -61,6 +61,7 @@ const empty = {
   hasDetailPage: true,
   tagsInput: '',
   gradientColors: [],
+  restrictedGroupsInput: '',
 };
 
 export function EventForm({ event, onClose }) {
@@ -71,6 +72,7 @@ export function EventForm({ event, onClose }) {
       ? {
           ...event,
           tagsInput: Array.isArray(event.tags) ? event.tags.join(', ') : event.tags || '',
+          restrictedGroupsInput: Array.isArray(event.restrictedGroups) ? event.restrictedGroups.join(', ') : '',
           dateISO: toISODate(event.dateText ?? event.date ?? ''),
           gradientColors: Array.isArray(event.gradientColors) ? [...event.gradientColors] : [],
           capacity: event.capacity ?? '',
@@ -169,11 +171,15 @@ export function EventForm({ event, onClose }) {
       const payload = {
         ...form,
         tags,
+        restrictedGroups: form.restrictedGroupsInput
+          ? form.restrictedGroupsInput.split(',').map(s => parseInt(s.trim(), 10)).filter(id => !isNaN(id))
+          : [],
         capacity: form.capacity ? parseInt(form.capacity, 10) : null,
         startDate: form.startDate || null,
         endDate: form.endDate || null,
       };
       delete payload.tagsInput;
+      delete payload.restrictedGroupsInput;
       delete payload.dateISO;
 
       if (event?.id) {
@@ -353,6 +359,15 @@ export function EventForm({ event, onClose }) {
               value={form.tagsInput || ''}
               onChange={(e) => set('tagsInput', e.target.value)}
               placeholder="e.g. react, typescript, web"
+            />
+          </div>
+
+          <div className="form-row">
+            <label>Restricted Groups (comma separated Group IDs)</label>
+            <input
+              value={form.restrictedGroupsInput || ''}
+              onChange={(e) => set('restrictedGroupsInput', e.target.value)}
+              placeholder="e.g. 1, 2 (Leave blank for public)"
             />
           </div>
 
