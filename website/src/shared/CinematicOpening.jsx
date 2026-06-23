@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BRAND_LOGO_ICON } from './brandAssets';
 
 const SHARDS = [
@@ -270,6 +270,14 @@ export default function CinematicOpening({ onDone, theme = 'dark' }) {
   const WORD = 'NEXASPHERE';
   const isL = theme === 'light';
 
+  // Respect the user's system preference for reduced motion.
+  // If set, skip the entire cinematic sequence immediately.
+  const prefersReducedMotion = useMemo(() => {
+    return (
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
+  }, []);
+
   const handleSkip = useCallback(() => {
     timersRef.current.forEach((t) => clearTimeout(t));
     clearInterval(ivRef.current);
@@ -278,6 +286,12 @@ export default function CinematicOpening({ onDone, theme = 'dark' }) {
   }, [onDone]);
 
   useEffect(() => {
+    // Skip animation immediately for users who prefer reduced motion
+    if (prefersReducedMotion) {
+      onDone?.();
+      return;
+    }
+
     const ts = [];
     ts.push(setTimeout(() => setPhase(1), 280));
     ts.push(
@@ -325,7 +339,7 @@ export default function CinematicOpening({ onDone, theme = 'dark' }) {
     ? 'linear-gradient(135deg,#E63946 0%,#B71C1C 50%,#FF5A5F 100%)'
     : 'linear-gradient(135deg,#FF5A5F 0%,#E63946 50%,#B71C1C 100%)';
 
-  if (gone) return null;
+  if (gone || prefersReducedMotion) return null;
 
   const shardKeyframes = SHARDS.map((_, i) => {
     const [tx, ty, rot] = EXITS[i];

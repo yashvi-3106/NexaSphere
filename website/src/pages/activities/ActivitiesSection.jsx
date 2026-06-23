@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { activities } from '../../data/activitiesData';
+import { activities } from '../../data/activities';
 import { activityPages } from '../../data/activities/index';
 import { DynamicIcon } from '../../shared/Icons';
 import BookmarkButton from '../../components/common/BookmarkButton';
