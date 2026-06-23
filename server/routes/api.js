@@ -22,6 +22,7 @@ import { auditLogRepository } from '../repositories/auditLogRepository.js';
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
+import * as subscriptionsController from '../controllers/subscriptionsController.js';
 import multer from 'multer';
 
 const upload = multer({
