@@ -96,6 +96,15 @@ const links = [
     to: '/dashboard/audit-logs',
     label: 'Audit Logs',
     icon: 'FileText',
+    to: '/dashboard/audit-logs',
+    label: 'Audit Logs',
+    icon: 'FileText',
+    requiredScope: 'settings:admin',
+  },
+  {
+    to: '/dashboard/scheduled-tasks',
+    label: 'Scheduled Tasks',
+    icon: 'Clock',
     requiredScope: 'settings:admin',
   },
   {
@@ -108,6 +117,10 @@ const links = [
     to: '/dashboard/reports',
     label: 'Reports',
     icon: 'Target',
+    to: '/dashboard/settings',
+    label: 'Platform Settings',
+    icon: 'Settings',
+    requiredScope: 'settings:admin',
   },
 ];
 
@@ -337,3 +350,4 @@ export function Sidebar() {
     </>
   );
 }
+

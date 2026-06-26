@@ -1,3 +1,4 @@
+import PlatformSettings from './pages/dashboard/PlatformSettings';
 import AuditLogViewer from './pages/dashboard/AuditLogViewer';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route element={<RequireAuth />}>
           <Route element={<DashboardLayout />}>
+            <Route path="/dashboard/settings" element={<PlatformSettings />} />
             <Route path="/dashboard" element={<DashboardHome />} />
             <Route path="/dashboard/analytics" element={<ComprehensiveAnalytics />} />
             <Route path="/dashboard/analytics/funnel" element={<FunnelAnalysis />} />
@@ -103,3 +105,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+
