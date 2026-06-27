@@ -21,6 +21,7 @@ import * as subscriptionsController from '../controllers/subscriptionsController
 import * as portfolioAnalyticsController from '../controllers/portfolioAnalyticsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
+import announcementPriorityRouter from "./announcementPriority.js";
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
@@ -397,5 +398,9 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   const active = impersonationService.getActive(req.adminSession.token);
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
+router.use(
+"/api/announcements",
+announcementPriorityRouter
+);
 
 export default router;

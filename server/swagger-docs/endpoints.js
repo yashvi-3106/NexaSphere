@@ -546,4 +546,144 @@
  * ...
  */
 
+/**
+ * @swagger
+ * /api/announcements:
+ *   get:
+ *     summary: Get all announcements
+ *     description: Returns all announcements sorted by priority and pinned status.
+ *     tags:
+ *       - Announcements
+ *     responses:
+ *       200:
+ *         description: List of announcements retrieved successfully.
+ *
+ *   post:
+ *     summary: Create a new announcement
+ *     description: Creates a new announcement with priority, audience, and expiration.
+ *     tags:
+ *       - Announcements
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - message
+ *             properties:
+ *               title:
+ *                 type: string
+ *               message:
+ *                 type: string
+ *               priority:
+ *                 type: string
+ *                 enum: [Critical, High, Medium, Low]
+ *               pinned:
+ *                 type: boolean
+ *               expiresAt:
+ *                 type: string
+ *                 format: date-time
+ *               audience:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Announcement created successfully.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/{id}/priority:
+ *   patch:
+ *     summary: Update announcement priority
+ *     tags:
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               priority:
+ *                 type: string
+ *                 enum: [Critical, High, Medium, Low]
+ *     responses:
+ *       200:
+ *         description: Priority updated successfully.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/{id}/pin:
+ *   patch:
+ *     summary: Pin or unpin an announcement
+ *     tags:
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pinned:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Announcement updated successfully.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/{id}/read:
+ *   post:
+ *     summary: Mark announcement as read
+ *     tags:
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Announcement marked as read.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/analytics:
+ *   get:
+ *     summary: Get announcement analytics
+ *     description: Returns announcement statistics including views, reads, and priority distribution.
+ *     tags:
+ *       - Announcements
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully.
+ */
 export default {};
