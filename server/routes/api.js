@@ -23,6 +23,7 @@ import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import announcementPriorityRouter from "./announcementPriority.js";
 import eventConflictRouter from "./eventConflict.js";
+import waitlistRoutes from "./waitlist.js";
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
@@ -405,5 +406,10 @@ announcementPriorityRouter
 );
 
 router.use("/api/events", eventConflictRouter);
+
+router.use(
+  "/api/admin/waitlist",
+  waitlistRoutes
+);
 
 export default router;
