@@ -71,19 +71,28 @@ export function getLocalEvents(fallbackEvents = []) {
 }
 
 export function mergeEvents(fallbackEvents = [], liveEvents = []) {
-  // Filter out tombstoned events from both fallback and live data
+  // Tombstones are IDs of events deleted while offline. We must filter them out
+  // to prevent deleted events from reappearing after sync.
   let tombstones = [];
   try {
     tombstones = safeJsonParse(window.localStorage.getItem('ns_tombstone_events'), []);
   } catch (e) {
     console.warn('Failed to parse tombstone events', e);
   }
+
+  // Remove tombstoned events from both the cached fallback data and live server data.
+  // This ensures deleted events stay deleted regardless of the data source.
   const filteredFallback = fallbackEvents.filter((event) => !tombstones.includes(String(event.id)));
   const filteredLive = liveEvents.filter((event) => !tombstones.includes(String(event.id)));
+
+  // Merge events by ID, with live data taking priority over fallback data.
+  // The spread operator order (...previous, ...event) gives live values precedence.
   return mergeById(filteredFallback, toArray(filteredLive), (previous, event, key) => ({
     ...previous,
     ...event,
+    // Use live ID if available, otherwise fallback ID, or the merge key as last resort
     id: event.id ?? previous.id ?? key,
+    // Name field has multiple aliases across data sources; prioritize live values
     name:
       event.name ??
       event.title ??
@@ -91,8 +100,11 @@ export function mergeEvents(fallbackEvents = [], liveEvents = []) {
       previous.name ??
       previous.title ??
       'Untitled Event',
+    // Date may be stored as either dateText or date; normalize to dateText
     dateText: event.dateText ?? event.date ?? previous.dateText ?? previous.date,
+    // Ensure status is always lowercase for consistent comparison
     status: String(event.status ?? previous.status ?? 'upcoming').toLowerCase(),
+    // Tags may be a string or array; normalize to array format
     tags: normalizeTags(event.tags ?? previous.tags),
   }));
 }
