@@ -232,22 +232,13 @@ export const searchRateLimiter = rateLimit({
 // Throws immediately if any limiter failed to initialise, preventing the silent
 // "undefined middleware" failure mode that this issue was created to fix.
 // ---------------------------------------------------------------------------
-// Search rate limiter: 30 requests per minute per IP.
-export const searchRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // 30 requests per minute
+export const syncRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
   standardHeaders: true,
-  legacyHeaders: false,
-  store: createRateLimitStore('rate-limit:search:'),
-  handler: (req, res, next, options) => {
-    logger.warn('Search rate limit exceeded', {
-      ip: req.ip,
-      path: req.originalUrl || req.path,
-    });
-    res.status(options.statusCode).json({
-      error: 'Too many search requests. Please slow down.',
-    });
-  },
+  legacyHeaders: true,
+  store: createRateLimitStore('rate-limit:sync:'),
+  handler: createLimiterHandler('Sync rate limit exceeded', 'Too many sync requests.'),
 });
 
 export function validateLimiters() {
