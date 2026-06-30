@@ -1,4 +1,4 @@
-﻿import 'dotenv/config';
+import 'dotenv/config';
 import { tracedFetch } from './config/appContext.js';
 import { initObservability } from './observability/index.js';
 import { setTraceIdResolver } from './utils/logContext.js';
@@ -52,7 +52,6 @@ import {
   portfolioRateLimiter,
   searchRateLimiter,
   validateLimiters,
-  searchRateLimiter,
 } from './middleware/rateLimiter.js';
 import {
   authRateLimiter,
@@ -84,7 +83,6 @@ import { slackRepository } from './repositories/slackRepository.js';
 import * as studentAuthController from './controllers/studentAuthController.js';
 import * as forumController from './controllers/forumController.js';
 import { requireStudentAuth } from './middleware/studentAuthMiddleware.js';
-import { studentAuthService } from './services/studentAuthService.js';
 import { loadPersistedPushSubscriptions } from './routes/notifications.js';
 import * as mentorshipController from './controllers/mentorshipController.js';
 import { xssSanitizer } from './middleware/xssSanitizer.js';
