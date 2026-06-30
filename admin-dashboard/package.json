@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@originjs/vite-plugin-federation": "^1.4.1",
+    "heatmap.js": "^2.0.5",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "jwt-decode": "^4.0.0",
@@ -19,6 +20,7 @@
     "react-dom": "^19.2.7",
     "react-router-dom": "^6.30.4",
     "recharts": "^3.8.1",
+    "rrweb-player": "^2.1.0",
     "socket.io-client": "^4.7.5"
   },
   "devDependencies": {
