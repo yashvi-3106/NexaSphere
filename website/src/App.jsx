@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom';
 
-// Style overrides and design system stylesheets
+import ResourcesPage from './pages/resources/ResourcesPage.jsx';
 import './styles/themes.css';
 import './styles/globals.css';
 import './styles/animations.css';

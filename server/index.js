@@ -51,6 +51,7 @@ import {
   portfolioRateLimiter,
   searchRateLimiter,
   validateLimiters,
+  searchRateLimiter,
 } from './middleware/rateLimiter.js';
 import {
   authRateLimiter,
@@ -1287,6 +1288,11 @@ app.get('/api/streams/:id/questions', streamController.listQuestions);
 app.patch('/api/streams/questions/:qId/answer', adminAuth, streamController.answerQuestion);
 app.post('/api/streams/:id/reactions', streamController.addReaction);
 app.get('/api/streams/:id/reactions', streamController.getReactions);
+
+// search routes
+app.get('/api/search', searchRateLimiter, searchController.search);
+app.get('/api/search/trending', searchRateLimiter, searchController.trending);
+app.get('/api/recommendations', searchRateLimiter, searchController.recommendations);
 
 // Public listings
 app.get('/api/content/team', async (req, res) => {
