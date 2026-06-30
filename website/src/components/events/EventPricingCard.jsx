@@ -35,6 +35,7 @@ export default function EventPricingCard({ eventId, onRegister }) {
     estimatedPriceIn7Days,
     reasons,
     capacityUtilization,
+    isLoyal,
   } = pricing;
 
   // Format reasons for users
@@ -86,6 +87,11 @@ export default function EventPricingCard({ eventId, onRegister }) {
               {reason}
             </span>
           ))}
+          {isLoyal && (
+            <span className="inline-block bg-emerald-50 text-emerald-700 text-xs px-2 py-1 rounded-md font-medium border border-emerald-100">
+              🎁 Loyalty Discount Applied!
+            </span>
+          )}
         </div>
       )}
 

@@ -176,3 +176,29 @@ model SettingsChangeLog {
   @@index([environment, key])
   @@index([changedById])
 }
+
+model EventPricing {
+  id            String         @id @default(uuid())
+  eventId       String         @unique
+  basePrice     Float
+  currentPrice  Float
+  minPrice      Float
+  maxPrice      Float
+  capacity      Int
+  registrations Int            @default(0)
+  eventDate     DateTime
+  adminOverride Float?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  priceHistory  PriceHistory[]
+}
+
+model PriceHistory {
+  id        String   @id @default(uuid())
+  pricingId String
+  price     Float
+  reason    String
+  createdAt DateTime @default(now())
+
+  pricing   EventPricing @relation(fields: [pricingId], references: [id], onDelete: Cascade)
+}

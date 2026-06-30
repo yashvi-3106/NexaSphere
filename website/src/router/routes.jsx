@@ -41,6 +41,7 @@ const NotificationHistoryPage = lazy(
 const SponsorsPage = lazy(() => import('../pages/sponsors/SponsorsPage'));
 const RecommendationsPage = lazy(() => import('../pages/resume/RecommendationsPage'));
 const SkillExchangePage = lazy(() => import('../pages/skills/SkillExchangePage'));
+const RevenueDashboardPage = lazy(() => import('../pages/monitoring/RevenueDashboardPage'));
 
 // Static/Eager page components
 import HeroSection from '../pages/home/HeroSection';
@@ -569,6 +570,18 @@ export function AppRoutes({
           <PageIn k="skill-exchange">
             <SkillExchangePage />
           </PageIn>
+        }
+      />
+
+      {/* ── Revenue Dashboard (Admin) ── */}
+      <Route
+        path="/admin/revenue-dashboard"
+        element={
+          <ProtectedRoute roles={['admin', 'SuperAdmin', 'faculty']}>
+            <PageIn k="revenue-dashboard">
+              <RevenueDashboardPage />
+            </PageIn>
+          </ProtectedRoute>
         }
       />
 
