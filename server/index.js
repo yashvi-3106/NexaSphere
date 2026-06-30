@@ -1368,52 +1368,9 @@ function clearPasskeyAttempts(username, ip) {
   failedPasskeyAttemptsByUsername.delete(userKey);
 }
 
-app.get('/api/notifications', async (req, res) => {
+app.get('/api/notifications', adminAuth, async (req, res) => {
   try {
     const userId = req.query.userId || 'global';
-
-    if (userId !== 'global') {
-      let authenticated = false;
-
-      // 1. Try Student Auth
-      let token = null;
-      const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.slice(7).trim();
-      }
-      if (!token && req.cookies?.ns_student_token) {
-        token = req.cookies.ns_student_token;
-      }
-      if (token) {
-        const payload = studentAuthService.verifyToken(token);
-        if (payload && (payload.sub === userId || payload.id === userId)) {
-          authenticated = true;
-        }
-      }
-
-      // 2. Try Admin Auth
-      if (!authenticated) {
-        let adminToken = null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          adminToken = authHeader.slice(7).trim();
-        }
-        if (!adminToken && req.cookies?.ns_admin_token) {
-          adminToken = req.cookies.ns_admin_token;
-        }
-        if (adminToken) {
-          const { getAdminSession } = await import('./repositories/adminSessionsRepository.js');
-          const session = await getAdminSession(adminToken);
-          if (session) {
-            authenticated = true;
-          }
-        }
-      }
-
-      if (!authenticated) {
-        return res.status(401).json({ error: 'Unauthorized to view these notifications' });
-      }
-    }
-
     const offset = parseInt(req.query.offset, 10) || 0;
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
     const list = await notificationsService.getNotifications(userId, offset, limit);
@@ -1423,26 +1380,7 @@ app.get('/api/notifications', async (req, res) => {
   }
 });
 
-function requireNotificationPrefAuth(req, res, next) {
-  adminAuthMiddleware.requireAdmin(req, res, (err) => {
-    if (!err && req.adminSession) {
-      return next();
-    }
-    requireStudentAuth(req, res, (err2) => {
-      if (err2 || !req.studentUser) {
-        return res.status(401).json({ error: 'Unauthorized: Authentication required' });
-      }
-      const userId = req.method === 'GET' ? (req.query.userId || 'global') : (req.body.userId || 'global');
-      if (req.studentUser.sub === userId || req.studentUser.id === userId) {
-        return next();
-      }
-      return res.status(403).json({ error: 'Forbidden: You cannot access or modify other users\' preferences' });
-    });
-  });
-}
-
-// Notification Preferences
-app.get('/api/notifications/preferences', requireNotificationPrefAuth, async (req, res) => {
+app.get('/api/notifications/preferences', adminAuth, async (req, res) => {
   try {
     const userId = req.query.userId || 'global';
     const prefs = await notificationPreferencesRepository.list(userId);
@@ -1451,8 +1389,8 @@ app.get('/api/notifications/preferences', requireNotificationPrefAuth, async (re
     return res.status(500).json({ error: err.message });
   }
 });
-
-app.put('/api/notifications/preferences', requireNotificationPrefAuth, async (req, res) => {
+// Notification analytics (lightweight collector)
+app.put('/api/notifications/preferences', adminAuth, async (req, res) => {
   try {
     const userId = req.body.userId || 'global';
     const { category, email, push, in_app, sms, frequency, quiet_start, quiet_end, dnd } = req.body;
@@ -1473,7 +1411,7 @@ app.put('/api/notifications/preferences', requireNotificationPrefAuth, async (re
   }
 });
 
-app.put('/api/notifications/preferences/bulk', requireNotificationPrefAuth, async (req, res) => {
+app.put('/api/notifications/preferences/bulk', adminAuth, async (req, res) => {
   try {
     const userId = req.body.userId || 'global';
     const { preferences } = req.body;
@@ -1487,17 +1425,6 @@ app.put('/api/notifications/preferences/bulk', requireNotificationPrefAuth, asyn
   }
 });
 
-// Notification analytics (lightweight collector)
-app.post('/api/notifications/analytics', async (req, res) => {
-  try {
-    const event = req.body || {};
-    // Minimal validation — in future route can forward to analytics pipeline
-    console.log('[notification-analytics]', event.type || 'unknown', event);
-    return res.json({ ok: true });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
 
 app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
   try {
