@@ -28,8 +28,8 @@ import { StreamManager } from './pages/StreamManager';
 import { CircuitBreakerManager } from './pages/CircuitBreakerManager';
 import { WaitingRoomManager } from './pages/WaitingRoomManager';
 import { SponsorshipsManager } from './pages/SponsorshipsManager';
-import { ComprehensiveAnalytics } from './pages/ComprehensiveAnalytics';
 import { UserSegmentation } from './pages/UserSegmentation';
+import { ImpersonationBanner } from './components/ImpersonationBanner';
 import './styles/admin.css';
 
 function RequireAuth() {
