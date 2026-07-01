@@ -28,7 +28,6 @@ import { StreamManager } from './pages/StreamManager';
 import { CircuitBreakerManager } from './pages/CircuitBreakerManager';
 import { WaitingRoomManager } from './pages/WaitingRoomManager';
 import { SponsorshipsManager } from './pages/SponsorshipsManager';
-import { ComprehensiveAnalytics } from './pages/ComprehensiveAnalytics';
 import { UserSegmentation } from './pages/UserSegmentation';
 import './styles/admin.css';
 
@@ -104,4 +103,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-

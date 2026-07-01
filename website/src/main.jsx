@@ -1,5 +1,7 @@
-// At the top (with other imports):
 import registerAndWatchSW from './utils/registerSW';
+import { setupFetchInterceptor } from './utils/interceptor';
+
+setupFetchInterceptor();
 
 // At the very bottom (after ReactDOM.createRoot(...).render(...)):
 registerAndWatchSW();
