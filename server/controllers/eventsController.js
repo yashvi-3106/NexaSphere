@@ -102,7 +102,8 @@ export const adminCreateEvent = wrapAsync(async (req, res) => {
 
 export const adminUpdateEvent = wrapAsync(async (req, res) => {
   const id = String(req.params.id || '').trim();
-  const updated = await eventsService.updateEvent(id, req.body);
+  const updateSeries = req.query.updateSeries === 'true';
+  const updated = await eventsService.updateEvent(id, req.body, updateSeries);
   if (!updated) return res.status(404).json({ error: 'Event not found' });
 
   // Invalidate event listing cache (and event detail cache if added later)
@@ -122,7 +123,8 @@ export const adminUpdateEvent = wrapAsync(async (req, res) => {
 
 export const adminDeleteEvent = wrapAsync(async (req, res) => {
   const id = String(req.params.id || '').trim();
-  const deleted = await eventsService.deleteEvent(id);
+  const deleteSeries = req.query.deleteSeries === 'true';
+  const deleted = await eventsService.deleteEvent(id, deleteSeries);
   if (!deleted) return res.status(404).json({ error: 'Event not found' });
 
   // Invalidate event listing cache
