@@ -473,4 +473,59 @@
  *                       format: float
  */
 
+/**
+ * @swagger
+ * /api/notification-preferences/{userId}:
+ *   get:
+ *     summary: Get notification preferences
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification preferences returned successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-preferences/{userId}:
+ *   put:
+ *     summary: Update notification preferences
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Preferences updated successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-preferences/{userId}/history:
+ *   get:
+ *     summary: Get notification history
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification history returned successfully
+ */
 export default {};
