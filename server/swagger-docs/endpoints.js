@@ -473,4 +473,88 @@
  *                       format: float
  */
 
+/**
+ * @swagger
+ * /api/analytics/overview:
+ *   get:
+ *     summary: Get platform dashboard overview
+ *     tags:
+ *       - Platform Analytics
+ *     responses:
+ *       200:
+ *         description: Dashboard overview retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/analytics/users:
+ *   get:
+ *     summary: Get user analytics
+ *     tags:
+ *       - Platform Analytics
+ *     responses:
+ *       200:
+ *         description: User analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/analytics/events:
+ *   get:
+ *     summary: Get event analytics
+ *     tags:
+ *       - Platform Analytics
+ *     responses:
+ *       200:
+ *         description: Event analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/analytics/clubs:
+ *   get:
+ *     summary: Get club analytics
+ *     tags:
+ *       - Platform Analytics
+ *     responses:
+ *       200:
+ *         description: Club analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/analytics/portfolios:
+ *   get:
+ *     summary: Get portfolio analytics
+ *     tags:
+ *       - Platform Analytics
+ *     responses:
+ *       200:
+ *         description: Portfolio analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/analytics/growth:
+ *   get:
+ *     summary: Get platform growth analytics
+ *     tags:
+ *       - Platform Analytics
+ *     responses:
+ *       200:
+ *         description: Growth analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/analytics/export:
+ *   get:
+ *     summary: Export analytics report
+ *     tags:
+ *       - Platform Analytics
+ *     responses:
+ *       200:
+ *         description: Analytics report exported successfully
+ */
+
 export default {};
