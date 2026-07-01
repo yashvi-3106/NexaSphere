@@ -988,4 +988,78 @@
  *       200:
  *         description: Analytics retrieved successfully.
  */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}:
+ *   get:
+ *     summary: Get user activity timeline
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User activity timeline
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}:
+ *   post:
+ *     summary: Add activity to timeline
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Activity added successfully
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}/summary:
+ *   get:
+ *     summary: Monthly activity summary
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Monthly summary
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}/stats:
+ *   get:
+ *     summary: Activity statistics
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Activity statistics
+ */
 export default {};
