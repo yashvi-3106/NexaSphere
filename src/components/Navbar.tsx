@@ -1,14 +1,15 @@
 'use client';
 
+ fix/search-clear-button-1487
 import React, { useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Search, X } from 'lucide-react';
 
-/**
- * Localized Navbar component.
- * Extracts all UI text dynamically using next-intl useTranslations.
- */
-export const Navbar: React.FC = () => {
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from './LanguageSwitcher';
+ main
+
+export const Navbar = () => {
   const t = useTranslations('General');
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +23,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
+fix/search-clear-button-1487
     <nav
       style={{
         display: 'flex',
@@ -168,6 +170,18 @@ export const Navbar: React.FC = () => {
         >
           {t('join')}
         </button>
+
+    <nav className="flex justify-between p-4 bg-gray-800 text-white">
+      <div className="flex gap-4">
+        <a href="/">{t('home')}</a>
+        <a href="/about">{t('about')}</a>
+        <a href="/events">{t('events')}</a>
+        <a href="/contact">{t('contact')}</a>
+      </div>
+      <div className="flex gap-4">
+        <button>{t('join')}</button>
+        <LanguageSwitcher />
+ main
       </div>
     </nav>
   );

@@ -9,6 +9,7 @@ export default defineConfig({
   reporter: [
     ['html', { outputFolder: 'visual-tests/report', open: 'never' }],
     ['list'],
+    ['./visual-tests/slackReporter.ts'],
   ],
   outputDir: 'visual-tests/output',
   use: {

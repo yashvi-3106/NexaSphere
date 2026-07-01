@@ -1,23 +1,7 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useLayoutEffect,
-  lazy,
-  Suspense,
-  memo,
-} from 'react';
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  useNavigate,
-  useLocation,
-  useParams,
-  Navigate,
-} from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom';
 
+import ResourcesPage from './pages/resources/ResourcesPage.jsx';
 import './styles/themes.css';
 import './styles/globals.css';
 import './styles/animations.css';
@@ -27,50 +11,45 @@ import './styles/portfolio.css';
 import './styles/pwa.css';
 import './styles/aurora.css';
 import './styles/motion.css';
-
-import SearchBar from './components/SearchBar';
-import PersonalizedFeed from './components/recommendation/PersonalizedFeed';
 import './i18n';
-import FloatingDock from './components/common/FloatingDock';
-import ParticleBackground from './shared/ParticleBackground';
-import GeometricGridBackground from './shared/GeometricGridBackground';
-import ScrollProgress from './shared/ScrollProgress';
+
+// Core structural elements
+import AppProviders from './providers/AppProviders';
+import AppRoutes, { Wipe } from './router/routes';
+import Cursor from './components/Cursor';
+import useAppBootstrap from './hooks/useAppBootstrap';
+import { useTheme } from './hooks/useTheme';
+import { useDeveloperMode } from './hooks/useDeveloperMode';
+import { useInteractionEffects } from './hooks/useInteractionEffects';
+import { useBackToTop } from './hooks/useScrollLogic';
+
+// Shared layout and telemetry widgets
 import Navbar from './shared/Navbar';
-import { DynamicIcon } from './shared/Icons';
-import HeroSection from './pages/home/HeroSection';
-import ActivitiesSection from './pages/activities/ActivitiesSection';
-import EventsSection from './pages/events/EventsSection';
-import AboutSection from './pages/about/AboutSection';
-import TeamSection from './pages/team/TeamSection';
-import Footer from './shared/Footer';
-import CinematicOpening from './shared/CinematicOpening';
+import MoveToTop from './shared/MoveToTop';
 import Chatbot from './shared/Chatbot';
+import ScrollProgress from './shared/ScrollProgress';
+import SearchBar from './components/SearchBar';
+import Terminal from './components/developer/Terminal';
+import BookmarksDrawer from './components/bookmarks/BookmarksDrawer';
+import CinematicOpening from './shared/CinematicOpening';
+import OfflineBanner from './components/pwa/OfflineBanner.jsx';
+import InstallPrompt from './components/pwa/InstallPrompt.jsx';
+import UpdatePrompt from './components/pwa/UpdatePrompt.jsx';
+
 import {
   AmbientOrbs,
-  SectionDivider,
-  PageFlash,
   useNsReveal,
   useHeroParallax,
   useNavScrollTint,
   useGlobalMouseParallax,
   useMagneticCards,
 } from './shared/MotionLayer';
-import apiClient from './utils/apiClient.js';
-import {
-  getLocalEvents,
-  mergeEvents,
-  subscribePublicContent,
-  initStorageSyncBridge,
-} from './utils/publicContentStore.js';
-import { initializeSocket, on, off, joinRoom } from './utils/socketClient.js';
-import NotFoundPage from './pages/NotFoundPage';
-
 import { activityPages } from './data/activities/index';
-import { events as fallbackEvents } from './data/eventsData';
-import nexasphereLogo from './assets/images/logos/nexasphere-logo.png';
 
-import Terminal from './components/developer/Terminal';
-import { useDeveloperMode } from './hooks/useDeveloperMode';
+const MNH = 88;
+const DNH = 64;
+const isPlaywright =
+  typeof window !== 'undefined' && window.navigator.userAgent.includes('Playwright');
 
 import { BookmarkProvider } from './context/BookmarkContext';
 import { StudentAuthProvider, useStudentAuth } from './context/StudentAuthContext';
@@ -104,6 +83,7 @@ const ResourcesPage = lazy(() => import('./pages/resources/ResourcesPage'));
 const CertificateVerifyPage = lazy(() => import('./pages/certificates/CertificateVerifyPage'));
 const CollabPage = lazy(() => import('./pages/collab/CollabPage'));
 const PortfolioBuilder = lazy(() => import('./components/portfolio/PortfolioBuilder'));
+const PortfolioAnalytics = lazy(() => import('./pages/portfolio/PortfolioAnalytics'));
 const PublicPortfolio = lazy(() => import('./pages/portfolio/PublicPortfolio'));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
 const AnalyticsPage = lazy(() => import('./pages/analytics/AnalyticsPage'));
@@ -116,10 +96,8 @@ const MentorsPage = lazy(() => import('./pages/mentorship/MentorsPage'));
 const MentorshipDashboard = lazy(() => import('./pages/mentorship/MentorshipDashboard'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const LiveStreamPage = lazy(() => import('./pages/streaming/LiveStreamPage'));
-const LiveQa = lazy(() => import('./pages/events/LiveQa'));
 const NotificationHistoryPage = lazy(() => import('./pages/notifications/NotificationHistoryPage'));
 const SponsorsPage = lazy(() => import('./pages/sponsors/SponsorsPage'));
-const RecommendationsPage = lazy(() => import('./pages/resume/RecommendationsPage'));
 
 const MNH = 88,
   DNH = 64;
@@ -379,24 +357,20 @@ function Cursor() {
 export default function App() {
   return (
     <BrowserRouter>
-      <StudentAuthProvider>
+      <AppProviders>
         <AppShell />
-      </StudentAuthProvider>
+      </AppProviders>
     </BrowserRouter>
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   AppShell â€” initialises global systems, reads location
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function AppShell() {
   const location = useLocation();
-  const [cinDone, setCinDone] = useState(() => {
-    return typeof window !== 'undefined' && window.navigator.userAgent.includes('Playwright');
-  });
-  const [eventsData, setEventsData] = useState(() => getLocalEvents(fallbackEvents));
+  const [cinDone, setCinDone] = useState(() => isPlaywright);
   const { resolvedTheme: theme } = useTheme();
   const { isOpen: isTerminalOpen, closeTerminal } = useDeveloperMode();
+
+  const { eventsData, swUpdateFn } = useAppBootstrap(cinDone);
 
   // Skip cinematic opening for deep links (anything except "/")
   useEffect(() => {
@@ -405,110 +379,10 @@ function AppShell() {
     }
   }, [location.pathname]);
 
-  // Socket + cross-origin localStorage sync
-  useEffect(() => {
-    const socket = initializeSocket();
-    if (socket) {
-      joinRoom('events-room');
-      joinRoom('notifications-room');
-    }
-    initStorageSyncBridge();
-    const onPostMessage = (e) => {
-      if (e.data && e.data.type === 'ns-content-updated' && e.data.key) {
-        window.dispatchEvent(new Event('ns-content-updated'));
-      }
-    };
-    window.addEventListener('message', onPostMessage);
-    return () => window.removeEventListener('message', onPostMessage);
-  }, []);
-
-  // Events data fetching
-  useEffect(() => {
-    let alive = true;
-    const base = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
-    const applyLocalEvents = () => {
-      if (alive) setEventsData(getLocalEvents(fallbackEvents));
-    };
-
-    if (!base) {
-      applyLocalEvents();
-      return subscribePublicContent(applyLocalEvents);
-    }
-
-    const url = `${base}/api/content/events`;
-    const fetchEvents = () => {
-      apiClient(url)
-        .then((data) => {
-          if (!alive) return;
-          if (data && Array.isArray(data.events)) {
-            setEventsData(
-              data.events.length
-                ? mergeEvents(fallbackEvents, data.events)
-                : getLocalEvents(fallbackEvents)
-            );
-          } else if (Array.isArray(data)) {
-            setEventsData(
-              data.length ? mergeEvents(fallbackEvents, data) : getLocalEvents(fallbackEvents)
-            );
-          } else {
-            setEventsData(getLocalEvents(fallbackEvents));
-          }
-        })
-        .catch(() => {
-          if (!alive) return;
-          setEventsData((prev) => (prev?.length ? prev : getLocalEvents(fallbackEvents)));
-        });
-    };
-
-    fetchEvents();
-    // Removed unconditional 4s polling â€” socket event handles live updates.
-    // Re-fetch once when the tab becomes visible again after being backgrounded.
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') fetchEvents();
-    };
-    const onContentUpdated = (data) => {
-      if (data?.type === 'events' || data?.type === 'activities') fetchEvents();
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    on('content:updated', onContentUpdated);
-
-    return () => {
-      alive = false;
-      off('content:updated', onContentUpdated);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-    };
-  }, []);
-
-  // Push notifications
-  useEffect(() => {
-    if (!cinDone) return;
-    const initPush = async () => {
-      try {
-        const { initializePushNotifications } = await import('./utils/pushNotificationClient');
-        const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
-        if (vapidKey) await initializePushNotifications(vapidKey);
-      } catch (err) {
-        console.warn('Push notification initialization skipped:', err);
-      }
-    };
-    const timer = setTimeout(initPush, 3500);
-    return () => clearTimeout(timer);
-  }, [cinDone]);
-
-  /* â”€â”€ SW update prompt â”€â”€ */
-  const [swUpdateFn, setSwUpdateFn] = useState(null);
-  useEffect(() => {
-    const handle = (e) => {
-      if (e.detail?.updateSW) setSwUpdateFn(() => e.detail.updateSW);
-    };
-    window.addEventListener('nexasphere:sw-update', handle);
-    return () => window.removeEventListener('nexasphere:sw-update', handle);
-  }, []);
-
   const [searchOpen, setSearchOpen] = useState(false);
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
 
-  /* Ctrl+K / Cmd+K */
+  // Ctrl+K / Cmd+K search trigger
   useEffect(() => {
     const fn = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -521,15 +395,14 @@ function AppShell() {
   }, []);
 
   return (
-    <BookmarkProvider>
-      {/* PWA Components */}
+    <>
       <OfflineBanner />
       <InstallPrompt />
       {swUpdateFn && <UpdatePrompt updateSW={swUpdateFn} />}
 
       <Chatbot />
 
-      {/* Loading screen â€” prevents white-flash during cinematic opening */}
+      {/* Loading cover to prevent flash during intro sequence */}
       <div
         aria-hidden="true"
         style={{
@@ -548,7 +421,6 @@ function AppShell() {
       {cinDone && <ScrollProgress />}
       <Cursor />
 
-      {/* Route-aware main content */}
       <MainRouter
         cinDone={cinDone}
         setCinDone={setCinDone}
@@ -561,26 +433,12 @@ function AppShell() {
         isTerminalOpen={isTerminalOpen}
         closeTerminal={closeTerminal}
       />
-    </BookmarkProvider>
+    </>
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   RequireAuth Wrapper
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-function RequireAuth({ children }) {
-  const { isAuthenticated, loading } = useStudentAuth();
-  if (loading) return <PageLoadingSpinner />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return children;
-}
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   MainRouter â€” renders the Navbar + Routes
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function MainRouter({
   cinDone,
-  setCinDone,
   theme,
   eventsData,
   searchOpen,
@@ -604,7 +462,7 @@ function MainRouter({
     return () => window.removeEventListener('resize', fn);
   }, []);
 
-  // Sync activeTab with current URL
+  // Sync activeTab with route path
   useEffect(() => {
     const pathMap = {
       '/': 'Home',
@@ -612,28 +470,19 @@ function MainRouter({
       '/events': 'Events',
       '/projects': 'Projects',
       '/roadmaps': 'Roadmaps',
-      '/portfolio': 'Portfolio',
-      '/collab': 'Collab',
       '/about': 'About',
       '/team': 'Core Team',
       '/contact': 'Contact',
       '/dashboard': 'Dashboard',
       '/analytics': 'Analytics',
-      '/gamification': 'Gamification',
-      '/apply': 'Apply',
-      '/join': 'Join',
       '/explore': 'Explore',
       '/forum': 'Forum',
-      '/mentorship': 'Mentorship',
-      '/mentorship/mentors': 'Mentorship',
-      '/mentorship/dashboard': 'Mentorship',
-      '/qa-poll': 'Q&A / Polling',
     };
     const tab = pathMap[location.pathname] || 'Home';
     setActiveTab(tab);
   }, [location.pathname]);
 
-  // Scroll-spy on home page
+  // Scroll spy on home page
   useEffect(() => {
     if (location.pathname !== '/') return;
     const HOME_SECTIONS = ['Home', 'Activities', 'Events', 'About', 'Core Team', 'Contact'];
@@ -653,6 +502,7 @@ function MainRouter({
     return () => window.removeEventListener('scroll', fn);
   }, [mobile, location.pathname]);
 
+  // Wire motion effects and event scroll behaviors
   useInteractionEffects(cinDone, location.pathname !== '/');
   useBackToTop();
   useNsReveal([cinDone, location.pathname]);
@@ -661,7 +511,7 @@ function MainRouter({
   useGlobalMouseParallax();
   useMagneticCards();
 
-  /* â”€â”€ Wipe-transition navigate â”€â”€ */
+  // Screen wipe transition utility
   const nav = useCallback(
     (path, fn) => {
       setWipeOn(true);
@@ -679,27 +529,21 @@ function MainRouter({
     [navigate]
   );
 
-  /* â”€â”€ Tab click handler â”€â”€ */
   const onTab = useCallback(
     (tab) => {
       const routeMap = {
         Dashboard: '/dashboard',
         Analytics: '/analytics',
-        Gamification: '/gamification',
         Activities: '/activities',
         Events: '/events',
         Projects: '/projects',
         Roadmaps: '/roadmaps',
-        Portfolio: '/portfolio',
-        Collab: '/collab',
         Explore: '/explore',
         Resources: '/resources',
         About: '/about',
         'Core Team': '/team',
         Contact: '/contact',
         Forum: '/forum',
-        Mentorship: '/mentorship',
-        'Q&A / Polling': '/qa-poll',
       };
       const targetPath = routeMap[tab];
       if (targetPath) {
@@ -714,7 +558,6 @@ function MainRouter({
         }
         return;
       }
-      // Home-page scroll targets
       const idStr = tab === 'Core Team' ? 'team' : tab.toLowerCase();
       if (location.pathname === '/') {
         setActiveTab(tab);
@@ -746,8 +589,6 @@ function MainRouter({
   const openJoin = useCallback(() => nav('/join'), [nav]);
   const onBackHome = useCallback(() => nav('/'), [nav]);
 
-  const nh = mobile ? MNH : DNH;
-
   const onNavigate = useCallback(
     (type, title) => {
       if (type === 'activity') nav(`/activities/${encodeURIComponent(title)}`);
@@ -762,13 +603,11 @@ function MainRouter({
     [nav]
   );
 
+  const nh = mobile ? MNH : DNH;
+
   return (
     <>
       {cinDone && <AmbientOrbs theme={theme} />}
-      {cinDone && <GeometricGridBackground theme={theme} />}
-      {cinDone && <ParticleBackground theme={theme} />}
-      <Wipe on={wipeOn} ph={wipePh} />
-
       {cinDone && (
         <Navbar
           activeTab={activeTab}
@@ -779,6 +618,8 @@ function MainRouter({
           onToggleBookmarks={() => setBookmarksOpen((prev) => !prev)}
         />
       )}
+
+      <Wipe on={wipeOn} ph={wipePh} />
 
       <main style={{ paddingTop: nh, position: 'relative', zIndex: 1 }}>
         <Suspense fallback={<PageLoadingSpinner />}>
@@ -797,8 +638,6 @@ function MainRouter({
                     />
                     <SectionDivider />
                     <ActivitiesSection onNavigate={onNavigate} />
-                    <SectionDivider />
-                    <RecommendationSection events={eventsData} onEventClick={onKSSClick} />
                     <SectionDivider />
                     <EventsSection onEventClick={onKSSClick} events={eventsData} />
                     <SectionDivider />
@@ -975,6 +814,14 @@ function MainRouter({
               element={
                 <ErrorBoundary>
                   <PublicPortfolioWrapper onBack={onBackHome} />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/p/:username/analytics"
+              element={
+                <ErrorBoundary>
+                  <PortfolioAnalyticsWrapper />
                 </ErrorBoundary>
               }
             />
@@ -1238,7 +1085,7 @@ function MainRouter({
 
       {cinDone && <MoveToTop />}
 
-      {/* Floating Search Button */}
+      {/* Floating search FAB */}
       {cinDone && (
         <button
           id="search-fab"
@@ -1287,7 +1134,6 @@ function MainRouter({
         </button>
       )}
 
-      {/* Search Overlay */}
       <SearchBar
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
@@ -1297,7 +1143,6 @@ function MainRouter({
         onEventClick={onKSSClick}
       />
 
-      {/* Developer Terminal */}
       <Terminal
         isOpen={isTerminalOpen}
         onClose={closeTerminal}
@@ -1306,7 +1151,6 @@ function MainRouter({
         onNavigate={onTab}
       />
 
-      {/* Bookmarks Drawer */}
       <BookmarksDrawer
         isOpen={bookmarksOpen}
         onClose={() => setBookmarksOpen(false)}
@@ -1316,8 +1160,6 @@ function MainRouter({
           else if (type === 'Roadmap') onTab('Roadmaps');
         }}
       />
-
-      {cinDone && <FloatingDock />}
     </>
   );
 }
@@ -1403,6 +1245,14 @@ function PublicPortfolioWrapper({ onBack }) {
   );
 }
 
+function PortfolioAnalyticsWrapper() {
+  const { username } = useParams();
+  return (
+    <PageIn k={`portfolio-analytics-${username}`}>
+      <PortfolioAnalytics username={username} />
+    </PageIn>
+  );
+}
 function CertVerifyWrapper({ onGoHome }) {
   const { certId } = useParams();
   return <CertificateVerifyPage certificateId={certId} onGoHome={onGoHome} />;
@@ -1423,56 +1273,6 @@ function EventPlanningWrapper({ onBack }) {
     <PageIn k={`event-planning-${eventId}`}>
       <EventPlanningPage event={{ id: eventId, eventId }} onBack={onBack} />
     </PageIn>
-  );
-}
-
-/* Local recommendations hook — scores events by upcoming status & recency */
-function useRecommendationsLocal(events) {
-  const [recommendations, setRecommendations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const scored = [...events]
-        .map((ev) => ({
-          ...ev,
-          hasDetailPage: !!ev.hasDetailPage,
-          dateText: ev.dateText || ev.date || '',
-        }))
-        .filter((ev) => ev.status !== 'completed')
-        .slice(0, 6);
-      setRecommendations(scored.length ? scored : events.slice(0, 6));
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [events]);
-  return { recommendations, loading };
-}
-
-/* ─────────────────────────────────────────────────────────────
-   RecommendationSection — "Recommended For You" on home page
-───────────────────────────────────────────────────────────────── */
-function RecommendationSection({ events = [], onEventClick }) {
-  const { recommendations, loading } = useRecommendationsLocal(events);
-  return (
-    <section id="section-recommendations" style={{ padding: '80px 0', position: 'relative' }}>
-      <div className="container">
-        <div style={{ marginBottom: 32 }}>
-          <span className="cin-section-label" style={{ display: 'block', marginBottom: 8 }}>
-            AI-Powered · Personalised
-          </span>
-          <h2
-            className="section-title"
-            style={{ fontSize: 'clamp(1.6rem,4vw,2.4rem)', marginBottom: 8 }}
-          >
-            Recommended For You
-          </h2>
-          <p className="section-subtitle" style={{ maxWidth: 500 }}>
-            Events and activities picked just for you based on what&apos;s trending in NexaSphere.
-          </p>
-        </div>
-        <PersonalizedFeed events={recommendations} loading={loading} onEventClick={onEventClick} />
-      </div>
-    </section>
   );
 }
 

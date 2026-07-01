@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import { tracedFetch } from './config/appContext.js';
 import { initObservability } from './observability/index.js';
 import { setTraceIdResolver } from './utils/logContext.js';
@@ -23,17 +23,15 @@ import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
 import healthRouter from './routes/health.js';
 import coreTeamRouter from './routes/coreTeam.js';
+import segmentsRouter from './routes/segments.js';
 import formsRouter from './routes/forms.js';
 import portfolioRouter from './routes/portfolio.js';
-import { createBullBoard } from '@bull-board/api';
-import { BullMQAdapter } from '@bull-board/api/bullMQAdapter.js';
-import { ExpressAdapter } from '@bull-board/express';
-import { eventRemindersQueue } from './services/queueService.js';
-import './workers/reminderWorker.js';
+import recoveryRouter from './routes/recovery.js';
 import portfolioExportRouter from './routes/portfolioExport.js';
 import userGroupsRouter from './routes/userGroups.js';
 import notificationsRouter from './routes/notifications.js';
 import adminRouter from './routes/admin.js';
+import portfolioAnalyticsRouter from './routes/portfolioAnalytics.js';
 import announcementsRouter from './routes/announcements.js';
 import bulkRouter from './routes/bulk.js';
 import { validateEnvironment } from './utils/envValidator.js';
@@ -54,6 +52,7 @@ import {
   portfolioRateLimiter,
   searchRateLimiter,
   validateLimiters,
+  searchRateLimiter,
 } from './middleware/rateLimiter.js';
 import {
   authRateLimiter,
@@ -113,13 +112,77 @@ const CONTENT_FILE = path.join(__dirname, 'data', 'content.json');
 
 validateEnvironment();
 
+function requiredStrongPassword(name) {
+  const value = String(process.env[name] || '').trim();
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+  const hasLower = /[a-z]/.test(value);
+  const hasUpper = /[A-Z]/.test(value);
+  const hasNumber = /\d/.test(value);
+  const hasSymbol = /[^A-Za-z0-9]/.test(value);
+  if (value.length < 12 || !hasLower || !hasUpper || !hasNumber || !hasSymbol) {
+    throw new Error(
+      `${name} must be at least 12 characters and include uppercase, lowercase, number, and symbol`
+    );
+  }
+  return value;
+}
+const ADMIN_EVENT_PASSWORD = requiredStrongPassword('ADMIN_EVENT_PASSWORD');
+const SESSION_SECRET = requiredStrongPassword('SESSION_SECRET');
+
 const app = express();
 
 // RECTIFIED: Enable 'trust proxy' to correctly extract client IPs from X-Forwarded-For headers when behind ALBs/Serverless layers
 app.set('trust proxy', 1);
 
 initializeSentry(app);
-app.use(compression());
+
+// Use compression with fallback (Brotli supported by default in compression v1.8 if zlib supports it)
+// Skip compression for responses smaller than 1KB (1024 bytes)
+app.use(
+  compression({
+    threshold: 1024,
+  })
+);
+
+// Middleware to monitor compression ratio
+app.use((req, res, next) => {
+  const originalWrite = res.write;
+  const originalEnd = res.end;
+  let originalSize = 0;
+
+  res.write = function (chunk, encoding, callback) {
+    if (chunk) {
+      originalSize += Buffer.isBuffer(chunk)
+        ? chunk.length
+        : Buffer.byteLength(chunk, typeof encoding === 'string' ? encoding : 'utf8');
+    }
+    return originalWrite.call(this, chunk, encoding, callback);
+  };
+
+  res.end = function (chunk, encoding, callback) {
+    if (chunk && typeof chunk !== 'function') {
+      originalSize += Buffer.isBuffer(chunk)
+        ? chunk.length
+        : Buffer.byteLength(chunk, typeof encoding === 'string' ? encoding : 'utf8');
+    }
+    return originalEnd.apply(this, arguments);
+  };
+
+  res.on('finish', () => {
+    const contentEncoding = res.get('Content-Encoding');
+    if (contentEncoding && ['gzip', 'br', 'deflate'].includes(contentEncoding)) {
+      const compressedSize = parseInt(res.get('Content-Length') || '0', 10);
+      if (originalSize > 0 && compressedSize > 0) {
+        const ratio = compressedSize / originalSize;
+        recordCompressionRatio(contentEncoding, ratio);
+      }
+    }
+  });
+
+  next();
+});
 
 const corsOrigin =
   process.env.CORS_ORIGIN ||
@@ -164,11 +227,15 @@ app.use(
           }
         : false,
 
+fix/search-clear-button-1487
  HEAD
     // Strict Content Security Policy with ALL directives
 
     // ✅ FIXED: Strict Content Security Policy with ALL directives
  921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
+
+    // ✅ FIXED: Strict Content Security Policy with ALL directives
+ main
     contentSecurityPolicy: {
       useDefaults: false,
 
@@ -200,6 +267,14 @@ app.use(
 
         objectSrc: ["'none'"],
 
+ fix/search-clear-button-1487
+
+ feat/i18n-localization-1397
+ feat/i18n-localization-1397
+
+ fix/csp-helmet-config-1475
+ main
+ main
         // ✅ CRITICAL FIX: Missing directives added below
         baseUri: ["'self'"],                                    // Prevents <base> tag injection
         frameAncestors: ["'none'"],                             // Prevents clickjacking
@@ -207,6 +282,7 @@ app.use(
         workerSrc: ["'self'", 'blob:'],                         // Restricts web worker sources
         manifestSrc: ["'self'"],                                // Restricts manifest sources
         mediaSrc: ["'self'"],                                   // Restricts media sources
+fix/search-clear-button-1487
  HEAD
         frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
 
@@ -214,6 +290,30 @@ app.use(
  921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
         childSrc: ["'none'"],                                   // Restricts child browsing contexts
         upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
+
+        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'], // Restricts iframe sources
+        childSrc: ["'none'"],                                   // Restricts child browsing contexts
+        upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
+
+        baseUri: ["'self'"],
+
+        frameAncestors: ["'none'"],
+
+        formAction: ["'self'"],
+
+        upgradeInsecureRequests: [],
+
+        workerSrc: ["'self'", 'blob:'],
+
+        manifestSrc: ["'self'"],
+
+        mediaSrc: ["'self'"],
+
+        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
+
+        childSrc: ["'none'"],
+ main
+ main
 
         reportUri: '/api/v1/csp-violation',
       },
@@ -249,7 +349,14 @@ app.use(
     },
   })
 );
- HEAD
+ fix/search-clear-button-1487
+ HEAD feat/i18n-localization-1397
+ feat/i18n-localization-1397
+
+ fix/csp-helmet-config-1475
+ main
+
+ main
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -279,7 +386,11 @@ app.use(
     maxAge: 86400,
   })
 );
+fix/search-clear-button-1487
  921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
+
+ main
+ main
 app.options('*', cors());
 
 app.use(enhancedTracingMiddleware);
@@ -287,6 +398,11 @@ app.use(enhancedTracingMiddleware);
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(xssSanitizer);
+if (useStructuredHttpLog) {
+  app.use(apiLogger);
+} else {
+  app.use(morgan('combined'));
+}
 app.use(apiLogger);
 app.use(performanceMonitor);
 app.use(cookieParser());
@@ -300,10 +416,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// CSRF protection — double-submit cookie pattern for all state-changing endpoints
+// CSRF protection â€” double-submit cookie pattern for all state-changing endpoints
 app.use(csrfProtection);
 
-// Global API rate limiter — protects all /api routes from request flooding
+// Global API rate limiter â€” protects all /api routes from request flooding
 app.use('/api', apiRateLimiter);
 app.use('/api', tierRateLimiter());
 
@@ -317,18 +433,26 @@ app.use('/', apiRouter);
 app.use('/', healthRouter);
 app.use('/', coreTeamRouter);
 app.use('/api', formsRouter);
+app.use('/api', portfolioAnalyticsRouter);
 app.use('/api', portfolioRouter);
-app.use('/api', userGroupsRouter);
+app.use('/api', recoveryRouter);
 app.use('/', notificationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', learningPathRouter);
 app.use('/', syncRouter);
 app.use('/api/feedback', feedbackRouter);
+import webhooksRouter from './routes/webhooks.js';
 
 const adminAuth = [apiRateLimiter, adminAuthMiddleware.requireAdmin];
 
+// Webhooks Management
+app.use('/api/webhooks', webhooksRouter);
+
 // Scheduled Tasks Management
 app.use('/api/admin/scheduled-tasks', adminAuth, scheduledTasksRouter);
+
+// User Segments
+app.use('/api/admin/segments', adminAuth, segmentsRouter);
 
 // Database Backup & Recovery Endpoints
 app.get('/api/admin/backups', adminAuth, backupController.getBackups);
@@ -341,7 +465,7 @@ const defaultContent = {
   events: [
     {
       id: 'kss-153',
-      name: 'KSS #153 — Knowledge Sharing Session',
+      name: 'KSS #153 â€” Knowledge Sharing Session',
       shortName: 'KSS #153',
       date: 'March 14, 2025',
       description: "NexaSphere's inaugural Knowledge Sharing Session focused on the impact of AI.",
@@ -377,7 +501,7 @@ function requiredStrongPassword(name) {
 
 const ADMIN_EVENT_PASSWORD = requiredStrongPassword('ADMIN_EVENT_PASSWORD');
 
-// ── File Upload Configuration ──
+// â”€â”€ File Upload Configuration â”€â”€
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 try {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -1146,6 +1270,11 @@ app.get('/api/auth/me', requireStudentAuth, studentAuthController.getMe);
 app.post('/api/auth/theme', requireStudentAuth, studentAuthController.updateTheme);
 app.post('/api/auth/logout', studentAuthController.logout);
 
+// Student Profile Endpoints
+app.get('/api/auth/profile',       requireStudentAuth, studentAuthController.getProfile);
+app.put('/api/auth/profile',       requireStudentAuth, studentAuthController.updateProfile);
+app.get('/api/auth/registrations', requireStudentAuth, studentAuthController.getRegistrations);
+
 // Slack Integration Endpoints
 app.post('/api/auth/slack-settings', requireStudentAuth, studentAuthController.updateSlackSettings);
 app.get('/api/slack/auth', slackController.startSlackAuth);
@@ -1159,7 +1288,7 @@ app.get('/api/admin/slack/config', adminAuth, slackController.getSlackConfig);
 app.post('/api/admin/slack/config', adminAuth, slackController.updateSlackConfig);
 app.delete('/api/admin/slack/disconnect', adminAuth, slackController.disconnectSlack);
 
-// ── Event Admin Management ──
+// â”€â”€ Event Admin Management â”€â”€
 app.get('/api/admin/events', adminAuth, eventsController.adminListEvents);
 app.post('/api/admin/events', adminAuth, eventsController.adminCreateEvent);
 app.put('/api/admin/events/:id', adminAuth, eventsController.adminUpdateEvent);
@@ -1192,6 +1321,11 @@ app.get('/api/streams/:id/questions', streamController.listQuestions);
 app.patch('/api/streams/questions/:qId/answer', adminAuth, streamController.answerQuestion);
 app.post('/api/streams/:id/reactions', streamController.addReaction);
 app.get('/api/streams/:id/reactions', streamController.getReactions);
+
+// search routes
+app.get('/api/search', searchRateLimiter, searchController.search);
+app.get('/api/search/trending', searchRateLimiter, searchController.trending);
+app.get('/api/recommendations', searchRateLimiter, searchController.recommendations);
 
 // Public listings
 app.get('/api/content/team', async (req, res) => {
@@ -1425,6 +1559,20 @@ app.put('/api/notifications/preferences/bulk', adminAuth, async (req, res) => {
   }
 });
 
+ fix/search-clear-button-1487
+
+// Notification analytics (lightweight collector)
+app.post('/api/notifications/analytics', async (req, res) => {
+  try {
+    const event = req.body || {};
+    // Minimal validation â€” in future route can forward to analytics pipeline
+    console.log('[notification-analytics]', event.type || 'unknown', event);
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+ main
 
 app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
   try {
@@ -1493,7 +1641,7 @@ app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
   }
 });
 
-// ── Forum / Q&A ──
+// â”€â”€ Forum / Q&A â”€â”€
 app.get('/api/forum/categories', forumController.listCategories);
 app.get('/api/forum/threads', forumController.listThreads);
 app.get('/api/forum/threads/:id', forumController.getThread);
@@ -1525,7 +1673,7 @@ function requireMentorshipAuth(req, res, next) {
   });
 }
 
-// ── Mentorship & Buddy System ──
+// â”€â”€ Mentorship & Buddy System â”€â”€
 app.get('/api/mentorship/mentors', mentorshipController.listMentors);
 app.get('/api/mentorship/mentors/:id', mentorshipController.getMentor);
 app.post('/api/mentorship/mentors', requireStudentAuth, mentorshipController.registerMentor);
@@ -1545,11 +1693,11 @@ app.get('/api/mentorship/buddy-pairs', requireStudentAuth, mentorshipController.
 app.get('/api/admin/mentorships', adminAuth, mentorshipController.adminListAll);
 app.get('/api/admin/mentors', adminAuth, mentorshipController.adminListMentors);
 
-// ── Search, Discovery & Recommendation Engine ──
+// â”€â”€ Search, Discovery & Recommendation Engine â”€â”€
 app.get('/api/search', searchRateLimiter, searchController.search);
 app.get('/api/search/trending', searchRateLimiter, searchController.trending);
 app.get('/api/recommendations', searchRateLimiter, searchController.recommendations);
-// ── Resource Library Routes ──
+// â”€â”€ Resource Library Routes â”€â”€
 // Public resource endpoints
 app.get('/api/resources', resourcesController.listResources);
 app.get('/api/resources/:id', resourcesController.getResource);
@@ -1618,6 +1766,7 @@ if (process.env.NODE_ENV !== 'test') {
     server = app.listen(port, () => {
       console.log(`NexaSphere server listening on http://localhost:${port}`);
       schedulerService.init();
+      initScheduler();
       startWebhookRetryProcessor();
     });
     initializeSocketIO(server);

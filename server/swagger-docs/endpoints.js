@@ -473,4 +473,77 @@
  *                       format: float
  */
 
+/**
+ * @swagger
+ * /api/portfolio/{username}/analytics:
+ *   get:
+ *     summary: Get portfolio analytics
+ *     description: Retrieve portfolio performance analytics including profile visits, engagement, downloads, and project popularity.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Portfolio username
+ *     responses:
+ *       200:
+ *         description: Portfolio analytics retrieved successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/visit:
+ *   post:
+ *     summary: Record portfolio visit
+ *     description: Records a visit to a user's portfolio for analytics purposes.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Visit recorded successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/monthly-report:
+ *   get:
+ *     summary: Get monthly analytics report
+ *     description: Returns the monthly portfolio performance report.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Monthly report retrieved successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/monthly-report:
+ *   get:
+ *     ...
+ */
+
+/**
+ * @swagger
+ * ...
+ */
+
 export default {};

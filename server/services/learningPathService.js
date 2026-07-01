@@ -1,6 +1,7 @@
 import { learningPathsRepository } from '../repositories/learningPathsRepository.js';
-import { supabaseRequest } from '../index.js';
+import { supabaseRequest } from '../storage/supabaseClient.js';
 import notificationsService from './notificationsService.js';
+import gamificationService from './gamificationService.js';
 
 /**
  * Service for Learning Path logic, progress tracking, and nudges.
@@ -44,6 +45,13 @@ export const learningPathService = {
     const percent = Math.round((completed / total) * 100);
 
     const updates = { progress_percent: percent };
+
+    if (percent === 50) {
+      const [studentUser] = await supabaseRequest(`student_users?id=eq.${enrollment.user_id}`);
+      const completedCount = studentUser ? (studentUser.paths_completed_count || 0) : 0;
+      await gamificationService.evaluateLearningProgress(enrollment.user_id, percent, completedCount);
+    }
+
     if (percent === 100) {
       updates.status = 'completed';
       updates.completed_at = new Date().toISOString();
@@ -57,19 +65,24 @@ export const learningPathService = {
 
       // Fetch current user stats to avoid overwriting and ensure uniqueness for path names
       const [studentUser] = await supabaseRequest(`student_users?id=eq.${enrollment.user_id}`);
+      let newCount = studentUser ? (studentUser.paths_completed_count || 0) : 0;
+      
       if (studentUser) {
         const currentCompletedPaths = new Set(studentUser.completed_path_names || []);
         if (!currentCompletedPaths.has(path.title)) {
           currentCompletedPaths.add(path.title);
+          newCount += 1;
           await supabaseRequest(`student_users?id=eq.${enrollment.user_id}`, {
             method: 'PATCH',
             body: {
-              paths_completed_count: (studentUser.paths_completed_count || 0) + 1,
+              paths_completed_count: newCount,
               completed_path_names: Array.from(currentCompletedPaths),
             },
           });
         }
       }
+      
+      await gamificationService.evaluateLearningProgress(enrollment.user_id, percent, newCount);
     }
 
     const [updated] = await learningPathsRepository.updateProgress(userPathId, updates);

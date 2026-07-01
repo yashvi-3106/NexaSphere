@@ -1,7 +1,11 @@
 import React from 'react';
 
-export default function Leaderboard({ users, currentUserId }) {
-  if (!users || users.length === 0) return null;
+export default function Leaderboard({ users, currentUserId, timeframe, setTimeframe }) {
+  const tabs = [
+    { id: 'week', label: 'This Week' },
+    { id: 'month', label: 'This Month' },
+    { id: 'all', label: 'All Time' },
+  ];
 
   return (
     <div
@@ -13,53 +17,63 @@ export default function Leaderboard({ users, currentUserId }) {
         border: '1px solid var(--b2)',
       }}
     >
-      <h3
-        style={{
-          color: 'var(--t1)',
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
-        🏆 Top Tech Explorers
-      </h3>
+      <h3 style={{ color: 'var(--t1)', marginBottom: '16px' }}>🏆 Top Tech Explorers</h3>
+
+      {/* Timeframe Tabs */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setTimeframe(tab.id)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '8px',
+              background: timeframe === tab.id ? 'var(--c1)' : 'rgba(255,255,255,0.1)',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Leaderboard List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {users.map((user, index) => {
-          const isMe = user.userId === currentUserId;
+        {users?.map((user, index) => {
+          const isMe = user.id === currentUserId;
+
           return (
             <div
-              key={user.id || index}
+              key={user.id}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '10px 16px',
-                borderRadius: '12px',
-                background: isMe ? 'var(--c1-15)' : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${isMe ? 'var(--c1-50)' : 'transparent'}`,
-                transition: 'background 0.2s',
+                borderRadius: '8px',
+                background: isMe ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255,255,255,0.02)',
+                border: isMe ? '1px solid rgba(255, 215, 0, 0.5)' : 'none',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span
-                  style={{
-                    color: index < 3 ? 'var(--c1)' : 'var(--t2)',
-                    fontWeight: 'bold',
-                    width: '24px',
-                    textAlign: 'center',
-                  }}
-                >
-                  #{index + 1}
-                </span>
-                <div>
-                  <div style={{ color: 'var(--t1)', fontWeight: isMe ? 'bold' : 'normal' }}>
-                    {user.username} {isMe && '(You)'}
-                  </div>
-                  <div style={{ color: 'var(--t2)', fontSize: '0.8rem' }}>Lvl {user.level}</div>
-                </div>
-              </div>
-              <div style={{ color: 'var(--c1)', fontWeight: 'bold' }}>{user.xp} XP</div>
+              <span
+                style={{
+                  color: isMe ? '#FFD700' : 'inherit',
+                  fontWeight: isMe ? 'bold' : 'normal',
+                }}
+              >
+                {index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : `#${index + 1} `}
+                {user.username} {isMe && '(You)'}
+              </span>
+              <span
+                style={{
+                  color: isMe ? '#FFD700' : 'inherit',
+                  fontWeight: isMe ? 'bold' : 'normal',
+                }}
+              >
+                {user.xp} XP
+              </span>
             </div>
           );
         })}

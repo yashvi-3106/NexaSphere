@@ -5,16 +5,7 @@ import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import { parseCSV, generateCSV } from '../utils/csvParser.js';
 import { sendEmail } from './emailService.js';
 import crypto from 'crypto';
-import { Queue } from 'bullmq';
-import IORedis from 'ioredis';
-import logger from '../utils/logger.js';
-
-let connection;
-if (process.env.REDIS_URL) {
-  connection = new IORedis(process.env.REDIS_URL, { maxRetriesPerRequest: null });
-}
-
-export const bulkOperationsQueue = connection ? new Queue('bulk-operations', { connection }) : null;
+import bcrypt from 'bcryptjs';
 
 class BulkOperationsService {
   constructor() {
@@ -121,17 +112,23 @@ class BulkOperationsService {
     const job = this.createJob('import_users', preview.length);
 
     if (bulkOperationsQueue) {
-      await bulkOperationsQueue.add('import_users', {
-        jobId: job.id,
-        csvText,
-        adminId
-      }, {
-        removeOnComplete: true,
-        removeOnFail: false
-      });
+      await bulkOperationsQueue.add(
+        'import_users',
+        {
+          jobId: job.id,
+          csvText,
+          adminId,
+        },
+        {
+          removeOnComplete: true,
+          removeOnFail: false,
+        }
+      );
       logger.info(`[bulkOperationsService] Queued import_users job ${job.id}`);
     } else {
-      logger.warn('[bulkOperationsService] Redis not configured, falling back to setTimeout processing');
+      logger.warn(
+        '[bulkOperationsService] Redis not configured, falling back to setTimeout processing'
+      );
       // Fallback if Redis is not available
       setTimeout(() => this.processImportUsersJob(job.id, csvText, adminId), 0);
     }
@@ -141,30 +138,30 @@ class BulkOperationsService {
 
   async processImportUsersJob(jobId, csvText, adminId) {
     const { preview, errors } = this.previewImportUsers(csvText);
-    
+
     this.updateJobProgress(jobId, 0, [], 'processing');
-      const oldState = [];
-      const newState = [];
-      let processed = 0;
-      const jobErrors = [...errors.map((e) => `Row ${e.row}: ${e.errors.join(', ')}`)];
+    const oldState = [];
+    const newState = [];
+    let processed = 0;
+    const jobErrors = [...errors.map((e) => `Row ${e.row}: ${e.errors.join(', ')}`)];
 
-      for (const user of preview) {
-        try {
-          await withDb(async (client) => {
-            // Check if user already exists
-            const { rows } = await client.query(
-              'SELECT * FROM users WHERE email = $1 OR username = $2',
-              [user.email, user.username]
-            );
+    for (const user of preview) {
+      try {
+        await withDb(async (client) => {
+          // Check if user already exists
+          const { rows } = await client.query(
+            'SELECT * FROM users WHERE email = $1 OR username = $2',
+            [user.email, user.username]
+          );
 
-            if (rows.length > 0) {
-              const existing = rows[0];
-              oldState.push({ type: 'update', table: 'users', key: existing.id, data: existing });
+          if (rows.length > 0) {
+            const existing = rows[0];
+            oldState.push({ type: 'update', table: 'users', key: existing.id, data: existing });
 
-              // Update existing user
-              const updatedTags = JSON.stringify(user.tags);
-              const { rows: updatedRows } = await client.query(
-                `UPDATE users 
+            // Update existing user
+            const updatedTags = JSON.stringify(user.tags);
+            const { rows: updatedRows } = await client.query(
+              `UPDATE users 
                  SET display_name = $1, username = $2, role = $3, admin_roles = $3, status = $4, major = $5, year = $6, tags = $7, updated_at = NOW()
                  WHERE id = $8 RETURNING *`,
                 [
@@ -185,12 +182,15 @@ class BulkOperationsService {
                 data: updatedRows[0],
               });
             } else {
-              // Create new user
+              // Create new user with password
               const id = `user-${crypto.randomUUID()}`;
               const updatedTags = JSON.stringify(user.tags);
+              const plainPassword = crypto.randomBytes(4).toString('hex'); // 8 char temp password
+              const passwordHash = await bcrypt.hash(plainPassword, 10);
+              
               const { rows: insertedRows } = await client.query(
-                `INSERT INTO users (id, username, display_name, email, role, admin_roles, status, major, year, tags, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9, NOW(), NOW()) RETURNING *`,
+                `INSERT INTO users (id, username, display_name, email, role, admin_roles, status, major, year, tags, password_hash, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9, $10, NOW(), NOW()) RETURNING *`,
                 [
                   id,
                   user.username,
@@ -201,8 +201,25 @@ class BulkOperationsService {
                   user.major || null,
                   user.year || null,
                   updatedTags,
+                  passwordHash,
                 ]
               );
+              
+              // Email the user their temporary password
+              try {
+                await sendEmail({
+                  to: user.email,
+                  subject: 'Welcome to NexaSphere!',
+                  templateName: 'generic',
+                  data: {
+                    name: user.display_name || 'Student',
+                    message: `Your account has been created. You can log in using your email and this temporary password: ${plainPassword} \nPlease change it after your first login.`,
+                  },
+                });
+              } catch (emailErr) {
+                console.error(`Failed to send welcome email to ${user.email}:`, emailErr.message);
+              }
+              
               oldState.push({ type: 'insert', table: 'users', key: id, data: null });
               newState.push({ type: 'insert', table: 'users', key: id, data: insertedRows[0] });
             }
@@ -222,36 +239,51 @@ class BulkOperationsService {
           oldState: { operations: oldState },
           newState: { operations: newState },
         });
+        processed++;
+        this.updateJobProgress(jobId, processed, []);
+      } catch (err) {
+        jobErrors.push(`Row ${user.row}: Database error - ${err.message}`);
       }
+    }
 
-      // Send email alert to admin
-      try {
-        await sendEmail({
-          to: 'admin@nexasphere.com',
-          subject: 'Bulk User Import Operation Completed',
-          templateName: 'generic',
-          data: {
-            name: 'Administrator',
-            message: `The bulk user import job (${job.id}) has finished. Successful: ${processed}/${preview.length}. Errors: ${jobErrors.length}.`,
-          },
-        });
-      } catch (emailErr) {
-        console.error('Failed to send import status email:', emailErr.message);
+    // Log to audit log
+    if (oldState.length > 0 || newState.length > 0) {
+      await auditLogRepository.insertAuditLog({
+        adminId,
+        action: 'BULK_USER_IMPORT',
+        oldState: { operations: oldState },
+        newState: { operations: newState },
+      });
+    }
+
+    // Send email alert to admin
+    try {
+      await sendEmail({
+        to: 'admin@nexasphere.com',
+        subject: 'Bulk User Import Operation Completed',
+        templateName: 'generic',
+        data: {
+          name: 'Administrator',
+          message: `The bulk user import job (${jobId}) has finished. Successful: ${processed}/${preview.length}. Errors: ${jobErrors.length}.`,
+        },
+      });
+    } catch (emailErr) {
+      console.error('Failed to send import status email:', emailErr.message);
+    }
+
+    this.updateJobProgress(
+      jobId,
+      processed,
+      jobErrors.map((e) => ({ message: e })),
+      'completed',
+      {
+        successful: processed,
+        total: preview.length,
+        errorsCount: jobErrors.length,
       }
+    );
 
-      this.updateJobProgress(
-        jobId,
-        processed,
-        jobErrors.map((e) => ({ message: e })),
-        'completed',
-        {
-          successful: processed,
-          total: preview.length,
-          errorsCount: jobErrors.length,
-        }
-      );
-      
-      return { successful: processed, total: preview.length, errorsCount: jobErrors.length };
+    return { successful: processed, total: preview.length, errorsCount: jobErrors.length };
   }
 
   async exportUsers(fields = null, filters = {}) {

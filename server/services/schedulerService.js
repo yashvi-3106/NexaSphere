@@ -13,7 +13,7 @@ import notificationsService from './notificationsService.js';
 import { withDb } from '../repositories/db.js';
 import { HAS_SUPABASE } from '../storage/supabaseClient.js';
 import { backupService } from './backupService.js';
-import { sendEmail } from './emailService.js';
+import { segmentationService } from './segmentationService.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -161,6 +161,14 @@ const TASK_DEFINITIONS = [
     description: 'Generates weekly activity and membership analytics reports',
     cron: '0 9 * * 1', // Mondays at 09:00
     category: 'reports',
+    enabled: true,
+  },
+  {
+    id: 'auto-user-segmentation',
+    name: 'Auto User Segmentation',
+    description: 'Updates user activity levels based on engagement for targeting',
+    cron: '0 0 * * *', // Daily at midnight
+    category: 'users',
     enabled: true,
   },
   {
@@ -333,6 +341,9 @@ class SchedulerService extends EventEmitter {
       case 'weekly-analytics-report':
         await this._generateWeeklyAnalyticsReport();
         break;
+      case 'auto-user-segmentation':
+        await segmentationService.runAutoSegmentation();
+        break;
       case 'inactive-user-check':
         await this._flagInactiveUsers();
         break;
@@ -417,30 +428,8 @@ class SchedulerService extends EventEmitter {
   }
 
   async _backupDatabase() {
-    logger.info('[Scheduler] Starting database backup');
-    if (!HAS_SUPABASE) {
-      logger.info('[Scheduler] No database configured, skipping backup');
-      return;
-    }
-    const tables = [
-      'events',
-      'student_users',
-      'core_team_members',
-      'resources',
-      'push_subscriptions',
-    ];
-    let totalRows = 0;
-    await withDb(async (client) => {
-      for (const table of tables) {
-        try {
-          const { rows } = await client.query(`SELECT COUNT(*) as count FROM ${table}`);
-          totalRows += parseInt(rows[0]?.count || '0', 10);
-        } catch {
-          logger.warn(`[Scheduler] Backup: table ${table} not found, skipping`);
-        }
-      }
-    });
-    logger.info(`[Scheduler] Backup summary: ${tables.length} tables, ${totalRows} total rows`);
+    logger.info('[Scheduler] Starting database full backup');
+    await backupService.runDailyBackup();
   }
 
   async _generateDailyAttendanceReport() {
@@ -728,6 +717,18 @@ class SchedulerService extends EventEmitter {
       successRate: totalRuns ? (((totalRuns - totalFails) / totalRuns) * 100).toFixed(1) : '100.0',
       avgDurationMs: avgDuration,
     };
+  }
+
+  // ── Public API ───────────────────────────────────────────────────────────────
+
+  /** Shutdown scheduler and clear all active timers. */
+  shutdown() {
+    for (const handle of this._timers.values()) {
+      clearTimeout(handle);
+    }
+    this._timers.clear();
+    this._tasks.clear();
+    this._initialized = false;
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
