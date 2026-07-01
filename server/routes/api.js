@@ -28,6 +28,7 @@ import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import mediaManagementRoutes from "./mediaManagement.js";
 import * as localAuthController from '../controllers/localAuthController.js';
 
+
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
 import * as subscriptionsController from '../controllers/subscriptionsController.js';
@@ -41,6 +42,7 @@ const upload = multer({
 });
 
 const router = Router();
+const recommendationEngine = require("./recommendationEngine");
 
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
@@ -421,6 +423,10 @@ router.get(
   '/api/admin/audit-logs/stats',
   adminAuthMiddleware.requireAdmin,
   auditLogController.getStats
+);
+router.use(
+  "/recommendations",
+  recommendationEngine
 );
 
 router.use("/api/media", mediaManagementRoutes);

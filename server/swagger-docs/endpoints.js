@@ -600,4 +600,64 @@
  * ...
  */
 
+/**
+ * @swagger
+ * /api/recommendations/{userId}:
+ *   get:
+ *     summary: Get personalized recommendations
+ *     tags:
+ *       - Recommendation Engine
+ *     responses:
+ *       200:
+ *         description: Personalized recommendations
+ */
+
+/**
+ * @swagger
+ * /api/recommendations/trending:
+ *   get:
+ *     summary: Get trending recommendations
+ *     tags:
+ *       - Recommendation Engine
+ *     responses:
+ *       200:
+ *         description: Trending recommendations
+ */
+
+/**
+ * @swagger
+ * /api/recommendations/{userId}/feedback:
+ *   post:
+ *     summary: Submit recommendation feedback
+ *     tags:
+ *       - Recommendation Engine
+ *     responses:
+ *       200:
+ *         description: Feedback submitted
+ */
+
+/**
+ * @swagger
+ * /api/recommendations/{userId}/interests:
+ *   put:
+ *     summary: Update user interests
+ *     tags:
+ *       - Recommendation Engine
+ *     responses:
+ *       200:
+ *         description: Interests updated
+ */
+
+/**
+ * @swagger
+ * /api/recommendations/stats:
+ *   get:
+ *     summary: Recommendation analytics
+ *     tags:
+ *       - Recommendation Engine
+ *     responses:
+ *       200:
+ *         description: Recommendation statistics
+ */
+
 export default {};
