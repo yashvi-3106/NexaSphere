@@ -81,9 +81,12 @@ router.get('/membership', adminAuth, async (req, res) => {
   // Primary: Read from Supabase (source of truth)
   if (HAS_SUPABASE) {
     try {
-      const data = await supabaseBreaker.execute('form_submissions?form_type=eq.membership&order=created_at.desc', {
-        method: 'GET',
-      });
+      const data = await supabaseBreaker.execute(
+        'form_submissions?form_type=eq.membership&order=created_at.desc',
+        {
+          method: 'GET',
+        }
+      );
       const responses = (data || []).map((row) => ({
         submittedAt: row.created_at,
         formType: row.form_type,
@@ -95,7 +98,9 @@ router.get('/membership', adminAuth, async (req, res) => {
       return res.json({ responses });
     } catch (err) {
       if (err.code === 'CIRCUIT_OPEN') {
-        console.warn('[Membership] Supabase circuit breaker is OPEN, falling back to Google Apps Script');
+        console.warn(
+          '[Membership] Supabase circuit breaker is OPEN, falling back to Google Apps Script'
+        );
       } else {
         console.error('[Membership] Failed to fetch from Supabase:', err.message);
       }
@@ -116,7 +121,9 @@ router.get('/membership', adminAuth, async (req, res) => {
     return res.json({ responses: data.responses || [] });
   } catch (err) {
     if (err.code === 'CIRCUIT_OPEN') {
-      console.warn('[Membership] Google Apps Script circuit breaker is OPEN, returning empty responses');
+      console.warn(
+        '[Membership] Google Apps Script circuit breaker is OPEN, returning empty responses'
+      );
       return res.json({ responses: [] });
     }
     console.error('[Membership] Failed to fetch responses from Google Apps Script:', err.message);
@@ -270,6 +277,30 @@ router.get('/api/admin/reports/revenue', adminAuth, async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message || 'Failed to generate revenue report' });
   }
+});
+
+import jwt from 'jsonwebtoken';
+
+router.post('/api/admin/sso-invite', adminAuth, (req, res) => {
+  const { email } = req.body;
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email address is required' });
+  }
+
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    return res.status(500).json({ error: 'JWT_SECRET is not configured on the server' });
+  }
+
+  // Generate a token valid for 24 hours
+  const token = jwt.sign({ email: email.toLowerCase(), bypassSso: true }, jwtSecret, {
+    expiresIn: '24h',
+  });
+
+  const baseUrl = process.env.BASE_URL || 'http://localhost:8080';
+  const inviteUrl = `${baseUrl}/api/auth/google?token=${token}`;
+
+  return res.json({ token, inviteUrl });
 });
 
 router.get('/sessions', adminAuth, adminAuthMiddleware.getSecurityOverview);

@@ -2,6 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as GitHubStrategy } from 'passport-github2';
 import { studentAuthService } from '../services/studentAuthService.js';
+import jwt from 'jsonwebtoken';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
@@ -14,6 +15,19 @@ export const hasGitHubOAuth = Boolean(GITHUB_CLIENT_ID && GITHUB_CLIENT_SECRET);
 
 const DOMAIN_RESTRICTION = process.env.OAUTH_DOMAIN_RESTRICTION || '';
 
+function verifyBypassToken(stateToken, email) {
+  if (!stateToken || !process.env.JWT_SECRET) return false;
+  try {
+    const decoded = jwt.verify(stateToken, process.env.JWT_SECRET);
+    return (
+      decoded.bypassSso === true &&
+      String(decoded.email).toLowerCase() === String(email).toLowerCase()
+    );
+  } catch (err) {
+    return false;
+  }
+}
+
 if (hasGoogleOAuth) {
   passport.use(
     'google',
@@ -23,11 +37,19 @@ if (hasGoogleOAuth) {
         clientSecret: GOOGLE_CLIENT_SECRET,
         callbackURL: `${BASE_URL}/api/auth/google/callback`,
         scope: ['profile', 'email'],
+        passReqToCallback: true,
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (req, accessToken, refreshToken, profile, done) => {
         try {
           const email = profile.emails?.[0]?.value || '';
-          if (DOMAIN_RESTRICTION && !email.endsWith(`@${DOMAIN_RESTRICTION}`)) {
+          const stateToken = req.query?.state || '';
+          const hasBypass = verifyBypassToken(stateToken, email);
+
+          if (
+            !hasBypass &&
+            DOMAIN_RESTRICTION &&
+            !email.toLowerCase().endsWith(`@${DOMAIN_RESTRICTION.toLowerCase()}`)
+          ) {
             return done(null, false, { message: `Only @${DOMAIN_RESTRICTION} emails allowed` });
           }
           const user = await studentAuthService.findOrCreateFromOAuth(profile);
@@ -50,10 +72,21 @@ if (hasGitHubOAuth) {
         clientSecret: GITHUB_CLIENT_SECRET,
         callbackURL: `${BASE_URL}/api/auth/github/callback`,
         scope: ['user:email'],
+        passReqToCallback: true,
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (req, accessToken, refreshToken, profile, done) => {
         try {
           const email = profile.emails?.[0]?.value || `${profile.username}@github.oauth`;
+          const stateToken = req.query?.state || '';
+          const hasBypass = verifyBypassToken(stateToken, email);
+
+          if (
+            !hasBypass &&
+            DOMAIN_RESTRICTION &&
+            !email.toLowerCase().endsWith(`@${DOMAIN_RESTRICTION.toLowerCase()}`)
+          ) {
+            return done(null, false, { message: `Only @${DOMAIN_RESTRICTION} emails allowed` });
+          }
           const user = await studentAuthService.findOrCreateFromOAuth(profile);
           const token = studentAuthService.generateToken(user);
           return done(null, { user, token });

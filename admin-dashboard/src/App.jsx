@@ -28,8 +28,9 @@ import { StreamManager } from './pages/StreamManager';
 import { CircuitBreakerManager } from './pages/CircuitBreakerManager';
 import { WaitingRoomManager } from './pages/WaitingRoomManager';
 import { SponsorshipsManager } from './pages/SponsorshipsManager';
-import { ComprehensiveAnalytics } from './pages/ComprehensiveAnalytics';
 import { UserSegmentation } from './pages/UserSegmentation';
+import { PlatformSettings } from './pages/dashboard/PlatformSettings';
+import { SsoInvitePage } from './pages/SsoInvitePage';
 import './styles/admin.css';
 
 function RequireAuth() {
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="/dashboard/audit-logs" element={<AuditLogViewer />} />
             <Route path="/dashboard/reports" element={<UserEngagementReport />} />
             <Route path="/dashboard/scheduled-reports" element={<ScheduledReports />} />
+            <Route path="/dashboard/sso-invites" element={<SsoInvitePage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
@@ -104,4 +106,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-

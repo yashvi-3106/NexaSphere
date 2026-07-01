@@ -227,29 +227,6 @@ export const searchRateLimiter = rateLimit({
   },
 });
 
-// ---------------------------------------------------------------------------
-// Startup guard — call once during server boot to catch missing exports early.
-// Throws immediately if any limiter failed to initialise, preventing the silent
-// "undefined middleware" failure mode that this issue was created to fix.
-// ---------------------------------------------------------------------------
-// Search rate limiter: 30 requests per minute per IP.
-export const searchRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // 30 requests per minute
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: createRateLimitStore('rate-limit:search:'),
-  handler: (req, res, next, options) => {
-    logger.warn('Search rate limit exceeded', {
-      ip: req.ip,
-      path: req.originalUrl || req.path,
-    });
-    res.status(options.statusCode).json({
-      error: 'Too many search requests. Please slow down.',
-    });
-  },
-});
-
 export function validateLimiters() {
   const limiters = {
     apiRateLimiter,

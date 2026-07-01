@@ -1741,6 +1741,15 @@ export const api = {
     getBillingHistory: (userId) => fetchWithAuth(`/api/admin/subscriptions/${userId}/billing`),
   },
 
+  sso: {
+    generateInvite: (email) =>
+      fetchWithAuth('/api/admin/sso-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      }),
+  },
+
   reports: {
     getEngagement: () => fetchWithAuth('/api/admin/reports/engagement'),
     getRevenue: () => fetchWithAuth('/api/admin/reports/revenue'),

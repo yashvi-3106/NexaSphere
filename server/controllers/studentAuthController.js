@@ -1,11 +1,15 @@
-﻿import passport from 'passport';
+import passport from 'passport';
 import { studentUsersRepository } from '../repositories/studentUsersRepository.js';
 import { studentAuthService } from '../services/studentAuthService.js';
 
-export const googleAuth = passport.authenticate('google', {
-  session: false,
-  scope: ['profile', 'email'],
-});
+export const googleAuth = (req, res, next) => {
+  const state = req.query.token || '';
+  passport.authenticate('google', {
+    session: false,
+    scope: ['profile', 'email'],
+    state,
+  })(req, res, next);
+};
 
 export const googleCallback = (req, res, next) => {
   passport.authenticate('google', { session: false }, (err, data, info) => {
@@ -26,10 +30,14 @@ export const googleCallback = (req, res, next) => {
   })(req, res, next);
 };
 
-export const githubAuth = passport.authenticate('github', {
-  session: false,
-  scope: ['user:email'],
-});
+export const githubAuth = (req, res, next) => {
+  const state = req.query.token || '';
+  passport.authenticate('github', {
+    session: false,
+    scope: ['user:email'],
+    state,
+  })(req, res, next);
+};
 
 export const githubCallback = (req, res, next) => {
   passport.authenticate('github', { session: false }, (err, data, info) => {
@@ -138,16 +146,15 @@ export const getProfile = async (req, res) => {
   try {
     const userId = req.studentUser.sub || req.studentUser.id;
 
-    const user = await studentUsersRepository.findByProvider(
-      req.studentUser.provider,
-      userId
-    ) || await studentUsersRepository.findByEmail(req.studentUser.email);
+    const user =
+      (await studentUsersRepository.findByProvider(req.studentUser.provider, userId)) ||
+      (await studentUsersRepository.findByEmail(req.studentUser.email));
 
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     // Safely count related data — tables may not exist yet in all envs
     let registrations = [];
-    let forumPosts    = 0;
+    let forumPosts = 0;
     let mentorSessions = 0;
 
     try {
@@ -162,33 +169,43 @@ export const getProfile = async (req, res) => {
           'events.location as event_location'
         )
         .orderBy('registrations.created_at', 'desc');
-    } catch (_) { /* table may not exist yet */ }
+    } catch (_) {
+      /* table may not exist yet */
+    }
 
     try {
       const { default: db } = await import('../db/index.js');
-      const [{ count }] = await db('forum_threads').where({ author_id: user.id }).count('id as count');
+      const [{ count }] = await db('forum_threads')
+        .where({ author_id: user.id })
+        .count('id as count');
       forumPosts = Number(count);
-    } catch (_) { /* table may not exist yet */ }
+    } catch (_) {
+      /* table may not exist yet */
+    }
 
     try {
       const { default: db } = await import('../db/index.js');
-      const [{ count }] = await db('mentor_sessions').where({ mentee_id: user.id }).count('id as count');
+      const [{ count }] = await db('mentor_sessions')
+        .where({ mentee_id: user.id })
+        .count('id as count');
       mentorSessions = Number(count);
-    } catch (_) { /* table may not exist yet */ }
+    } catch (_) {
+      /* table may not exist yet */
+    }
 
     const attendedEvents = registrations.filter(
-      r => r.attended || r.status === 'attended'
+      (r) => r.attended || r.status === 'attended'
     ).length;
 
     return res.json({
-      id:          user.id,
-      fullName:    user.full_name,
-      email:       user.email,
-      avatar:      user.avatar_url,
-      bio:         user.bio || '',
+      id: user.id,
+      fullName: user.full_name,
+      email: user.email,
+      avatar: user.avatar_url,
+      bio: user.bio || '',
       socialLinks: user.social_links || {},
-      role:        user.role,
-      createdAt:   user.created_at,
+      role: user.role,
+      createdAt: user.created_at,
       stats: {
         totalRegistrations: registrations.length,
         attendedEvents,
@@ -208,7 +225,7 @@ export const updateProfile = async (req, res) => {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   try {
-    const userId  = req.studentUser.sub || req.studentUser.id;
+    const userId = req.studentUser.sub || req.studentUser.id;
     const allowed = ['fullName', 'bio', 'socialLinks'];
     const updates = {};
     for (const key of allowed) {
@@ -217,18 +234,19 @@ export const updateProfile = async (req, res) => {
 
     // Map camelCase keys to snake_case DB columns
     const dbUpdates = {};
-    if (updates.fullName    !== undefined) dbUpdates.full_name    = updates.fullName;
-    if (updates.bio         !== undefined) dbUpdates.bio          = updates.bio;
-    if (updates.socialLinks !== undefined) dbUpdates.social_links = JSON.stringify(updates.socialLinks);
+    if (updates.fullName !== undefined) dbUpdates.full_name = updates.fullName;
+    if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+    if (updates.socialLinks !== undefined)
+      dbUpdates.social_links = JSON.stringify(updates.socialLinks);
 
     const updatedUser = await studentUsersRepository.updateProfile(userId, dbUpdates);
     if (!updatedUser) return res.status(404).json({ error: 'User not found' });
 
     return res.json({
-      id:          updatedUser.id,
-      fullName:    updatedUser.full_name,
-      email:       updatedUser.email,
-      bio:         updatedUser.bio || '',
+      id: updatedUser.id,
+      fullName: updatedUser.full_name,
+      email: updatedUser.email,
+      bio: updatedUser.bio || '',
       socialLinks: updatedUser.social_links || {},
     });
   } catch (err) {
@@ -258,7 +276,9 @@ export const getRegistrations = async (req, res) => {
           'events.location as event_location'
         )
         .orderBy('registrations.created_at', 'desc');
-    } catch (_) { /* table may not exist yet */ }
+    } catch (_) {
+      /* table may not exist yet */
+    }
 
     return res.json(registrations);
   } catch (err) {
