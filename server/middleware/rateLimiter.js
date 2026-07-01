@@ -1,14 +1,16 @@
 import rateLimit from 'express-rate-limit';
+import RedisStore from 'rate-limit-redis';
+import { getRedisClient } from '../utils/redis.js';
 import logger from '../utils/logger.js';
 import { createRateLimitStore } from '../services/rateLimitService.js';
-import { apiSecurityManager } from '../utils/apiSecurityManager.js';
-import { calculateRiskScore } from '../utils/threatDetection.js';
 
 const suspiciousIPs = new Map();
-
+function calculateRiskScore(req) {
+  return (suspiciousIPs.get(req.ip) || 0) * 20;
+}
 function parsePositiveInt(value, fallback) {
-  const n = parseInt(value, 10);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
 }
 // ---------------------------------------------------------------------------
 // SECURITY WARNING: Upstream Proxy Dependency
@@ -154,29 +156,16 @@ export const activityAuthRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
-  legacyHeaders: true,
-  store: createRateLimitStore('rate-limit:activity-auth:'),
-  handler: (req, res, next, options) => {
-    logger.warn('Activity-event auth rate limit exceeded', {
-      ip: req.ip,
-      path: req.originalUrl || req.path,
-      method: req.method,
-    });
-    res.status(options.statusCode).json({
-      error: 'Too many attempts from this IP, please try again later.',
-    });
-  },
-});
-
-// Sync batch rate limiter — 10 requests per IP per minute.
-// Applied to the write-heavy POST /api/sync/batch which previously had no
-// rate limiting or authentication at all.
-export const syncRateLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: true,
-  store: createRateLimitStore('rate-limit:sync:'),
+  legacyHeaders: false,
+  store: (() => {
+    const c = getRedisClient();
+    return c
+      ? new RedisStore({
+          sendCommand: (...args) => c.call(args[0], ...args.slice(1)),
+          prefix: 'rl:activity:',
+        })
+      : undefined;
+  })(),
   handler: (req, res, next, options) => {
     logger.warn('Sync batch rate limit exceeded', {
       ip: req.ip,
@@ -243,6 +232,24 @@ export const searchRateLimiter = rateLimit({
 // Throws immediately if any limiter failed to initialise, preventing the silent
 // "undefined middleware" failure mode that this issue was created to fix.
 // ---------------------------------------------------------------------------
+// Search rate limiter: 30 requests per minute per IP.
+export const searchRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 requests per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRateLimitStore('rate-limit:search:'),
+  handler: (req, res, next, options) => {
+    logger.warn('Search rate limit exceeded', {
+      ip: req.ip,
+      path: req.originalUrl || req.path,
+    });
+    res.status(options.statusCode).json({
+      error: 'Too many search requests. Please slow down.',
+    });
+  },
+});
+
 export function validateLimiters() {
   const limiters = {
     apiRateLimiter,
@@ -252,7 +259,6 @@ export function validateLimiters() {
     activityAuthRateLimiter,
     syncRateLimiter,
     portfolioRateLimiter,
-    eventRegistrationLimiter,
     searchRateLimiter,
   };
 

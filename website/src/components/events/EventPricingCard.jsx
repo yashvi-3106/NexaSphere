@@ -35,6 +35,7 @@ export default function EventPricingCard({ eventId, onRegister }) {
     estimatedPriceIn7Days,
     reasons,
     capacityUtilization,
+    isLoyal,
   } = pricing;
 
   // Format reasons for users
@@ -78,14 +79,19 @@ export default function EventPricingCard({ eventId, onRegister }) {
 
       {friendlyReasons.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
-          {friendlyReasons.map((reason, idx) => (
+          {friendlyReasons.map((reason) => (
             <span
-              key={idx}
+              key={reason}
               className="inline-block bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-md font-medium border border-indigo-100"
             >
               {reason}
             </span>
           ))}
+          {isLoyal && (
+            <span className="inline-block bg-emerald-50 text-emerald-700 text-xs px-2 py-1 rounded-md font-medium border border-emerald-100">
+              🎁 Loyalty Discount Applied!
+            </span>
+          )}
         </div>
       )}
 

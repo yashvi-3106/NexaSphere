@@ -41,7 +41,8 @@ export const getPricing = wrapAsync(async (req, res) => {
 // GET /api/pricing/transparency/:eventId
 export const getPriceTransparency = wrapAsync(async (req, res) => {
   const { eventId } = req.params;
-  const transparency = await dynamicPricingService.getPriceTransparency(eventId);
+  const email = req.user?.email || req.query.email || null;
+  const transparency = await dynamicPricingService.getPriceTransparency(eventId, email);
 
   if (!transparency) return res.status(404).json({ success: false, error: 'Pricing not found' });
 

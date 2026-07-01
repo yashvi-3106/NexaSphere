@@ -1,3 +1,5 @@
+import RateLimitMonitor from './pages/dashboard/RateLimitMonitor';
+import AuditLogViewer from './pages/dashboard/AuditLogViewer';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { Sidebar } from './components/Sidebar';
@@ -6,6 +8,9 @@ import { OfflineBanner } from './components/OfflineBanner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { LoginPage } from './pages/LoginPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
+import { ComprehensiveAnalytics } from './pages/ComprehensiveAnalytics';
+import { FunnelAnalysis } from './pages/FunnelAnalysis';
+import { CustomEventTracking } from './pages/CustomEventTracking';
 import { ForumManager } from './pages/ForumManager';
 import { MentorshipManager } from './pages/MentorshipManager';
 import { DashboardHome } from './pages/DashboardHome';
@@ -22,8 +27,9 @@ import { PortfolioManager } from './pages/PortfolioManager';
 import { StreamManager } from './pages/StreamManager';
 import { CircuitBreakerManager } from './pages/CircuitBreakerManager';
 import { WaitingRoomManager } from './pages/WaitingRoomManager';
+import { SponsorshipsManager } from './pages/SponsorshipsManager';
 import { ComprehensiveAnalytics } from './pages/ComprehensiveAnalytics';
-import { FunnelAnalysis } from './pages/FunnelAnalysis';
+import { UserSegmentation } from './pages/UserSegmentation';
 import './styles/admin.css';
 
 function RequireAuth() {
@@ -67,9 +73,10 @@ export default function App() {
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route element={<RequireAuth />}>
           <Route element={<DashboardLayout />}>
+            <Route path="/dashboard/settings" element={<PlatformSettings />} />
             <Route path="/dashboard" element={<DashboardHome />} />
             <Route path="/dashboard/analytics" element={<ComprehensiveAnalytics />} />
-            <Route path="/dashboard/analytics/funnel" element={<FunnelAnalysis />} />
+            <Route path="/dashboard/segments" element={<UserSegmentation />} />
             <Route path="/dashboard/events" element={<EventsManager />} />
             <Route path="/dashboard/activity-events" element={<ActivityEventsManager />} />
             <Route path="/dashboard/core-team" element={<CoreTeamManager />} />
@@ -84,6 +91,12 @@ export default function App() {
             <Route path="/dashboard/circuit-breaker" element={<CircuitBreakerManager />} />
             <Route path="/dashboard/waiting-room" element={<WaitingRoomManager />} />
             <Route path="/dashboard/groups" element={<UserGroups />} />
+            <Route path="/dashboard/tasks" element={<ScheduledTasksManager />} />
+            <Route path="/dashboard/backups" element={<BackupsManager />} />
+            <Route path="/dashboard/sponsorships" element={<SponsorshipsManager />} />
+            <Route path="/dashboard/audit-logs" element={<AuditLogViewer />} />
+            <Route path="/dashboard/reports" element={<UserEngagementReport />} />
+            <Route path="/dashboard/scheduled-reports" element={<ScheduledReports />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
@@ -91,3 +104,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+

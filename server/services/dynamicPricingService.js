@@ -21,8 +21,12 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { computeDynamicPrice } from './pricingAlgorithm.js';
 
 const prisma = new PrismaClient();
+
+// Re-export so existing callers (controllers, tests) work unchanged
+export { computeDynamicPrice };
 
 // ── Pure algorithm (no DB calls — easy to unit-test) ─────────────────────────
 
@@ -39,79 +43,39 @@ const prisma = new PrismaClient();
  * @param {Date}   [params.now]          Injection point for testing
  * @returns {{ price: number, reasons: string[] }}
  */
-export function computeDynamicPrice({
-  basePrice,
-  minPrice,
-  maxPrice,
-  capacity,
-  registrations,
-  eventDate,
-  now = new Date(),
-}) {
-  const reasons = [];
-  let multiplier = 1;
-
-  // ── Time-based tier ──────────────────────────────────────────────────────
-  const daysUntil = (new Date(eventDate) - now) / (1000 * 60 * 60 * 24);
-
-  if (daysUntil > 30) {
-    multiplier *= 0.8;
-    reasons.push('early_bird_-20pct');
-  } else if (daysUntil < 3) {
-    multiplier *= 1.5;
-    reasons.push('final_days_+50pct');
-  } else if (daysUntil < 15) {
-    multiplier *= 1.2;
-    reasons.push('last_minute_+20pct');
-  } else {
-    reasons.push('standard_rate');
-  }
-
-  // ── Demand-based adjustment ───────────────────────────────────────────────
-  if (capacity > 0) {
-    const utilization = registrations / capacity;
-
-    if (utilization >= 0.95) {
-      multiplier *= 1.25;
-      reasons.push('demand_95pct_+25pct');
-    } else if (utilization >= 0.8) {
-      multiplier *= 1.1;
-      reasons.push('demand_80pct_+10pct');
-    } else if (utilization <= 0.2) {
-      multiplier *= 0.85;
-      reasons.push('low_demand_-15pct');
-    }
-  }
-
-  // ── Apply & clamp ─────────────────────────────────────────────────────────
-  const raw = basePrice * multiplier;
-  const price = Math.min(maxPrice, Math.max(minPrice, Math.round(raw * 100) / 100));
-
-  return { price, reasons };
-}
 
 // ── Database-backed service ───────────────────────────────────────────────────
+
 
 export const dynamicPricingService = {
   /**
    * Create or update pricing configuration for an event.
    */
   async upsertPricing(eventId, { basePrice, minPrice, maxPrice, capacity, eventDate }) {
-    const { price, reasons } = computeDynamicPrice({
+    const existing = await prisma.eventPricing.findUnique({ where: { eventId } });
+    const hasOverride = existing?.adminOverride != null;
+
+    const { price: algoPrice, reasons } = computeDynamicPrice({
       basePrice,
       minPrice,
       maxPrice,
       capacity,
-      registrations: 0,
+      registrations: existing?.registrations || 0,
       eventDate: new Date(eventDate),
     });
+
+    const finalPrice = hasOverride ? existing.adminOverride : algoPrice;
+    if (hasOverride) {
+      reasons.length = 0;
+      reasons.push('admin_override');
+    }
 
     const pricing = await prisma.eventPricing.upsert({
       where: { eventId },
       create: {
         eventId,
         basePrice,
-        currentPrice: price,
+        currentPrice: finalPrice,
         minPrice,
         maxPrice,
         capacity,
@@ -123,14 +87,14 @@ export const dynamicPricingService = {
         maxPrice,
         capacity,
         eventDate: new Date(eventDate),
-        currentPrice: price,
+        currentPrice: finalPrice,
       },
     });
 
     await prisma.priceHistory.create({
       data: {
         pricingId: pricing.id,
-        price,
+        price: finalPrice,
         reason: reasons.join(','),
       },
     });
@@ -235,42 +199,57 @@ export const dynamicPricingService = {
     });
   },
 
-  /**
-   * Build the transparency object shown to users.
-   *
-   * Returns: current price, base price, reason string, estimated price if
-   * they wait 7 more days (so they know the price might go up).
-   */
-  async getPriceTransparency(eventId) {
+  async getPriceTransparency(eventId, email = null) {
     const pricing = await prisma.eventPricing.findUnique({
       where: { eventId },
       include: { priceHistory: { orderBy: { createdAt: 'desc' }, take: 2 } },
     });
     if (!pricing) return null;
 
+    let isLoyal = false;
+    if (email) {
+      try {
+        const result = await prisma.$queryRaw`SELECT COUNT(*)::int as count FROM event_registrations WHERE email = ${email}`;
+        const count = result?.[0]?.count || 0;
+        if (count >= 3) {
+          isLoyal = true;
+        }
+      } catch (err) {
+        console.error('Error fetching loyalty count:', err);
+      }
+    }
+
     const previousPrice = pricing.priceHistory?.[1]?.price ?? pricing.basePrice;
+    const hasOverride = pricing.adminOverride != null;
 
-    const { price: futurePrice } = computeDynamicPrice({
-      basePrice: pricing.basePrice,
-      minPrice: pricing.minPrice,
-      maxPrice: pricing.maxPrice,
-      capacity: pricing.capacity,
-      registrations: pricing.registrations,
-      eventDate: pricing.eventDate,
-      now: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days in future
-    });
+    let futurePrice;
+    if (hasOverride) {
+      futurePrice = pricing.adminOverride;
+    } else {
+      const { price } = computeDynamicPrice({
+        basePrice: pricing.basePrice,
+        minPrice: pricing.minPrice,
+        maxPrice: pricing.maxPrice,
+        capacity: pricing.capacity,
+        registrations: pricing.registrations,
+        eventDate: pricing.eventDate,
+        now: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days in future
+      });
+      futurePrice = price;
+    }
 
-    const reasons = pricing.priceHistory?.[0]?.reason?.split(',') ?? [];
+    const combinedReasons = [...(pricing.priceHistory?.[0]?.reason?.split(',') ?? []), ...reasons];
 
     return {
       basePrice: pricing.basePrice,
-      currentPrice: pricing.currentPrice,
+      currentPrice,
       previousPrice,
       estimatedPriceIn7Days: futurePrice,
-      priceChanged: pricing.currentPrice !== previousPrice,
-      reasons,
+      priceChanged: currentPrice !== previousPrice,
+      reasons: combinedReasons,
       capacityUtilization:
         pricing.capacity > 0 ? Math.round((pricing.registrations / pricing.capacity) * 100) : 0,
+      isLoyal,
     };
   },
 
