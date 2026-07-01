@@ -40,6 +40,34 @@ export function useSearch(activities, events) {
   const debouncedQuery = useDebounce(query, 300);
   const abortRef = useRef(null);
 
+  const [recentSearches, setRecentSearches] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ns_recent_searches');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const addRecentSearch = useCallback((searchTerm) => {
+    if (!searchTerm || !searchTerm.trim()) return;
+    const clean = searchTerm.trim();
+    setRecentSearches((prev) => {
+      const filtered = prev.filter((s) => s.toLowerCase() !== clean.toLowerCase());
+      const next = [clean, ...filtered].slice(0, 10);
+      localStorage.setItem('ns_recent_searches', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const removeRecentSearch = useCallback((searchTerm) => {
+    setRecentSearches((prev) => {
+      const next = prev.filter((s) => s !== searchTerm);
+      localStorage.setItem('ns_recent_searches', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   const searchApi = useCallback(
     async (q, type) => {
       if (!apiBase) return null;
@@ -52,11 +80,13 @@ export function useSearch(activities, events) {
         const res = await fetch(`${apiBase}/api/search?${params}`, {
           signal: controller.signal,
         });
-        if (!res.ok) return null;
+        if (!res.ok) {
+          throw new Error('Search failed');
+        }
         return res.json();
       } catch (err) {
         if (err.name === 'AbortError') return null;
-        return null;
+        throw err;
       }
     },
     [apiBase]
@@ -72,13 +102,19 @@ export function useSearch(activities, events) {
 
     const q = debouncedQuery.toLowerCase();
     setLoading(true);
+    setApiError(null);
 
     const doSearch = async () => {
-      const apiResults = await searchApi(debouncedQuery, filter === 'all' ? 'all' : filter);
-      if (apiResults && apiResults.results) {
-        setResults(apiResults.results);
-        setLoading(false);
-        return;
+      try {
+        const apiResults = await searchApi(debouncedQuery, filter === 'all' ? 'all' : filter);
+        if (apiResults && apiResults.results) {
+          setResults(apiResults.results);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Search API error:', err);
+        setApiError('Unable to connect to search service.');
       }
 
       let all = [];
@@ -162,5 +198,30 @@ export function useSearch(activities, events) {
     setApiError(null);
   }, []);
 
-  return { query, setQuery, filter, setFilter, results, loading, clearSearch };
+  const groupedResults = useMemo(() => {
+    const groups = {};
+    results.forEach((item) => {
+      const type = item.type || 'other';
+      if (!groups[type]) {
+        groups[type] = [];
+      }
+      groups[type].push(item);
+    });
+    return groups;
+  }, [results]);
+
+  return {
+    query,
+    setQuery,
+    filter,
+    setFilter,
+    results,
+    groupedResults,
+    loading,
+    error: apiError,
+    clearSearch,
+    recentSearches,
+    addRecentSearch,
+    removeRecentSearch,
+  };
 }

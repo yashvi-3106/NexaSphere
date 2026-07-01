@@ -112,6 +112,7 @@ const MentorshipDashboard = lazy(() => import('./pages/mentorship/MentorshipDash
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const LiveStreamPage = lazy(() => import('./pages/streaming/LiveStreamPage'));
 const SponsorsPage = lazy(() => import('./pages/sponsors/SponsorsPage'));
+const SearchPage = lazy(() => import('./pages/search/SearchPage'));
 
 const MNH = 88,
   DNH = 64;
@@ -767,6 +768,7 @@ function MainRouter({
           onApply={openApply}
           onJoin={openJoin}
           onToggleBookmarks={() => setBookmarksOpen((prev) => !prev)}
+          onSearchToggle={() => setSearchOpen(true)}
         />
       )}
 
@@ -1146,6 +1148,18 @@ function MainRouter({
                 <ErrorBoundary>
                   <PageIn k="login">
                     <LoginPage />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* ── Search Page ── */}
+            <Route
+              path="/search"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="search">
+                    <SearchPage />
                   </PageIn>
                 </ErrorBoundary>
               }
