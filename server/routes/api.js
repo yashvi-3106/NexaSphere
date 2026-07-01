@@ -20,6 +20,7 @@ import * as sponsorshipsController from '../controllers/sponsorshipsController.j
 import * as subscriptionsController from '../controllers/subscriptionsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
+import mediaManagementRoutes from "./mediaManagement.js";
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
@@ -380,4 +381,5 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
 
+router.use("/api/media", mediaManagementRoutes);
 export default router;

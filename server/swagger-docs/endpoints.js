@@ -473,4 +473,75 @@
  *                       format: float
  */
 
+/**
+ * @swagger
+ * /api/media:
+ *   get:
+ *     summary: Get all uploaded media
+ *     tags:
+ *       - Media Management
+ *     responses:
+ *       200:
+ *         description: Media files retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/media/upload:
+ *   post:
+ *     summary: Upload a media file
+ *     tags:
+ *       - Media Management
+ *     responses:
+ *       201:
+ *         description: File uploaded successfully
+ */
+
+/**
+ * @swagger
+ * /api/media/{id}:
+ *   delete:
+ *     summary: Delete a media file
+ *     tags:
+ *       - Media Management
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: File deleted successfully
+ */
+
+/**
+ * @swagger
+ * /api/media/search:
+ *   get:
+ *     summary: Search uploaded files
+ *     tags:
+ *       - Media Management
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Matching files returned
+ */
+
+/**
+ * @swagger
+ * /api/media/storage:
+ *   get:
+ *     summary: Get storage usage statistics
+ *     tags:
+ *       - Media Management
+ *     responses:
+ *       200:
+ *         description: Storage usage retrieved successfully
+ */
+
 export default {};
