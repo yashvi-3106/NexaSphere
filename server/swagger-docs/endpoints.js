@@ -473,4 +473,188 @@
  *                       format: float
  */
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Bookmarks
+ *     description: Universal Bookmark & Favorites Management APIs
+ */
+
+/**
+ * @swagger
+ * /api/bookmarks:
+ *   post:
+ *     summary: Create a new bookmark
+ *     tags:
+ *       - Bookmarks
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Bookmark created successfully
+ *
+ *   get:
+ *     summary: Get all bookmarks
+ *     tags:
+ *       - Bookmarks
+ *     responses:
+ *       200:
+ *         description: List of bookmarks
+ */
+
+/**
+ * @swagger
+ * /api/bookmarks/{id}:
+ *   delete:
+ *     summary: Delete a bookmark
+ *     tags:
+ *       - Bookmarks
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Bookmark deleted successfully
+ */
+
+/**
+ * @swagger
+ * /api/bookmarks/search:
+ *   get:
+ *     summary: Search bookmarks
+ *     tags:
+ *       - Bookmarks
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Search results
+ */
+
+/**
+ * @swagger
+ * /api/bookmarks/recent:
+ *   get:
+ *     summary: Get recently bookmarked items
+ *     tags:
+ *       - Bookmarks
+ *     responses:
+ *       200:
+ *         description: Recently bookmarked items
+ */
+
+/**
+ * @swagger
+ * /api/bookmarks/folders:
+ *   post:
+ *     summary: Create bookmark folder
+ *     tags:
+ *       - Bookmarks
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Folder created
+ *
+ *   get:
+ *     summary: Get all bookmark folders
+ *     tags:
+ *       - Bookmarks
+ *     responses:
+ *       200:
+ *         description: Folder list
+ */
+
+/**
+ * @swagger
+ * /api/bookmarks/folders/{id}:
+ *   put:
+ *     summary: Update bookmark folder
+ *     tags:
+ *       - Bookmarks
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Folder updated
+ *
+ *   delete:
+ *     summary: Delete bookmark folder
+ *     tags:
+ *       - Bookmarks
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Folder deleted
+ */
+
+/**
+ * @swagger
+ * /api/bookmarks/share/{id}:
+ *   post:
+ *     summary: Share bookmark collection
+ *     tags:
+ *       - Bookmarks
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Share link generated
+ */
+
+/**
+ * @swagger
+ * /api/bookmarks/sync:
+ *   get:
+ *     summary: Synchronize bookmarks across devices
+ *     tags:
+ *       - Bookmarks
+ *     responses:
+ *       200:
+ *         description: Sync completed
+ */
+
+/**
+ * @swagger
+ * /api/bookmarks/export:
+ *   get:
+ *     summary: Export bookmarks
+ *     tags:
+ *       - Bookmarks
+ *     responses:
+ *       200:
+ *         description: Bookmark export completed
+ */
+
+/**
+ * @swagger
+ * /api/bookmarks/analytics:
+ *   get:
+ *     summary: Get bookmark analytics
+ *     tags:
+ *       - Bookmarks
+ *     responses:
+ *       200:
+ *         description: Bookmark analytics
+ */
+
 export default {};
