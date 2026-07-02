@@ -1,4 +1,5 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const styles = {
   page: { minHeight: "100vh", background: "#0f172a", color: "#f0f4ff", fontFamily: "system-ui, sans-serif", padding: "2rem 1rem" },
@@ -44,6 +45,7 @@ const statusColor = (s) => s === "attended" ? "#10b981" : s === "cancelled" ? "#
 const statusBg    = (s) => s === "attended" ? "#10b98118" : s === "cancelled" ? "#ef444418" : "#3b82f618";
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const [profile,    setProfile]    = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
@@ -119,7 +121,10 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
-          <button onClick={() => setEditing(true)} style={styles.btnOutline}>Edit Profile</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <button onClick={() => setEditing(true)} style={styles.btnOutline}>Edit Profile</button>
+            <button onClick={() => navigate('/settings/account')} style={{ ...styles.btnOutline, background: '#1e293b' }}>Manage Account & Privacy</button>
+          </div>
         </div>
 
         {/* Stats */}

@@ -143,14 +143,24 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
             <ThemeToggle />
             <LanguageSelector />
             {isAuthenticated && (
-              <span
-                className="ns-nav-user-badge"
-                onClick={() => navigate('/dashboard')}
-                style={{ cursor: 'pointer', fontSize: '0.8rem', color: 'var(--t1)' }}
-                title={user?.name || user?.email}
-              >
-                👤
-              </span>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span
+                  className="ns-nav-user-badge"
+                  onClick={() => navigate('/settings/account')}
+                  style={{ cursor: 'pointer', fontSize: '1rem', color: 'var(--t1)' }}
+                  title="Settings & Privacy"
+                >
+                  ⚙️
+                </span>
+                <span
+                  className="ns-nav-user-badge"
+                  onClick={() => navigate('/dashboard')}
+                  style={{ cursor: 'pointer', fontSize: '0.8rem', color: 'var(--t1)' }}
+                  title={user?.name || user?.email}
+                >
+                  👤
+                </span>
+              </div>
             )}
           </div>
         </div>
@@ -250,14 +260,24 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
             <LanguageSelector />
 
             {isAuthenticated && (
-              <span
-                className="ns-nav-user-badge"
-                onClick={() => navigate('/dashboard')}
-                style={{ cursor: 'pointer', fontSize: '0.9rem', color: 'var(--t1)' }}
-                title={user?.name || user?.email}
-              >
-                👤
-              </span>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span
+                  className="ns-nav-user-badge"
+                  onClick={() => navigate('/settings/account')}
+                  style={{ cursor: 'pointer', fontSize: '1rem', color: 'var(--t1)' }}
+                  title="Settings & Privacy"
+                >
+                  ⚙️
+                </span>
+                <span
+                  className="ns-nav-user-badge"
+                  onClick={() => navigate('/dashboard')}
+                  style={{ cursor: 'pointer', fontSize: '0.9rem', color: 'var(--t1)' }}
+                  title={user?.name || user?.email}
+                >
+                  👤
+                </span>
+              </div>
             )}
 
             <button

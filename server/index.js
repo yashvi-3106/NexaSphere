@@ -1,4 +1,4 @@
-﻿import 'dotenv/config';
+import 'dotenv/config';
 import { tracedFetch } from './config/appContext.js';
 import { initObservability } from './observability/index.js';
 import { setTraceIdResolver } from './utils/logContext.js';
@@ -1240,7 +1240,10 @@ app.get('/api/auth/google', studentAuthController.googleAuth);
 app.get('/api/auth/google/callback', studentAuthController.googleCallback);
 app.get('/api/auth/github', studentAuthController.githubAuth);
 app.get('/api/auth/github/callback', studentAuthController.githubCallback);
+// Student Auth & Me Endpoints
 app.get('/api/auth/me', requireStudentAuth, studentAuthController.getMe);
+app.delete('/api/auth/me', requireStudentAuth, studentAuthController.deleteAccount);
+app.get('/api/auth/export', requireStudentAuth, studentAuthController.exportData);
 app.post('/api/auth/theme', requireStudentAuth, studentAuthController.updateTheme);
 app.post('/api/auth/logout', studentAuthController.logout);
 

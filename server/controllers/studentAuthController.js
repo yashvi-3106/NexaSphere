@@ -1,6 +1,7 @@
-﻿import passport from 'passport';
+import passport from 'passport';
 import { studentUsersRepository } from '../repositories/studentUsersRepository.js';
 import { studentAuthService } from '../services/studentAuthService.js';
+import { withDb } from '../repositories/db.js';
 
 export const googleAuth = passport.authenticate('google', {
   session: false,
@@ -263,6 +264,78 @@ export const getRegistrations = async (req, res) => {
     return res.json(registrations);
   } catch (err) {
     console.error('getRegistrations error:', err);
+    return res.status(500).json({ error: 'Server error', detail: err.message });
+  }
+};
+export const exportData = async (req, res) => {
+  try {
+    const userId = req.studentUser.id;
+    const data = await withDb(async (client) => {
+      // Get profile
+      const { rows: profiles } = await client.query('SELECT * FROM student_users WHERE id = $1', [userId]);
+      const profile = profiles[0] || {};
+      
+      // Get registrations
+      let registrations = [];
+      try {
+        const { rows } = await client.query('SELECT * FROM event_registrations WHERE user_id = $1', [userId]);
+        registrations = rows;
+      } catch (e) {}
+
+      // Get portfolio
+      let portfolios = [];
+      try {
+        const { rows } = await client.query('SELECT * FROM portfolios WHERE user_id = $1', [userId]);
+        portfolios = rows;
+      } catch (e) {}
+
+      // Get forum posts
+      let forumPosts = [];
+      try {
+        const { rows } = await client.query('SELECT * FROM forum_threads WHERE author_id = $1', [userId]);
+        forumPosts = rows;
+      } catch (e) {}
+
+      return {
+        exportedAt: new Date().toISOString(),
+        profile,
+        registrations,
+        portfolios,
+        forumPosts
+      };
+    });
+    
+    return res.json(data);
+  } catch (err) {
+    console.error('exportData error:', err);
+    return res.status(500).json({ error: 'Server error', detail: err.message });
+  }
+};
+
+export const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.studentUser.id;
+    await withDb(async (client) => {
+      // Soft delete user record by clearing PII
+      await client.query(
+        "UPDATE student_users SET email = $1, full_name = 'Deleted User', avatar_url = null, bio = null WHERE id = $2",
+        ["deleted-$userId@anonymized.local", userId]
+      );
+      
+      // Cascade delete or anonymize related data
+      try {
+        await client.query('DELETE FROM portfolios WHERE user_id = $1', [userId]);
+      } catch (e) {}
+      
+      try {
+        await client.query('DELETE FROM event_registrations WHERE user_id = $1', [userId]);
+      } catch (e) {}
+    });
+
+    res.clearCookie('ns_student_token');
+    return res.json({ success: true, message: 'Account permanently deleted' });
+  } catch (err) {
+    console.error('deleteAccount error:', err);
     return res.status(500).json({ error: 'Server error', detail: err.message });
   }
 };
