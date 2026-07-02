@@ -21,23 +21,8 @@ import { portfolioService } from '../services/portfolioService.js';
 import { waitingRoomService } from '../services/waitingRoomService.js';
 import { studentAuthService } from '../services/studentAuthService.js';
 import * as sponsorshipsController from '../controllers/sponsorshipsController.js';
-import * as subscriptionsController from '../controllers/subscriptionsController.js';
-import * as portfolioAnalyticsController from '../controllers/portfolioAnalyticsController.js';
-import { achievementSchema } from '../validators/portfolioSchemas.js';
-import { auditLogRepository } from '../repositories/auditLogRepository.js';
-import * as localAuthController from '../controllers/localAuthController.js';
-
-import * as recommendationsController from '../controllers/recommendationsController.js';
-import * as gamificationController from '../controllers/gamificationController.js';
-import * as subscriptionsController from '../controllers/subscriptionsController.js';
-import multer from 'multer';
-
-router.use(rateLimitAdminRoutes);
-router.use(throttleMiddleware);
-
-const upload = multer({
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-});
+import * as followsController from '../controllers/followsController.js';
+import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
 
 const router = Router();
 
@@ -420,6 +405,59 @@ router.get(
   '/api/admin/audit-logs/stats',
   adminAuthMiddleware.requireAdmin,
   auditLogController.getStats
+);
+
+// Follows/User Following System APIs
+// Follow/Unfollow operations
+router.post(
+  '/api/student/follows/:followingId',
+  requireStudentAuth,
+  protectedActionRateLimiter,
+  followsController.followUser
+);
+router.delete(
+  '/api/student/follows/:followingId',
+  requireStudentAuth,
+  protectedActionRateLimiter,
+  followsController.unfollowUser
+);
+
+// Check follow status
+router.get(
+  '/api/student/follows/status/:followingId',
+  requireStudentAuth,
+  followsController.checkFollowStatus
+);
+
+// Get followers and following lists
+router.get('/api/student/users/:userId/followers', followsController.getUserFollowers);
+router.get('/api/student/users/:userId/following', followsController.getUserFollowing);
+
+// Get follow counts
+router.get('/api/student/users/:userId/follow-counts', followsController.getFollowCounts);
+
+// Current user endpoints
+router.get(
+  '/api/student/me/followers',
+  requireStudentAuth,
+  followsController.getCurrentUserFollowers
+);
+router.get(
+  '/api/student/me/following',
+  requireStudentAuth,
+  followsController.getCurrentUserFollowing
+);
+router.get(
+  '/api/student/me/follow-counts',
+  requireStudentAuth,
+  followsController.getCurrentUserFollowCounts
+);
+
+// Activity feed from followed users
+router.get(
+  '/api/student/activity-feed/followed',
+  requireStudentAuth,
+  followsController.getFollowedUsersActivityFeed
 );
 
 export default router;
