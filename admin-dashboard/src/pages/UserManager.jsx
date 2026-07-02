@@ -2,6 +2,20 @@ import { useState, useEffect } from 'react';
 import UserTimelineModal from '../components/UserTimelineModal';
 
 const ROLES = ['member', 'moderator', 'admin'];
+const PASSWORD_REQUIREMENTS = [
+  { test: (value) => value.length >= 8, message: 'at least 8 characters' },
+  { test: (value) => /[A-Z]/.test(value), message: 'one uppercase letter' },
+  { test: (value) => /[a-z]/.test(value), message: 'one lowercase letter' },
+  { test: (value) => /[0-9]/.test(value), message: 'one number' },
+  { test: (value) => /[^A-Za-z0-9]/.test(value), message: 'one special character' },
+];
+
+function getPasswordValidationError(password) {
+  const missing = PASSWORD_REQUIREMENTS.filter((requirement) => !requirement.test(password)).map(
+    (requirement) => requirement.message
+  );
+  return missing.length ? `Password must include ${missing.join(', ')}.` : '';
+}
 
 export default function UserManager() {
   const [users, setUsers] = useState([]);
@@ -18,8 +32,9 @@ export default function UserManager() {
   });
   const [editUser, setEditUser] = useState(null);
   const [timelineUser, setTimelineUser] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState(null);
+  const [resetPasswordForm, setResetPasswordForm] = useState({ newPassword: '' });
+  const [resetPasswordError, setResetPasswordError] = useState('');
   const [form, setForm] = useState({
     username: '',
     display_name: '',
@@ -33,8 +48,6 @@ export default function UserManager() {
   const [importJobId, setImportJobId] = useState(null);
   const [importProgress, setImportProgress] = useState(null);
   const [importErrors, setImportErrors] = useState([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState(null);
 
   async function fetchUsers() {
     setLoading(true);
@@ -236,21 +249,45 @@ export default function UserManager() {
     }
   }
 
-  async function handleResetPassword(id) {
-    const newPassword = prompt('Enter new password (min 8 chars):');
-    if (!newPassword || newPassword.length < 8) return alert('Invalid password');
+  function openResetPassword(user) {
+    setResetPasswordUser(user);
+    setResetPasswordForm({ newPassword: '' });
+    setResetPasswordError('');
+  }
+
+  function closeResetPassword() {
+    setResetPasswordUser(null);
+    setResetPasswordForm({ newPassword: '' });
+    setResetPasswordError('');
+  }
+
+  async function handleResetPassword() {
+    const newPassword = resetPasswordForm.newPassword;
+    const validationError = getPasswordValidationError(newPassword);
+    if (validationError) {
+      setResetPasswordError(validationError);
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      const res = await fetch(`/api/admin/users/${id}/reset-password`, {
+      const res = await fetch(`/api/admin/users/${resetPasswordUser.id}/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ newPassword }),
       });
-      if (res.ok) alert('Password reset successfully');
-      else alert('Failed to reset password');
+      if (res.ok) {
+        closeResetPassword();
+        alert('Password reset successfully');
+      } else {
+        alert('Failed to reset password');
+      }
     } catch (e) {
       console.error(e);
       alert('Error resetting password');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -308,7 +345,7 @@ export default function UserManager() {
                 <button onClick={() => openEdit(user)}>Edit</button>
                 <button onClick={() => handleDeactivate(user.id)}>Deactivate</button>
                 <button onClick={() => handleUnlock(user.id)}>Unlock</button>
-                <button onClick={() => handleResetPassword(user.id)}>Reset Password</button>
+                <button onClick={() => openResetPassword(user)}>Reset Password</button>
               </td>
             </tr>
           ))}
@@ -375,6 +412,60 @@ export default function UserManager() {
                   setEditUser(null);
                 }}
               >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {resetPasswordUser && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              padding: '24px',
+              borderRadius: '8px',
+              minWidth: '320px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <h3>Reset Password</h3>
+            <p style={{ margin: 0 }}>
+              Set a new password for {resetPasswordUser.display_name || resetPasswordUser.email}.
+            </p>
+            <input
+              type="password"
+              placeholder="New Password"
+              autoComplete="new-password"
+              value={resetPasswordForm.newPassword}
+              onChange={(e) => {
+                const newPassword = e.target.value;
+                setResetPasswordForm({ newPassword });
+                setResetPasswordError(getPasswordValidationError(newPassword));
+              }}
+            />
+            <small>
+              Password must include uppercase, lowercase, number, special character, and be at least
+              8 characters.
+            </small>
+            {resetPasswordError && <p style={{ color: 'red', margin: 0 }}>{resetPasswordError}</p>}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={handleResetPassword} disabled={submitting}>
+                Reset Password
+              </button>
+              <button onClick={closeResetPassword} disabled={submitting}>
                 Cancel
               </button>
             </div>
