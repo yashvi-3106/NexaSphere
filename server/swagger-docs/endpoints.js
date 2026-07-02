@@ -845,4 +845,223 @@
  *         description: Draft statistics retrieved successfully
  */
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Event Resources
+ *     description: Event Resource & Inventory Management APIs
+ */
+
+/**
+ * @swagger
+ * /api/event-resources:
+ *   get:
+ *     summary: Get all event resources
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: List of resources
+ *
+ *   post:
+ *     summary: Create a new resource
+ *     tags:
+ *       - Event Resources
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Resource created
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/{id}:
+ *   get:
+ *     summary: Get resource by ID
+ *     tags:
+ *       - Event Resources
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Resource details
+ *
+ *   put:
+ *     summary: Update resource
+ *     tags:
+ *       - Event Resources
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Resource updated
+ *
+ *   delete:
+ *     summary: Delete resource
+ *     tags:
+ *       - Event Resources
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Resource deleted
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/{id}/reserve:
+ *   post:
+ *     summary: Reserve a resource
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: Resource reserved
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/{id}/return:
+ *   post:
+ *     summary: Return a reserved resource
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: Resource returned
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/{id}/assign:
+ *   post:
+ *     summary: Assign resource to an event
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: Resource assigned
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/{id}/report-damage:
+ *   post:
+ *     summary: Report damaged resource
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: Damage reported
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/{id}/maintenance:
+ *   put:
+ *     summary: Update maintenance status
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: Maintenance status updated
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/{id}/availability:
+ *   get:
+ *     summary: Check resource availability
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: Availability information
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/conflicts/all:
+ *   get:
+ *     summary: Detect resource conflicts
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: Conflict report
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/calendar/availability:
+ *   get:
+ *     summary: View availability calendar
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: Availability calendar
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/{id}/qrcode:
+ *   get:
+ *     summary: Generate QR code for resource
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: QR code generated
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/{id}/history:
+ *   get:
+ *     summary: Get borrow history
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: Borrow history
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/analytics/inventory:
+ *   get:
+ *     summary: Inventory analytics
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: Inventory analytics
+ */
+
+/**
+ * @swagger
+ * /api/event-resources/analytics/utilization:
+ *   get:
+ *     summary: Resource utilization report
+ *     tags:
+ *       - Event Resources
+ *     responses:
+ *       200:
+ *         description: Utilization analytics
+ */
+
 export default {};

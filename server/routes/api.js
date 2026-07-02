@@ -28,6 +28,7 @@ import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import mediaManagementRoutes from "./mediaManagement.js";
 import * as localAuthController from '../controllers/localAuthController.js';
 import draftRecoveryRoutes from "./draftRecovery.js";
+import eventResourceRoutes from "./eventResource.js";
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
@@ -432,4 +433,5 @@ router.use(
 router.use("/api/drafts", draftRecoveryRoutes);
 
 router.use("/api/media", mediaManagementRoutes);
+router.use("/api/resources", eventResourceRoutes);
 export default router;
