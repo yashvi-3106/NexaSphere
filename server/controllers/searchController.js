@@ -1,6 +1,9 @@
 import { eventsRepository } from '../repositories/eventsRepository.js';
 import { coreTeamService } from '../services/coreTeamService.js';
 import { activityEventsService } from '../services/activityEventsService.js';
+import { searchAnalyticsRepository } from '../repositories/searchAnalyticsRepository.js';
+import { elasticsearchService } from '../services/elasticsearchService.js';
+import Fuse from 'fuse.js';
 
 export const searchController = {
   async search(req, res) {
@@ -18,20 +21,19 @@ export const searchController = {
       }
 
       const query = q.toLowerCase();
-      let results = [];
+      // 1. Log analytics
+      await searchAnalyticsRepository.logSearch(q, 0, req.user?.id);
 
-      if (type === 'all' || type === 'events') {
-        const events = await eventsRepository.list({ page: 1, limit: 100 });
-        const matched = (events?.rows || [])
-          .filter(
-            (ev) =>
-              ev.name?.toLowerCase().includes(query) ||
-              ev.description?.toLowerCase().includes(query) ||
-              ev.shortName?.toLowerCase().includes(query) ||
-              ev.location?.toLowerCase().includes(query) ||
-              ev.tags?.some((t) => t.toLowerCase().includes(query))
-          )
-          .map((ev) => ({
+      // 2. Try Elasticsearch
+      let results = await elasticsearchService.search(q, type, limit, skip);
+      let trueTotal = results.length;
+
+      // 3. Fallback to Fuse.js
+      if (results.length === 0) {
+        let allItems = [];
+        if (type === 'all' || type === 'events') {
+          const events = await eventsRepository.list({ page: 1, limit: 100 });
+          const matched = (events?.rows || []).map((ev) => ({
             id: ev.id,
             type: 'event',
             title: ev.name || ev.shortName,
@@ -42,20 +44,12 @@ export const searchController = {
             category: ev.category,
             url: `/events/${ev.id}`,
           }));
-        results = [...results, ...matched];
-      }
+          allItems = [...allItems, ...matched];
+        }
 
-      if (type === 'all' || type === 'members') {
-        const members = await coreTeamService.listMembers();
-        const matched = (members || [])
-          .filter(
-            (m) =>
-              m.name?.toLowerCase().includes(query) ||
-              m.role?.toLowerCase().includes(query) ||
-              m.bio?.toLowerCase().includes(query) ||
-              m.skills?.some((s) => s.toLowerCase().includes(query))
-          )
-          .map((m) => ({
+        if (type === 'all' || type === 'members') {
+          const members = await coreTeamService.listMembers();
+          const matched = (members || []).map((m) => ({
             id: m.id,
             type: 'member',
             title: m.name,
@@ -64,20 +58,12 @@ export const searchController = {
             tags: m.skills,
             url: `/team`,
           }));
-        results = [...results, ...matched];
-      }
+          allItems = [...allItems, ...matched];
+        }
 
-      if (type === 'all' || type === 'activities') {
-        const activities = await activityEventsService.listAllActivities();
-        const matched = Object.entries(activities || {})
-          .filter(
-            ([key, a]) =>
-              key.toLowerCase().includes(query) ||
-              a.title?.toLowerCase().includes(query) ||
-              a.description?.toLowerCase().includes(query) ||
-              a.subtitle?.toLowerCase().includes(query)
-          )
-          .map(([key, a]) => ({
+        if (type === 'all' || type === 'activities') {
+          const activities = await activityEventsService.listAllActivities();
+          const matched = Object.entries(activities || {}).map(([key, a]) => ({
             id: key,
             type: 'activity',
             title: a.title || key,
@@ -86,13 +72,19 @@ export const searchController = {
             tags: a.tags,
             url: `/activities/${encodeURIComponent(key)}`,
           }));
-        results = [...results, ...matched];
+          allItems = [...allItems, ...matched];
+        }
+
+        const fuse = new Fuse(allItems, {
+          keys: ['title', 'description', 'tags'],
+          includeScore: true,
+          threshold: 0.4, // typo tolerance
+        });
+
+        results = fuse.search(q).map(r => ({ ...r.item, score: r.score }));
+        trueTotal = results.length;
+        results = results.slice(skip, skip + limit);
       }
-
-      const trueTotal = results.length;
-
-      // Apply pagination here
-      results = results.slice(skip, skip + limit);
 
       return res.json({
         results,
@@ -109,6 +101,7 @@ export const searchController = {
 
   async trending(req, res) {
     try {
+      const popularSearches = await searchAnalyticsRepository.getPopularSearches(5);
       const events = await eventsRepository.list({ page: 1, limit: 100 });
       const allEvents = events?.rows || [];
 
@@ -134,10 +127,10 @@ export const searchController = {
           url: `/events/${ev.id}`,
         }));
 
-      return res.json({ trending: sorted });
+      return res.json({ trending: sorted, popularSearches });
     } catch (err) {
       console.error('Trending error:', err);
-      return res.status(500).json({ error: 'Failed to fetch trending', trending: [] });
+      return res.status(500).json({ error: 'Failed to fetch trending', trending: [], popularSearches: [] });
     }
   },
 
