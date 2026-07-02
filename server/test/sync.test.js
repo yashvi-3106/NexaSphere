@@ -12,6 +12,10 @@ process.env.CORS_ORIGIN = 'http://localhost:3000';
 process.env.JWT_SECRET = 'secret_super_long_secret_key_that_is_safe_and_long_enough_for_256bit';
 process.env.PORT = '0';
 process.env.DATABASE_URL = 'postgresql://localhost/dummy_test_db';
+process.env.ENCRYPTION_KEY = '12345678901234567890123456789012';
+process.env.SUPABASE_URL = 'http://localhost';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'mockkey';
+process.env.SESSION_SECRET = 'StrongSessionPassword123!@#';
 
 // Mock DB responses for sync testing
 let dbQueries = [];

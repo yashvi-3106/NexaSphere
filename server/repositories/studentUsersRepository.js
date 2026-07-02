@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+﻿import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { withDb } from './db.js';
@@ -54,6 +54,12 @@ export const studentUsersRepository = {
       `);
       await client.query(`
         ALTER TABLE student_users ADD COLUMN IF NOT EXISTS theme VARCHAR(10) DEFAULT NULL;
+      `);
+      await client.query(`
+        ALTER TABLE student_users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT NULL;
+      `);
+      await client.query(`
+        ALTER TABLE student_users ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '{}'::jsonb;
       `);
     });
   },
@@ -173,31 +179,28 @@ export const studentUsersRepository = {
   async markRecoveryCodeUsed(id) {
     if (!HAS_SUPABASE) return;
     return withDb(async (client) => {
-      await client.query('UPDATE recovery_codes SET used = true WHERE id = $1', [id]);
+      await client.query(
+        'UPDATE recovery_codes SET used = true WHERE id = $1',
+        [id]
+      );
     });
   },
 
   async awardXP(userId, amount) {
     if (!HAS_SUPABASE) return null;
     return withDb(async (client) => {
-      // Get current XP & Level
-      const userRes = await client.query(
-        'SELECT xp, level, badges FROM student_users WHERE id = $1',
-        [userId]
-      );
+      const userRes = await client.query('SELECT xp, level, badges FROM student_users WHERE id = $1', [userId]);
       if (userRes.rows.length === 0) return null;
 
       const currentXP = userRes.rows[0].xp || 0;
       const newXP = currentXP + amount;
 
-      // Calculate level: Level 1 (0 XP), Level 2 (500 XP), Level 3 (1500 XP), Level 4 (4000 XP), Level 5 (10000 XP)
       let newLevel = 1;
       if (newXP >= 10000) newLevel = 5;
       else if (newXP >= 4000) newLevel = 4;
       else if (newXP >= 1500) newLevel = 3;
       else if (newXP >= 500) newLevel = 2;
 
-      // Award matching badges automatically based on Level milestones
       let badges = Array.isArray(userRes.rows[0].badges) ? userRes.rows[0].badges : [];
       if (newLevel >= 2 && !badges.includes('explorer')) badges.push('explorer');
       if (newLevel >= 3 && !badges.includes('contributor')) badges.push('contributor');
@@ -205,9 +208,9 @@ export const studentUsersRepository = {
       if (newLevel >= 5 && !badges.includes('legend')) badges.push('legend');
 
       const { rows } = await client.query(
-        `UPDATE student_users 
-         SET xp = $1, level = $2, badges = $3::jsonb, updated_at = NOW() 
-         WHERE id = $4 
+        `UPDATE student_users
+         SET xp = $1, level = $2, badges = $3::jsonb, updated_at = NOW()
+         WHERE id = $4
          RETURNING *`,
         [newXP, newLevel, JSON.stringify(badges), userId]
       );
@@ -218,10 +221,9 @@ export const studentUsersRepository = {
   async getLeaderboard(filter = 'all') {
     if (!HAS_SUPABASE) return [];
     return withDb(async (client) => {
-      // Support sorting contributors by XP score. Filtering could optionally scope to weekly/monthly metrics
       const { rows } = await client.query(
         `SELECT id, full_name as name, email, avatar_url, xp, level, badges
-         FROM student_users 
+         FROM student_users
          ORDER BY xp DESC, level DESC
          LIMIT 50`
       );
@@ -235,6 +237,48 @@ export const studentUsersRepository = {
       const { rows } = await client.query(
         'UPDATE student_users SET theme = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
         [theme, id]
+      );
+      return rows[0] || null;
+    });
+  },
+
+  async updateProfile(id, updates) {
+    if (!HAS_SUPABASE) return null;
+    return withDb(async (client) => {
+      const setClauses = [];
+      const values = [];
+      let idx = 1;
+
+      if (updates.full_name !== undefined) {
+        setClauses.push(`full_name = $${idx++}`);
+        values.push(updates.full_name);
+      }
+      if (updates.bio !== undefined) {
+        setClauses.push(`bio = $${idx++}`);
+        values.push(updates.bio);
+      }
+      if (updates.social_links !== undefined) {
+        setClauses.push(`social_links = $${idx++}::jsonb`);
+        values.push(
+          typeof updates.social_links === 'string'
+            ? updates.social_links
+            : JSON.stringify(updates.social_links)
+        );
+      }
+
+      if (setClauses.length === 0) {
+        const { rows } = await client.query(
+          'SELECT * FROM student_users WHERE id = $1 LIMIT 1', [id]
+        );
+        return rows[0] || null;
+      }
+
+      setClauses.push(`updated_at = NOW()`);
+      values.push(id);
+
+      const { rows } = await client.query(
+        `UPDATE student_users SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING *`,
+        values
       );
       return rows[0] || null;
     });

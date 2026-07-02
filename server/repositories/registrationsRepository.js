@@ -13,6 +13,17 @@ export const registrationsRepository = {
     });
   },
 
+  async findByEventIds(eventIds) {
+    if (!HAS_SUPABASE || !eventIds || eventIds.length === 0) return [];
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        'SELECT * FROM event_registrations WHERE event_id = ANY($1) ORDER BY created_at ASC',
+        [eventIds]
+      );
+      return rows;
+    });
+  },
+
   async findByEmailAndEvent(email, eventId) {
     if (!HAS_SUPABASE) return null;
     return withDb(async (client) => {
@@ -237,6 +248,20 @@ export const registrationsRepository = {
         [eventId, email]
       );
       return rows[0] || null;
+    });
+  },
+  async countByEmail(email) {
+    if (!HAS_SUPABASE) return 0;
+
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        `SELECT COUNT(*)::int AS count
+       FROM event_registrations
+       WHERE email = $1`,
+        [email]
+      );
+
+      return rows[0]?.count || 0;
     });
   },
 };

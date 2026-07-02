@@ -84,8 +84,24 @@ export const databaseUp = new client.Gauge({
   registers: [register],
 });
 
+export const responseCompressionRatio = new client.Histogram({
+  name: 'http_response_compression_ratio',
+  help: 'Ratio of compressed size to uncompressed size (compressed / original)',
+  labelNames: ['encoding'],
+  buckets: [0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1.0],
+  registers: [register],
+});
+
 export function recordCacheHit() {
   redisCacheHits.inc();
+}
+
+export function recordActiveUsers(count) {
+  activeUsersOnline.set(count);
+}
+
+export function recordCompressionRatio(encoding, ratio) {
+  responseCompressionRatio.labels(encoding).observe(ratio);
 }
 
 export function recordCacheMiss() {

@@ -1,11 +1,11 @@
-import React, { lazy, useState, useEffect, useParams, memo, useLayoutEffect } from 'react';
-import { Route, Routes, Navigate } from 'react-router-dom';
+import React, { lazy, useState, useEffect, memo, useLayoutEffect } from 'react';
+import { Route, Routes, Navigate, useParams } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
 
 // Lazy-loaded heavy pages
 const RecruitmentPage = lazy(() => import('../pages/recruitment/RecruitmentPage'));
 const MembershipPage = lazy(() => import('../pages/membership/MembershipPage'));
-const AdminPage = lazy(() => import('../pages/admin/AdminPage'));
 const ActivitiesPage = lazy(() => import('../pages/activities/ActivitiesPage'));
 const ActivityDetailPage = lazy(() => import('../pages/activities/ActivityDetailPage'));
 const EventsPage = lazy(() => import('../pages/events/EventsPage'));
@@ -18,7 +18,7 @@ const RoadmapsPage = lazy(() => import('../pages/roadmaps/RoadmapsPage'));
 const ProjectsPage = lazy(() => import('../pages/projects/ProjectsPage'));
 const ResourcesPage = lazy(() => import('../pages/resources/ResourcesPage'));
 const CertificateVerifyPage = lazy(() => import('../pages/certificates/CertificateVerifyPage'));
-const CollabPage = lazy(() => import('../pages/collab/CollabPage'));
+
 const PortfolioBuilder = lazy(() => import('../components/portfolio/PortfolioBuilder'));
 const PublicPortfolio = lazy(() => import('../pages/portfolio/PublicPortfolio'));
 const DashboardPage = lazy(() => import('../pages/dashboard/DashboardPage'));
@@ -41,6 +41,7 @@ const NotificationHistoryPage = lazy(
 const SponsorsPage = lazy(() => import('../pages/sponsors/SponsorsPage'));
 const RecommendationsPage = lazy(() => import('../pages/resume/RecommendationsPage'));
 const SkillExchangePage = lazy(() => import('../pages/skills/SkillExchangePage'));
+const WebhooksPage = lazy(() => import('../pages/monitoring/WebhooksPage'));
 
 // Static/Eager page components
 import HeroSection from '../pages/home/HeroSection';
@@ -321,8 +322,6 @@ export function AppRoutes({
               <SectionDivider />
               <ActivitiesSection onNavigate={onNavigate} />
               <SectionDivider />
-              <RecommendationSection events={eventsData} onEventClick={onKSSClick} />
-              <SectionDivider />
               <EventsSection onEventClick={onKSSClick} events={eventsData} />
               <SectionDivider />
               <AboutSection />
@@ -330,7 +329,7 @@ export function AppRoutes({
               <TeamSection onApply={openApply} />
               <div id="section-contact">
                 <Footer
-                  onAdmin={() => nav('/admin')}
+                  onAdmin={() => {}}
                   onProjects={() => onTab('Projects')}
                   onRoadmaps={() => onTab('Roadmaps')}
                 />
@@ -373,7 +372,11 @@ export function AppRoutes({
       {/* ── Event Planning (collaborative) ── */}
       <Route
         path="/events/:eventId/planning"
-        element={<EventPlanningWrapper onBack={() => nav('/events')} />}
+        element={
+          <ErrorBoundary>
+            <EventPlanningWrapper onBack={() => nav('/events')} />
+          </ErrorBoundary>
+        }
       />
 
       {/* ── Live Streaming ── */}
@@ -406,16 +409,6 @@ export function AppRoutes({
         }
       />
 
-      {/* ── Gamification ── */}
-      <Route
-        path="/gamification"
-        element={
-          <PageIn k="gamification">
-            <GamificationDashboard />
-          </PageIn>
-        }
-      />
-
       {/* ── Analytics ── */}
       <Route
         path="/analytics"
@@ -423,6 +416,18 @@ export function AppRoutes({
           <PageIn k="analytics">
             <AnalyticsPage onBack={onBackHome} />
           </PageIn>
+        }
+      />
+
+      {/* ── Webhooks (monitoring) ── */}
+      <Route
+        path="/admin/webhooks"
+        element={
+          <ProtectedRoute>
+            <PageIn k="webhooks">
+              <WebhooksPage />
+            </PageIn>
+          </ProtectedRoute>
         }
       />
 
@@ -442,29 +447,6 @@ export function AppRoutes({
         element={
           <PageIn k="roadmaps">
             <RoadmapsPage onBack={onBackHome} />
-          </PageIn>
-        }
-      />
-
-      {/* ── Portfolio Builder ── */}
-      <Route
-        path="/portfolio"
-        element={
-          <PageIn k="portfolio">
-            <PortfolioBuilder />
-          </PageIn>
-        }
-      />
-      {/* ── Public Portfolio ── */}
-      <Route path="/p/:username" element={<PublicPortfolioWrapper onBack={onBackHome} />} />
-      <Route path="/profile/:username" element={<PublicPortfolioWrapper onBack={onBackHome} />} />
-
-      {/* ── Collab ── */}
-      <Route
-        path="/collab"
-        element={
-          <PageIn k="collab">
-            <CollabPage onBack={onBackHome} />
           </PageIn>
         }
       />
@@ -553,58 +535,12 @@ export function AppRoutes({
         }
       />
 
-      {/* ── Mentorship ── */}
-      <Route
-        path="/mentorship"
-        element={
-          <PageIn k="mentorship">
-            <MentorsPage />
-          </PageIn>
-        }
-      />
-      <Route
-        path="/mentorship/mentors"
-        element={
-          <PageIn k="mentorship-mentors">
-            <MentorsPage />
-          </PageIn>
-        }
-      />
-      <Route
-        path="/mentorship/dashboard"
-        element={
-          <PageIn k="mentorship-dashboard">
-            <MentorshipDashboard />
-          </PageIn>
-        }
-      />
-
-      {/* ── Admin (embedded, for quick access) ── */}
-      <Route
-        path="/admin"
-        element={
-          <PageIn k="admin">
-            <AdminPage onBack={onBackHome} />
-          </PageIn>
-        }
-      />
-
       {/* ── Resources / Library ── */}
       <Route
         path="/resources"
         element={
           <PageIn k="resources">
             <ResourcesPage onBack={onBackHome} />
-          </PageIn>
-        }
-      />
-
-      {/* ── Recommendations ── */}
-      <Route
-        path="/recommendations"
-        element={
-          <PageIn k="recommendations">
-            <RecommendationsPage onBack={onBackHome} />
           </PageIn>
         }
       />
@@ -629,24 +565,6 @@ export function AppRoutes({
         }
       />
 
-      {/* ── Live Q&A / Polling ── */}
-      <Route
-        path="/qa-poll"
-        element={
-          <PageIn k="qa-poll">
-            <LiveQa onBack={onBackHome} />
-          </PageIn>
-        }
-      />
-      <Route
-        path="/qa-poll/:eventId"
-        element={
-          <PageIn k="qa-poll-event">
-            <LiveQa onBack={() => nav('/qa-poll')} />
-          </PageIn>
-        }
-      />
-
       {/* ── Status Page ── */}
       <Route
         path="/status"
@@ -664,6 +582,18 @@ export function AppRoutes({
           <PageIn k="skill-exchange">
             <SkillExchangePage />
           </PageIn>
+        }
+      />
+
+      {/* ── Revenue Dashboard (Admin) ── */}
+      <Route
+        path="/admin/revenue-dashboard"
+        element={
+          <ProtectedRoute roles={['admin', 'SuperAdmin', 'faculty']}>
+            <PageIn k="revenue-dashboard">
+              <RevenueDashboardPage />
+            </PageIn>
+          </ProtectedRoute>
         }
       />
 

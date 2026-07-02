@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import UserTimelineModal from '../components/UserTimelineModal';
 
 const ROLES = ['member', 'moderator', 'admin'];
 
@@ -7,13 +8,33 @@ export default function UserManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(null);
+  const [awardBadgeUser, setAwardBadgeUser] = useState(null);
+  const [badgeForm, setBadgeForm] = useState({
+    name: '',
+    description: '',
+    icon: 'Award',
+  });
   const [editUser, setEditUser] = useState(null);
+  const [timelineUser, setTimelineUser] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(null);
   const [form, setForm] = useState({
     username: '',
     display_name: '',
     email: '',
     admin_roles: 'member',
   });
+
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [csvText, setCsvText] = useState('');
+  const [importPreview, setImportPreview] = useState(null);
+  const [importJobId, setImportJobId] = useState(null);
+  const [importProgress, setImportProgress] = useState(null);
+  const [importErrors, setImportErrors] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(null);
 
   async function fetchUsers() {
     setLoading(true);
@@ -32,50 +53,204 @@ export default function UserManager() {
     fetchUsers();
   }, []);
 
-  async function handleCreate() {
-    const res = await fetch('/api/admin/users', {
+  useEffect(() => {
+    let interval;
+    if (importJobId && importProgress !== 100) {
+      interval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/admin/bulk/jobs/${importJobId}`, { credentials: 'include' });
+          if (res.ok) {
+            const job = await res.json();
+            setImportProgress(job.progress);
+            if (job.status === 'completed' || job.status === 'failed') {
+              setImportErrors(job.errors || []);
+              clearInterval(interval);
+              fetchUsers(); // Refresh after import
+            }
+          }
+        } catch (err) {
+          console.error('Failed to poll job status');
+        }
+      }, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [importJobId, importProgress]);
+
+  function downloadCsvTemplate() {
+    const template = 'email,username,displayname,role,major,year,tags\njohn@college.edu,johndoe,John Doe,user,Computer Science,2028,tech;sports\n';
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'users_import_template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleFileSelected(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const text = await file.text();
+    setCsvText(text);
+
+    // Get preview
+    const res = await fetch('/api/admin/bulk/users/preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify(form),
+      body: JSON.stringify({ csv: text }),
     });
     if (res.ok) {
-      setShowAddModal(false);
-      setForm({ username: '', display_name: '', email: '', admin_roles: 'member' });
-      fetchUsers();
+      const data = await res.json();
+      setImportPreview(data);
     } else {
-      const d = await res.json();
-      alert(d.error);
+      alert('Failed to generate preview');
+    }
+  }
+
+  async function handleImportSubmit() {
+    if (!csvText) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/bulk/users/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ csv: csvText }),
+      });
+      if (res.ok) {
+        const job = await res.json();
+        setImportJobId(job.id);
+        setImportProgress(0);
+      } else {
+        alert('Failed to start import');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleCreate() {
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setShowAddModal(false);
+        setForm({ username: '', display_name: '', email: '', admin_roles: 'member' });
+        fetchUsers();
+      } else {
+        const d = await res.json();
+        alert(d.error);
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
   async function handleUpdate() {
-    const res = await fetch(`/api/admin/users/${editUser.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        display_name: form.display_name,
-        email: form.email,
-        admin_roles: form.admin_roles,
-      }),
-    });
-    if (res.ok) {
-      setEditUser(null);
-      fetchUsers();
-    } else {
-      const d = await res.json();
-      alert(d.error);
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/users/${editUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          display_name: form.display_name,
+          email: form.email,
+          admin_roles: form.admin_roles,
+        }),
+      });
+      if (res.ok) {
+        setEditUser(null);
+        fetchUsers();
+      } else {
+        const d = await res.json();
+        alert(d.error);
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
   async function handleDeactivate(id) {
     if (!confirm('Deactivate this user?')) return;
-    const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE', credentials: 'include' });
-    if (res.ok) fetchUsers();
-    else {
-      const d = await res.json();
-      alert(d.error);
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (res.ok) fetchUsers();
+      else {
+        const d = await res.json();
+        alert(d.error);
+      }
+    } finally {
+      setDeleting(null);
+    }
+  }
+
+  async function handleAwardBadge() {
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/users/${awardBadgeUser.id}/badges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...badgeForm,
+          isCustom: true,
+          earnedAt: new Date(),
+        }),
+      });
+      if (res.ok) {
+        setAwardBadgeUser(null);
+        setBadgeForm({ name: '', description: '', icon: 'Award' });
+        fetchUsers();
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Failed to award badge');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleUnlock(id) {
+    if (!confirm('Unlock this user account?')) return;
+    try {
+      const res = await fetch(`/api/admin/users/${id}/unlock`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) alert('Account unlocked successfully');
+      else alert('Failed to unlock');
+    } catch (e) {
+      console.error(e);
+      alert('Error unlocking account');
+    }
+  }
+
+  async function handleResetPassword(id) {
+    const newPassword = prompt('Enter new password (min 8 chars):');
+    if (!newPassword || newPassword.length < 8) return alert('Invalid password');
+    try {
+      const res = await fetch(`/api/admin/users/${id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ newPassword }),
+      });
+      if (res.ok) alert('Password reset successfully');
+      else alert('Failed to reset password');
+    } catch (e) {
+      console.error(e);
+      alert('Error resetting password');
     }
   }
 
@@ -103,9 +278,7 @@ export default function UserManager() {
         }}
       >
         <h2>User Management</h2>
-        <button onClick={() => setShowAddModal(true)} disabled={submitting}>
-          + Add User
-        </button>
+        <button onClick={() => setShowAddModal(true)}>+ Add User</button>
       </div>
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -132,18 +305,10 @@ export default function UserManager() {
                 {user.joined_at ? new Date(user.joined_at).toLocaleDateString() : '-'}
               </td>
               <td style={{ padding: '8px', display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => openEdit(user)}
-                  disabled={deleting === user.id || submitting}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeactivate(user.id)}
-                  disabled={deleting === user.id || submitting}
-                >
-                  {deleting === user.id ? 'Deactivating…' : 'Deactivate'}
-                </button>
+                <button onClick={() => openEdit(user)}>Edit</button>
+                <button onClick={() => handleDeactivate(user.id)}>Deactivate</button>
+                <button onClick={() => handleUnlock(user.id)}>Unlock</button>
+                <button onClick={() => handleResetPassword(user.id)}>Reset Password</button>
               </td>
             </tr>
           ))}
@@ -215,6 +380,10 @@ export default function UserManager() {
             </div>
           </div>
         </div>
+      )}
+
+      {timelineUser && (
+        <UserTimelineModal user={timelineUser} onClose={() => setTimelineUser(null)} />
       )}
     </div>
   );

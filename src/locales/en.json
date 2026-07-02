@@ -18,7 +18,7 @@
     "dark_mode": "Dark mode"
   },
   "footer": {
-    "copyright": "© {{year}} NexaSphere — GL Bajaj Group of Institutions, Mathura",
+    "copyright": " © {{year}} NexaSphere — GL Bajaj Group of Institutions, Mathura",
     "built_with": "Built with",
     "by_team": "by the NexaSphere Core Team ·",
     "admin_dashboard": "Admin Dashboard"

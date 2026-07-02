@@ -1,4 +1,6 @@
+import NotFound from './pages/NotFound';
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { stateToUrl, urlToState } from './utils/routing';
 import './styles/themes.css';
 import './styles/globals.css';
 import './styles/animations.css';
@@ -24,6 +26,7 @@ import Chatbot from './shared/Chatbot';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import GamificationDashboard from './components/gamification/GamificationDashboard';
 import RecommendationWidget from './components/recommendation/RecommendationWidget';
+import SettingsPage from './pages/settings/SettingsPage';
 
 import {
   AmbientOrbs,
@@ -70,9 +73,12 @@ const NAV_TABS = [
 
 export default function App() {
   const [cinDone, setCinDone] = useState(false);
-  const [activeTab, setActiveTab] = useState('Home');
-  const [page, setPage] = useState(null);
+  
+  // Use lazy initialization for state derived from the URL
+  const [activeTab, setActiveTab] = useState(() => urlToState(window.location.pathname).activeTab);
+  const [page, setPage] = useState(() => urlToState(window.location.pathname).page);
   const [mobile, setMobile] = useState(window.innerWidth <= 768);
+  const [fontSize, setFontSize] = useState(() => localStorage.getItem('nexa-fontsize') || 'normal');
 
   const { theme, toggleTheme } = useThemeManagement();
   const eventsData = useDynamicEvents(fallbackEvents);
@@ -88,6 +94,19 @@ export default function App() {
     window.addEventListener('resize', handleResize, { passive: true });
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-fontsize', fontSize);
+    localStorage.setItem('nexa-fontsize', fontSize);
+  }, [fontSize]);
+
+  const toggleFontSize = () => {
+    setFontSize((prev) => {
+      if (prev === 'normal') return 'large';
+      if (prev === 'large') return 'extra-large';
+      return 'normal';
+    });
+  };
 
   useInteractionEffects(cinDone, page);
   useBackToTop();
@@ -145,6 +164,7 @@ export default function App() {
             onTabChange={handleTabChange}
             onToggleTheme={toggleTheme}
             theme={theme}
+            onSettings={actions.openSettings}
           />
         </>
       )}
@@ -242,6 +262,12 @@ export default function App() {
           {page?.type === 'gamification' && (
             <PageIn k="pg-gamification">
               <GamificationDashboard />
+            </PageIn>
+          )}
+
+          {page?.type === 'settings' && (
+            <PageIn k="pg-settings">
+              <SettingsPage onBack={actions.onBackHome} />
             </PageIn>
           )}
 
