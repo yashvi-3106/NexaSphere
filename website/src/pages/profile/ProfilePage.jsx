@@ -1,5 +1,5 @@
-﻿import { useState, useEffect } from "react";
-
+import { useState, useEffect } from "react";
+import { useUnsavedChangesWarning } from "../../hooks/useUnsavedChangesWarning";
 const styles = {
   page: { minHeight: "100vh", background: "#0f172a", color: "#f0f4ff", fontFamily: "system-ui, sans-serif", padding: "2rem 1rem" },
   container: { maxWidth: "900px", margin: "0 auto" },
@@ -51,6 +51,13 @@ export default function ProfilePage() {
   const [saving,     setSaving]     = useState(false);
   const [activeTab,  setActiveTab]  = useState("registrations");
   const [editForm,   setEditForm]   = useState({ fullName: "", bio: "", socialLinks: { github: "", linkedin: "", portfolio: "" } });
+
+  const isDirty = editing && profile && (
+    editForm.fullName !== (profile.fullName || profile.name || "") ||
+    editForm.bio !== (profile.bio || "") ||
+    JSON.stringify(editForm.socialLinks) !== JSON.stringify(profile.socialLinks || { github: "", linkedin: "", portfolio: "" })
+  );
+  useUnsavedChangesWarning(isDirty);
 
   useEffect(() => { fetchProfile(); }, []);
 

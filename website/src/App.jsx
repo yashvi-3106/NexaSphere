@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, useLocation, useNavigate } from 'react-router-dom';
 
 import './styles/themes.css';
 import './styles/globals.css';
@@ -339,14 +339,12 @@ function Cursor() {
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Root App â€” wraps everything in BrowserRouter
 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+const router = createBrowserRouter([
+  { path: '*', element: <AppProviders><AppShell /></AppProviders> }
+]);
+
 export default function App() {
-  return (
-    <BrowserRouter>
-      <AppProviders>
-        <AppShell />
-      </AppProviders>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 }
 
 function AppShell() {

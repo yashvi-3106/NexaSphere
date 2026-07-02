@@ -5,6 +5,7 @@ import { projectsData } from '../../data/projectsData';
 import { roadmapData } from '../../data/roadmapData';
 import { RepoCardSkeleton } from '../ui/skeleton/RepoCardSkeleton';
 import AdvancedCustomizer from './AdvancedCustomizer';
+import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 
 export default function PortfolioBuilder() {
   const [username, setUsername] = useState('');
@@ -58,6 +59,10 @@ export default function PortfolioBuilder() {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // Track if form is dirty for unsaved changes warning
+  const isDirty = username !== '' || title !== '' || bio !== '';
+  useUnsavedChangesWarning(isDirty);
 
   // Extract all unique skills from roadmapData
   const availableSkills = Object.values(roadmapData).reduce((acc, roadmap) => {
