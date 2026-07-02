@@ -1,4 +1,4 @@
-﻿import 'dotenv/config';
+import 'dotenv/config';
 import { tracedFetch } from './config/appContext.js';
 import { initObservability } from './observability/index.js';
 import { setTraceIdResolver } from './utils/logContext.js';
@@ -19,6 +19,8 @@ import analyticsRouter from './routes/analytics.js';
 import apiRouter from './routes/api.js';
 import { initializeSocketIO } from './config/socket.js';
 import adminStreamRouter from './routes/adminStream.js';
+import faqRouter from './routes/faqRoutes.js';
+import { setupAuditContext } from './middleware/adminAuditMiddleware.js';
 import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
 import healthRouter from './routes/health.js';
@@ -52,7 +54,6 @@ import {
   portfolioRateLimiter,
   searchRateLimiter,
   validateLimiters,
-  searchRateLimiter,
 } from './middleware/rateLimiter.js';
 import {
   authRateLimiter,
@@ -84,7 +85,6 @@ import { slackRepository } from './repositories/slackRepository.js';
 import * as studentAuthController from './controllers/studentAuthController.js';
 import * as forumController from './controllers/forumController.js';
 import { requireStudentAuth } from './middleware/studentAuthMiddleware.js';
-import { studentAuthService } from './services/studentAuthService.js';
 import { loadPersistedPushSubscriptions } from './routes/notifications.js';
 import * as mentorshipController from './controllers/mentorshipController.js';
 import { xssSanitizer } from './middleware/xssSanitizer.js';
@@ -259,11 +259,7 @@ app.use(
 
         objectSrc: ["'none'"],
 
- feat/i18n-localization-1397
- feat/i18n-localization-1397
 
- fix/csp-helmet-config-1475
- main
         // ✅ CRITICAL FIX: Missing directives added below
         baseUri: ["'self'"],                                    // Prevents <base> tag injection
         frameAncestors: ["'none'"],                             // Prevents clickjacking
@@ -292,8 +288,6 @@ app.use(
         frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
 
         childSrc: ["'none'"],
- main
-
         reportUri: '/api/v1/csp-violation',
       },
     },
@@ -410,6 +404,7 @@ app.use('/api', formsRouter);
 app.use('/api', portfolioAnalyticsRouter);
 app.use('/api', portfolioRouter);
 app.use('/api', recoveryRouter);
+app.use('/api/faqs', faqRouter);
 app.use('/', notificationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', learningPathRouter);
@@ -454,26 +449,7 @@ const defaultContent = {
   coreTeam: [],
 };
 
-function requiredStrongPassword(name) {
-  const value = String(process.env[name] || '').trim();
-  if (!value) {
-    throw new Error(`Missing environment variable: ${name}`);
-  }
-  const hasLower = /[a-z]/.test(value);
-  const hasUpper = /[A-Z]/.test(value);
-  const hasNumber = /\d/.test(value);
-  const hasSymbol = /[^A-Za-z0-9]/.test(value);
 
-  if (value.length < 12 || !hasLower || !hasUpper || !hasNumber || !hasSymbol) {
-    throw new Error(
-      `${name} must be at least 12 characters and include uppercase, lowercase, number, and symbol`
-    );
-  }
-
-  return value;
-}
-
-const ADMIN_EVENT_PASSWORD = requiredStrongPassword('ADMIN_EVENT_PASSWORD');
 
 // â”€â”€ File Upload Configuration â”€â”€
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
