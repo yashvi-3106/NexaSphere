@@ -605,4 +605,154 @@
  *         description: Duplicate statistics retrieved successfully.
  */
 
+/**
+ * @swagger
+ * tags:
+ *   name: Operational Insights
+ *   description: Platform Operational Insights & Health Command Center APIs
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/overview:
+ *   get:
+ *     summary: Get dashboard overview
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Dashboard overview retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/health:
+ *   get:
+ *     summary: Get system health
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: System health retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/users:
+ *   get:
+ *     summary: Get active user statistics
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: User statistics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/traffic:
+ *   get:
+ *     summary: Get API traffic analytics
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: API traffic retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/database:
+ *   get:
+ *     summary: Get database performance
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Database performance retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/jobs:
+ *   get:
+ *     summary: Get background job status
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Background jobs retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/storage:
+ *   get:
+ *     summary: Get storage utilization
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Storage usage retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/notifications:
+ *   get:
+ *     summary: Get notification delivery statistics
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Notification statistics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/errors:
+ *   get:
+ *     summary: Get error monitoring logs
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Error logs retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/maintenance:
+ *   get:
+ *     summary: Get scheduled maintenance
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Maintenance schedule retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/dependencies:
+ *   get:
+ *     summary: Get service dependency status
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Dependencies retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/resources:
+ *   get:
+ *     summary: Get resource consumption
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Resource utilization retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/reports:
+ *   get:
+ *     summary: Get operational reports
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Operational reports retrieved successfully
+ */
+
 export default {};

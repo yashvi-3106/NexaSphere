@@ -43,6 +43,8 @@ const duplicateDetectionRoutes = require("./duplicateDetection");
 
 const router = Router();
 
+const operationalInsightsRoutes = require("./operationalInsights");
+
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
 router.post(
@@ -427,6 +429,11 @@ router.get(
 router.use(
   "/duplicates",
   duplicateDetectionRoutes
+);
+
+router.use(
+    "/operational-insights",
+    operationalInsightsRoutes
 );
 
 export default router;
