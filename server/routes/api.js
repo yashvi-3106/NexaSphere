@@ -71,6 +71,10 @@ router.get(
   '/api/content/events/:eventId/waitlist-position',
   eventRegistrationController.getWaitlistPosition
 );
+router.post(
+  '/api/content/events/:eventId/waitlist/confirm',
+  eventRegistrationController.confirmWaitlistSpot
+);
 router.delete(
   '/api/content/events/:eventId/waitlist',
   eventRegistrationLimiter,
