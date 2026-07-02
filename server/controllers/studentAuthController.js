@@ -49,7 +49,22 @@ export const githubCallback = (req, res, next) => {
     return res.redirect(`${frontendUrl}/dashboard`);
   })(req, res, next);
 };
+export const githubPortfolioAuth = passport.authenticate('github-portfolio', {
+  session: false,
+  scope: ['read:user'],
+});
 
+export const githubPortfolioCallback = (req, res, next) => {
+  passport.authenticate('github-portfolio', { session: false }, (err, data) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5175';
+    if (err || !data?.githubUsername) {
+      return res.redirect(`${frontendUrl}/portfolio-builder?githubError=1`);
+    }
+    return res.redirect(
+      `${frontendUrl}/portfolio-builder?github=${encodeURIComponent(data.githubUsername)}`
+    );
+  })(req, res, next);
+};
 export const getMe = async (req, res) => {
   if (!req.studentUser) {
     return res.status(401).json({ error: 'Not authenticated' });

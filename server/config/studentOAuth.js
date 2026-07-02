@@ -64,7 +64,24 @@ if (hasGitHubOAuth) {
     )
   );
 }
-
+if (hasGitHubOAuth) {
+  passport.use(
+    'github-portfolio',
+    new GitHubStrategy(
+      {
+        clientID: GITHUB_CLIENT_ID,
+        clientSecret: GITHUB_CLIENT_SECRET,
+        callbackURL: `${BASE_URL}/api/auth/github/portfolio/callback`,
+        scope: ['read:user'],
+      },
+      (accessToken, refreshToken, profile, done) => {
+        // Lightweight strategy for linking a GitHub username to a
+        // portfolio. Does not create or touch student accounts.
+        return done(null, { githubUsername: profile.username });
+      }
+    )
+  );
+}
 passport.serializeUser((data, done) => done(null, data));
 passport.deserializeUser((data, done) => done(null, data));
 

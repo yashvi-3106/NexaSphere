@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import apiClient from '../../utils/apiClient.js';
 import { getApiBase } from '../../utils/runtimeConfig';
 import { projectsData } from '../../data/projectsData';
@@ -83,6 +83,15 @@ export default function PortfolioBuilder() {
     title: p.title,
   }));
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const githubParam = params.get('github');
+    if (githubParam) {
+      setGhUsername(githubParam);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const loadControllerRef = useRef(null);
 
   const handleLoadConfig = async () => {
@@ -117,6 +126,7 @@ export default function PortfolioBuilder() {
         );
         setSocialLinks(data.socialLinks || { github: '', linkedin: '', twitter: '', resume: '' });
         setSeoMetadata(data.seoMetadata || { title: '', description: '' });
+        setGhUsername(data.githubUsername || '');
         setSelectedSkills(data.skills || []);
         setSelectedRoadmaps(data.roadmaps || []);
         setSelectedProjects(data.projects || []);
@@ -165,6 +175,7 @@ export default function PortfolioBuilder() {
         roadmaps: selectedRoadmaps,
         projects: selectedProjects,
         customProjects,
+        githubUsername: ghUsername.trim() || undefined,
       };
 
       const base = getApiBase();
@@ -256,7 +267,10 @@ export default function PortfolioBuilder() {
       }
 
       const data = await response.json();
-      setGhRepos(data);
+      const top5 = [...data]
+        .sort((a, b) => b.stargazers_count - a.stargazers_count)
+        .slice(0, 5);
+      setGhRepos(top5);
     } catch (err) {
       if (err.name === 'AbortError') return;
       setGhError('Failed to fetch repositories. Please check your connection and try again.');
@@ -280,6 +294,7 @@ export default function PortfolioBuilder() {
           github: repo.html_url,
           demo: repo.homepage || '#',
           stars: repo.stargazers_count,
+          forks: repo.forks_count,
         };
         return [...prev, customProj];
       }
@@ -755,6 +770,17 @@ export default function PortfolioBuilder() {
                 </div>
               )}
 
+              {!ghError && !isFetchingGh && ghRepos.length > 0 && ghUsername && (
+                <div style={{ marginBottom: '12px' }}>
+                  <img
+                    src={`https://ghchart.rshah.org/CC1111/${ghUsername.trim()}`}
+                    alt={`${ghUsername} GitHub contribution graph`}
+                    style={{ width: '100%', borderRadius: 'var(--r2)' }}
+                    loading="lazy"
+                  />
+                </div>
+              )}
+
               {isFetchingGh ? (
                 <div
                   className="checklist-grid"
@@ -786,11 +812,12 @@ export default function PortfolioBuilder() {
                               onChange={() => toggleGithubRepo(repo)}
                             />
                             <span style={{ fontWeight: 'bold' }}>{repo.name}</span>
-                            {repo.stargazers_count > 0 && (
+                            {(repo.stargazers_count > 0 || repo.forks_count > 0) && (
                               <span
-                                style={{ marginLeft: 'auto', fontSize: '0.75rem', opacity: 0.8 }}
+                                style={{ marginLeft: 'auto', fontSize: '0.75rem', opacity: 0.8, display: 'flex', gap: '8px' }}
                               >
-                                ★ {repo.stargazers_count}
+                                {repo.stargazers_count > 0 && <span>★ {repo.stargazers_count}</span>}
+                                {repo.forks_count > 0 && <span>⑂ {repo.forks_count}</span>}
                               </span>
                             )}
                           </div>

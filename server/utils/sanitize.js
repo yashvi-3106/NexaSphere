@@ -401,6 +401,12 @@ export function sanitizePortfolioRecord(data = {}) {
   }
   out.bio = stripHtmlTruncated(data.bio, 5000);
   out.title = stripHtmlTruncated(data.title, 200);
+  if (data.githubUsername != null) {
+    const gh = stripHtmlTruncated(data.githubUsername, 39);
+    if (gh && /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/.test(gh)) {
+      out.githubUsername = gh;
+    }
+  }
   return out;
 }
 

@@ -1240,6 +1240,8 @@ app.get('/api/auth/google', studentAuthController.googleAuth);
 app.get('/api/auth/google/callback', studentAuthController.googleCallback);
 app.get('/api/auth/github', studentAuthController.githubAuth);
 app.get('/api/auth/github/callback', studentAuthController.githubCallback);
+app.get('/api/auth/github/portfolio', studentAuthController.githubPortfolioAuth);
+app.get('/api/auth/github/portfolio/callback', studentAuthController.githubPortfolioCallback);
 app.get('/api/auth/me', requireStudentAuth, studentAuthController.getMe);
 app.post('/api/auth/theme', requireStudentAuth, studentAuthController.updateTheme);
 app.post('/api/auth/logout', studentAuthController.logout);
