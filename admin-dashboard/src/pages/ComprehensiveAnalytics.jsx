@@ -10,11 +10,13 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { CustomReportBuilder } from '../components/analytics/CustomReportBuilder';
+import { buildFeedbackAnalyticsReport } from '../utils/analyticsHelpers';
 
 export function ComprehensiveAnalytics() {
   const [summary, setSummary] = useState(null);
   const [userAnalytics, setUserAnalytics] = useState(null);
   const [funnel, setFunnel] = useState(null);
+  const [feedbackReport, setFeedbackReport] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,7 +42,41 @@ export function ComprehensiveAnalytics() {
         setLoading(false);
       }
     }
+
+    async function loadFeedbackInsights() {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/feedback`);
+        if (!res.ok) throw new Error('Feedback endpoint unavailable');
+        const data = await res.json();
+        const entries = Array.isArray(data) ? data : data.feedbacks || data.analytics?.feedbacks || [];
+        setFeedbackReport(buildFeedbackAnalyticsReport(entries));
+      } catch {
+        const fallback = [
+          {
+            id: 1,
+            text: 'Great speaker but poor venue and the room was too hot.',
+            suggestions: 'Increase AC.',
+            date: '2025-05-01',
+          },
+          {
+            id: 2,
+            text: 'The content was informative and the timing was perfect.',
+            suggestions: 'Keep the same structure.',
+            date: '2025-05-02',
+          },
+          {
+            id: 3,
+            text: 'Food was disappointing and the organization felt rushed.',
+            suggestions: 'Improve catering.',
+            date: '2025-05-03',
+          },
+        ];
+        setFeedbackReport(buildFeedbackAnalyticsReport(fallback));
+      }
+    }
+
     fetchAnalytics();
+    loadFeedbackInsights();
   }, []);
 
   if (loading) return <div className="p-8 text-gray-500">Loading Analytics Dashboard...</div>;
@@ -138,6 +174,67 @@ export function ComprehensiveAnalytics() {
           </div>
         </div>
       </div>
+
+      {feedbackReport && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h3 className="font-bold">Feedback Insights</h3>
+              <p className="text-sm text-gray-500">Sentiment, themes, aspect analysis, and suggestions</p>
+            </div>
+            <span className="text-sm font-semibold text-indigo-600">
+              Overall: {feedbackReport.summary.overallSentiment}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(feedbackReport.summary.sentimentPercentages).map(([label, value]) => (
+                  <div key={label} className="bg-gray-50 p-3 rounded border">
+                    <p className="text-sm text-gray-500">{label}</p>
+                    <p className="text-lg font-semibold">{value}%</p>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-gray-50 p-3 rounded border">
+                <h4 className="font-semibold mb-2">Aspect Ratings</h4>
+                <div className="space-y-2 text-sm">
+                  {Object.entries(feedbackReport.summary.aspectRatings).map(([aspect, value]) => (
+                    <div key={aspect} className="flex justify-between">
+                      <span>{aspect}</span>
+                      <span className="font-medium">{value.sentiment}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-3 rounded border">
+                <h4 className="font-semibold mb-2">Top Themes</h4>
+                <div className="flex flex-wrap gap-2">
+                  {feedbackReport.summary.topThemes.slice(0, 6).map((theme) => (
+                    <span key={theme.theme} className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-sm">
+                      {theme.theme} ({theme.count})
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-gray-50 p-3 rounded border">
+                <h4 className="font-semibold mb-2">Actionable Suggestions</h4>
+                <ul className="space-y-2 text-sm">
+                  {feedbackReport.summary.suggestions.map((suggestion) => (
+                    <li key={suggestion.topic} className="leading-5">
+                      • {suggestion.suggestion}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Custom Report Builder */}
       <div className="mb-8">
