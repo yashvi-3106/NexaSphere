@@ -7,6 +7,7 @@ import { Router } from 'express';
 import * as coreTeamController from '../controllers/coreTeamController.js';
 import { coreTeamService } from '../services/coreTeamService.js';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
+import { adminAuditMiddleware, attachOldState } from '../middleware/adminAuditMiddleware.js';
 
 const router = Router();
 const adminAuth = adminAuthMiddleware.requireAdmin;
@@ -31,5 +32,20 @@ router.post('/api/admin/core-team', adminAuth, coreTeamController.adminAddCoreTe
  * DELETE /api/admin/core-team/:id — Remove a core team member (admin).
  */
 router.delete('/api/admin/core-team/:id', adminAuth, coreTeamController.adminDeleteCoreTeamMember);
+
+/**
+ * PUT /api/admin/core-team/:id — Update a core team member (admin).
+ * Includes audit logging and old-state capture.
+ */
+router.put(
+  '/api/admin/core-team/:id',
+  adminAuthMiddleware.requireScope('settings:admin'),
+  attachOldState(async (req) => {
+    const members = await coreTeamService.listMembers();
+    return members.find((m) => String(m.id) === String(req.params.id));
+  }),
+  adminAuditMiddleware,
+  coreTeamController.adminUpdateCoreTeamMember
+);
 
 export default router;

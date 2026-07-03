@@ -69,8 +69,6 @@ import * as eventsController from './controllers/eventsController.js';
 import './workers/bulkWorker.js';
 import * as activityEventsController from './controllers/activityEventsController.js';
 import * as streamController from './controllers/streamController.js';
-import * as coreTeamController from './controllers/coreTeamController.js';
-import { coreTeamService } from './services/coreTeamService.js';
 import { HAS_SUPABASE, SUPABASE_URL, SUPABASE_SERVICE_KEY } from './storage/supabaseClient.js';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
@@ -1300,49 +1298,6 @@ app.get('/api/streams/:id/reactions', streamController.getReactions);
 app.get('/api/search', searchRateLimiter, searchController.search);
 app.get('/api/search/trending', searchRateLimiter, searchController.trending);
 app.get('/api/recommendations', searchRateLimiter, searchController.recommendations);
-
-// Public listings
-app.get('/api/content/team', async (req, res) => {
-  try {
-    const rawMembers = await coreTeamService.listMembers();
-    const members = (rawMembers || []).map((m) => {
-      let email = m.email || null;
-      if (email && !email.toLowerCase().endsWith('@glbajajgroup.org')) {
-        email = null;
-      }
-      return {
-        ...m,
-        email,
-        whatsapp: 'https://chat.whatsapp.com/FhpJEaod2g419jFMfqrhGZ',
-      };
-    });
-    return res.json({ members });
-  } catch (e) {
-    return res.status(500).json({ error: e?.message || 'Failed to load core team' });
-  }
-});
-
-// Admin Team Management
-app.get(
-  '/api/admin/core-team',
-  adminAuthMiddleware.requireScope('settings:admin'),
-  coreTeamController.adminListCoreTeamMembers
-);
-app.post(
-  '/api/admin/core-team',
-  adminAuthMiddleware.requireScope('settings:admin'),
-  coreTeamController.adminAddCoreTeamMember
-);
-app.put(
-  '/api/admin/core-team/:id',
-  adminAuthMiddleware.requireScope('settings:admin'),
-  coreTeamController.adminUpdateCoreTeamMember
-);
-app.delete(
-  '/api/admin/core-team/:id',
-  adminAuthMiddleware.requireScope('settings:admin'),
-  coreTeamController.adminDeleteCoreTeamMember
-);
 
 // Circuit Breaker Admin API
 app.get('/api/admin/circuit-breaker/metrics', adminAuth, async (req, res) => {
