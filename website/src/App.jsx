@@ -30,7 +30,6 @@ import Chatbot from './shared/Chatbot';
 import ScrollProgress from './shared/ScrollProgress';
 import SearchBar from './components/SearchBar';
 import Terminal from './components/developer/Terminal';
-import BookmarksDrawer from './components/bookmarks/BookmarksDrawer';
 import CinematicOpening from './shared/CinematicOpening';
 import OfflineBanner from './components/pwa/OfflineBanner.jsx';
 import InstallPrompt from './components/pwa/InstallPrompt.jsx';
