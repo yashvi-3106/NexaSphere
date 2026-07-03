@@ -1,5 +1,15 @@
 import { analyticsRepository } from '../repositories/analyticsRepository.js';
 import { query } from '../config/db.js';
+import { withDb } from '../repositories/db.js';
+
+export const FUNNEL_STEP_TYPES = [
+  'PAGE_VIEW',
+  'EVENT_REGISTER',
+  'EVENT_ATTEND',
+  'PROFILE_COMPLETE',
+  'FORM_SUBMIT',
+  'RESOURCE_VIEW',
+];
 
 export const analyticsService = {
   async processEventBatch(sessionId, userId, events) {
@@ -19,15 +29,11 @@ export const analyticsService = {
   },
 
   async evaluateSegments() {
-    // This function can run periodically (e.g., cron)
-    // to calculate and assign users to segments
     const segments = await analyticsRepository.getAllSegments();
 
     for (const segment of segments) {
       try {
         const rules = segment.rules_json;
-        // Basic rule evaluator based on rules JSON
-        // E.g. {"condition": "events_count", "operator": ">=", "value": 5, "days": 30}
         if (rules.condition === 'events_count') {
           const days = rules.days || 30;
           const value = rules.value || 5;
@@ -61,7 +67,6 @@ export const analyticsService = {
   },
 
   async performSegmentAction(segmentId, actionData) {
-    // actionData: { action: 'email', template: 'miss_you' }
     if (actionData.action === 'email') {
       const q = `
         SELECT u.email, u.name
@@ -71,12 +76,191 @@ export const analyticsService = {
       `;
       const res = await query(q, [segmentId]);
       const users = res.rows;
-      // Mocking email send
       console.log(
         `Sending email to ${users.length} users in segment ${segmentId} with template ${actionData.template}`
       );
       return { success: true, count: users.length };
     }
     return { success: false, reason: 'Unknown action' };
+  },
+
+  async logEvent({ type, userId, sessionId, path, metadata }) {
+    return withDb(async (client) => {
+      await client.query(
+        `INSERT INTO analytics_events (session_id, user_id, event_type, path, metadata, created_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [sessionId || 'anon', userId || null, type, path || null, JSON.stringify(metadata || {})]
+      );
+    });
+  },
+
+  async getDashboardSummary() {
+    return withDb(async (client) => {
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const { rows: activeUsersRows } = await client.query(
+        `SELECT COUNT(DISTINCT user_id) AS count FROM analytics_events
+         WHERE created_at >= $1 AND user_id IS NOT NULL`,
+        [firstDayOfMonth]
+      );
+      const activeUsers = parseInt(activeUsersRows[0]?.count || 0, 10);
+
+      const { rows: eventsRows } = await client.query(
+        `SELECT COUNT(*) AS count FROM events WHERE created_at >= $1`,
+        [firstDayOfMonth]
+      );
+      const eventsThisMonth = parseInt(eventsRows[0]?.count || 0, 10);
+
+      const { rows: regRows } = await client.query(
+        `SELECT COUNT(*) AS count FROM analytics_events WHERE event_type = 'EVENT_REGISTER'`
+      );
+      const totalRegistrations = parseInt(regRows[0]?.count || 0, 10);
+
+      const { rows: pvRows } = await client.query(
+        `SELECT COUNT(*) AS count FROM analytics_events WHERE event_type = 'PAGE_VIEW'`
+      );
+      const totalPageViews = parseInt(pvRows[0]?.count || 0, 10);
+
+      return {
+        activeUsers,
+        eventsThisMonth,
+        totalRegistrations,
+        totalPageViews,
+        engagementRate:
+          activeUsers > 0 ? ((totalRegistrations + totalPageViews) / activeUsers).toFixed(2) : 0,
+      };
+    });
+  },
+
+  async getUserAnalytics() {
+    return withDb(async (client) => {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { rows } = await client.query(
+        `SELECT DATE(created_at) AS date, COUNT(*) AS count
+         FROM users
+         WHERE created_at >= $1
+         GROUP BY DATE(created_at)
+         ORDER BY date ASC`,
+        [thirtyDaysAgo]
+      );
+
+      return {
+        signupsByDay: rows.map((r) => ({ date: r.date, count: parseInt(r.count, 10) })),
+        totalLast30Days: rows.reduce((sum, r) => sum + parseInt(r.count, 10), 0),
+      };
+    });
+  },
+
+  async getEngagementFunnel() {
+    return analyticsService.getFunnelAnalysis(['PAGE_VIEW', 'EVENT_REGISTER', 'EVENT_ATTEND']);
+  },
+
+  async getFunnelAnalysis(steps) {
+    if (!Array.isArray(steps) || steps.length === 0) {
+      return [];
+    }
+
+    return withDb(async (client) => {
+      const result = [];
+      let prevCount = null;
+
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i];
+        const prevStep = i > 0 ? steps[i - 1] : null;
+
+        const { rows: countRows } = await client.query(
+          `SELECT COUNT(DISTINCT session_id) AS count
+           FROM analytics_events
+           WHERE event_type = $1`,
+          [step]
+        );
+        const count = parseInt(countRows[0]?.count || 0, 10);
+
+        let dropOffPercent = null;
+        let avgSecondsFromPrev = null;
+
+        if (prevStep !== null && prevCount !== null) {
+          dropOffPercent = prevCount > 0 ? Math.round(((prevCount - count) / prevCount) * 100) : 0;
+
+          const { rows: timeRows } = await client.query(
+            `SELECT AVG(EXTRACT(EPOCH FROM (curr.created_at - prev.created_at))) AS avg_seconds
+             FROM analytics_events prev
+             JOIN analytics_events curr
+               ON prev.session_id = curr.session_id
+              AND curr.event_type = $1
+              AND curr.created_at > prev.created_at
+             WHERE prev.event_type = $2`,
+            [step, prevStep]
+          );
+          avgSecondsFromPrev =
+            timeRows[0]?.avg_seconds !== null
+              ? Math.round(parseFloat(timeRows[0].avg_seconds))
+              : null;
+        }
+
+        result.push({
+          step,
+          count,
+          dropOffPercent,
+          avgSecondsFromPrev,
+        });
+        prevCount = count;
+      }
+
+      return result;
+    });
+  },
+
+  async executeCustomReport(reportConfig) {
+    const { metric, timeRange } = reportConfig;
+    const dateFilter =
+      timeRange === '30d'
+        ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+        : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+
+    return withDb(async (client) => {
+      let data = [];
+
+      if (metric === 'page_views') {
+        const { rows } = await client.query(
+          `SELECT DATE(created_at) AS date, COUNT(*) AS count
+           FROM analytics_events
+           WHERE event_type = 'PAGE_VIEW' AND created_at >= $1
+           GROUP BY DATE(created_at)
+           ORDER BY date ASC`,
+          [dateFilter]
+        );
+        data = rows.map((r) => ({ date: r.date, count: parseInt(r.count, 10) }));
+      } else if (metric === 'signups') {
+        const { rows } = await client.query(
+          `SELECT DATE(created_at) AS date, COUNT(*) AS count
+           FROM users
+           WHERE created_at >= $1
+           GROUP BY DATE(created_at)
+           ORDER BY date ASC`,
+          [dateFilter]
+        );
+        data = rows.map((r) => ({ date: r.date, count: parseInt(r.count, 10) }));
+      }
+
+      return { data };
+    });
+  },
+
+  async saveCustomReport({ name, description, config, scheduleType }) {
+    return {
+      id: `report-${Date.now()}`,
+      name,
+      description,
+      config,
+      scheduleType,
+      createdAt: new Date(),
+    };
+  },
+
+  async getCustomReports() {
+    return [];
   },
 };

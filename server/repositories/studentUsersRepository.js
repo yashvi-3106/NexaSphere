@@ -53,10 +53,7 @@ export const studentUsersRepository = {
         CREATE INDEX IF NOT EXISTS idx_student_users_email ON student_users(email)
       `);
       await client.query(`
-        ALTER TABLE student_users ADD COLUMN IF NOT EXISTS slack_user_id VARCHAR(255) DEFAULT NULL;
-      `);
-      await client.query(`
-        ALTER TABLE student_users ADD COLUMN IF NOT EXISTS slack_dm_reminders BOOLEAN DEFAULT FALSE;
+        ALTER TABLE student_users ADD COLUMN IF NOT EXISTS theme VARCHAR(10) DEFAULT NULL;
       `);
     });
   },
@@ -101,14 +98,14 @@ export const studentUsersRepository = {
       const isNewUser = check.rows.length === 0;
 
       const { rows } = await client.query(
-        `INSERT INTO student_users (provider, provider_id, email, full_name, avatar_url, last_login_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+        `INSERT INTO student_users (provider, provider_id, email, full_name, avatar_url, last_login_at, updated_at, xp, level, badges)
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), 0, 1, '[]'::jsonb)
          ON CONFLICT (provider, provider_id) DO UPDATE SET
-           email = EXCLUDED.email,
-           full_name = COALESCE(NULLIF(EXCLUDED.full_name, ''), student_users.full_name),
-           avatar_url = COALESCE(NULLIF(EXCLUDED.avatar_url, ''), student_users.avatar_url),
-           last_login_at = NOW(),
-           updated_at = NOW()
+            email = EXCLUDED.email,
+            full_name = COALESCE(NULLIF(EXCLUDED.full_name, ''), student_users.full_name),
+            avatar_url = COALESCE(NULLIF(EXCLUDED.avatar_url, ''), student_users.avatar_url),
+            last_login_at = NOW(),
+            updated_at = NOW()
          RETURNING *`,
         [provider, providerId, email, fullName || null, avatarUrl || null]
       );
@@ -137,15 +134,110 @@ export const studentUsersRepository = {
     });
   },
 
-  async saveRecoveryCode(email, code) {
-    return {
-      email,
-      code,
-    };
+  async saveRecoveryCode(email, hashedCode) {
+    if (!HAS_SUPABASE) return null;
+    return withDb(async (client) => {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS recovery_codes (
+          id SERIAL PRIMARY KEY,
+          email VARCHAR(255) NOT NULL,
+          code_hash VARCHAR(255) NOT NULL,
+          expires_at TIMESTAMPTZ NOT NULL,
+          used BOOLEAN NOT NULL DEFAULT false,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      await client.query(
+        `INSERT INTO recovery_codes (email, code_hash, expires_at)
+         VALUES ($1, $2, NOW() + INTERVAL '15 minutes')`,
+        [email, hashedCode]
+      );
+      return true;
+    });
   },
 
   async getRecoveryCode(email) {
-    return null;
+    if (!HAS_SUPABASE) return null;
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        `SELECT id, code_hash, expires_at
+         FROM recovery_codes
+         WHERE email = $1 AND used = false AND expires_at > NOW()
+         ORDER BY created_at DESC LIMIT 1`,
+        [email]
+      );
+      return rows[0] || null;
+    });
+  },
+
+  async markRecoveryCodeUsed(id) {
+    if (!HAS_SUPABASE) return;
+    return withDb(async (client) => {
+      await client.query('UPDATE recovery_codes SET used = true WHERE id = $1', [id]);
+    });
+  },
+
+  async awardXP(userId, amount) {
+    if (!HAS_SUPABASE) return null;
+    return withDb(async (client) => {
+      // Get current XP & Level
+      const userRes = await client.query(
+        'SELECT xp, level, badges FROM student_users WHERE id = $1',
+        [userId]
+      );
+      if (userRes.rows.length === 0) return null;
+
+      const currentXP = userRes.rows[0].xp || 0;
+      const newXP = currentXP + amount;
+
+      // Calculate level: Level 1 (0 XP), Level 2 (500 XP), Level 3 (1500 XP), Level 4 (4000 XP), Level 5 (10000 XP)
+      let newLevel = 1;
+      if (newXP >= 10000) newLevel = 5;
+      else if (newXP >= 4000) newLevel = 4;
+      else if (newXP >= 1500) newLevel = 3;
+      else if (newXP >= 500) newLevel = 2;
+
+      // Award matching badges automatically based on Level milestones
+      let badges = Array.isArray(userRes.rows[0].badges) ? userRes.rows[0].badges : [];
+      if (newLevel >= 2 && !badges.includes('explorer')) badges.push('explorer');
+      if (newLevel >= 3 && !badges.includes('contributor')) badges.push('contributor');
+      if (newLevel >= 4 && !badges.includes('expert')) badges.push('expert');
+      if (newLevel >= 5 && !badges.includes('legend')) badges.push('legend');
+
+      const { rows } = await client.query(
+        `UPDATE student_users 
+         SET xp = $1, level = $2, badges = $3::jsonb, updated_at = NOW() 
+         WHERE id = $4 
+         RETURNING *`,
+        [newXP, newLevel, JSON.stringify(badges), userId]
+      );
+      return rows[0];
+    });
+  },
+
+  async getLeaderboard(filter = 'all') {
+    if (!HAS_SUPABASE) return [];
+    return withDb(async (client) => {
+      // Support sorting contributors by XP score. Filtering could optionally scope to weekly/monthly metrics
+      const { rows } = await client.query(
+        `SELECT id, full_name as name, email, avatar_url, xp, level, badges
+         FROM student_users 
+         ORDER BY xp DESC, level DESC
+         LIMIT 50`
+      );
+      return rows;
+    });
+  },
+
+  async updateTheme(id, theme) {
+    if (!HAS_SUPABASE) return null;
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        'UPDATE student_users SET theme = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+        [theme, id]
+      );
+      return rows[0] || null;
+    });
   },
 
   async listAll() {

@@ -1,5 +1,6 @@
 import { registrationsRepository } from '../repositories/registrationsRepository.js';
 import { eventsRepository } from '../repositories/eventsRepository.js';
+import { getAdminEventRecommendations } from '../services/eventRecommendationService.js';
 
 function wrapAsync(fn) {
   return (req, res) =>
@@ -30,7 +31,14 @@ export const getEventStats = wrapAsync(async (req, res) => {
 
   const popularityScore =
     stats.confirmed > 0
-      ? Math.min(100, Math.round((stats.confirmed / (stats.confirmed + waitlist.length)) * 100))
+      ? Math.min(
+          100,
+          Math.round(
+            ((stats.confirmed + waitlist.length) /
+              (event.capacity || stats.confirmed + waitlist.length)) *
+              100
+          )
+        )
       : 0;
 
   const resourceRecommendation =
@@ -52,4 +60,9 @@ export const getEventStats = wrapAsync(async (req, res) => {
     yearBreakdown,
     waitlist,
   });
+});
+
+export const getEventRecommendations = wrapAsync(async (req, res) => {
+  const recommendations = await getAdminEventRecommendations();
+  return res.json(recommendations);
 });

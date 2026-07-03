@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react';
-import { cacheGet, CACHE_KEYS } from './indexedDB.js';
+import { cacheGet, cacheSet, CACHE_KEYS, TTL } from './indexedDB.js';
 import { enqueueRequest } from './offlineQueue.js';
 
 /**
@@ -77,6 +77,28 @@ export const apiClient = async (url, options = {}) => {
     }
 
     if (MUTATING_METHODS.has(method)) {
+      // Security: Do not queue authentication requests to avoid storing credentials in cleartext IDB
+      const urlStr = String(url).toLowerCase();
+      if (
+        urlStr.includes('/login') ||
+        urlStr.includes('/register') ||
+        urlStr.includes('/auth') ||
+        urlStr.includes('/reset')
+      ) {
+        throw new ApiError(
+          'Authentication actions cannot be performed offline. Please reconnect and try again.',
+          0,
+          'OFFLINE_AUTH_UNSUPPORTED'
+        );
+      }
+
+      // Security: Strip sensitive headers before storing in IndexedDB
+      const safeHeaders = { ...(fetchOptions.headers || {}) };
+      delete safeHeaders['Authorization'];
+      delete safeHeaders['authorization'];
+      delete safeHeaders['X-Api-Key'];
+      delete safeHeaders['x-api-key'];
+
       // Queue the mutation for later replay
       let body;
       try {
@@ -85,11 +107,19 @@ export const apiClient = async (url, options = {}) => {
         body = fetchOptions.body;
       }
 
+      // Security: Redact sensitive fields from body to avoid cleartext storage in IndexedDB
+      if (body && typeof body === 'object') {
+        body = { ...body };
+        ['password', 'token', 'secret', 'authorization', 'apiKey'].forEach((key) => {
+          if (key in body) body[key] = '[REDACTED]';
+        });
+      }
+
       const { queued, id, reason } = await enqueueRequest({
         url,
         method,
         body,
-        headers: fetchOptions.headers || {},
+        headers: safeHeaders,
       });
 
       if (queued) {
@@ -116,10 +146,19 @@ export const apiClient = async (url, options = {}) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
 
+  // Combine the timeout controller's signal with any caller-provided signal.
+  // AbortSignal.any() (available in modern browsers/Node ≥20) fires whichever
+  // signal aborts first, so component unmount AND timeout both work correctly.
+  const callerSignal = fetchOptions.signal;
+  const combinedSignal =
+    callerSignal && typeof AbortSignal.any === 'function'
+      ? AbortSignal.any([controller.signal, callerSignal])
+      : controller.signal;
+
   try {
     const response = await fetch(url, {
       ...fetchOptions,
-      signal: controller.signal,
+      signal: combinedSignal,
     });
 
     clearTimeout(id);
@@ -145,7 +184,28 @@ export const apiClient = async (url, options = {}) => {
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       try {
-        return await response.json();
+        const json = await response.json();
+
+        // Cache successful GET responses for offline viewing
+        if (method === 'GET') {
+          const cacheKey = getIDBCacheKey(url);
+          if (cacheKey) {
+            const CACHE_TTL_MAP = {
+              [CACHE_KEYS.DASHBOARD]: TTL.DASHBOARD,
+              [CACHE_KEYS.ANALYTICS]: TTL.ANALYTICS,
+              [CACHE_KEYS.NOTIFICATIONS]: TTL.NOTIFICATIONS,
+              [CACHE_KEYS.USER_PROFILE]: TTL.USER_PROFILE,
+              [CACHE_KEYS.RECENTLY_VIEWED]: TTL.RECENTLY_VIEWED,
+              [CACHE_KEYS.EVENTS]: TTL.EVENTS,
+            };
+            const ttl = CACHE_TTL_MAP[cacheKey] || 0;
+            cacheSet(cacheKey, json, ttl).catch((err) => {
+              console.warn('[apiClient] Failed to cache response:', err);
+            });
+          }
+        }
+
+        return json;
       } catch (e) {
         throw new ApiError('Malformed JSON response', 500, 'MALFORMED_JSON', e);
       }
