@@ -1,9 +1,9 @@
-{
+﻿{
   "name": "nexasphere-monorepo",
   "private": true,
   "type": "module",
   "version": "1.0.0",
-  "description": "NexaSphere — GL Bajaj Tech Community Platform. Monorepo containing the website, admin dashboard, and server.",
+  "description": "NexaSphere â€” GL Bajaj Tech Community Platform. Monorepo containing the website, admin dashboard, and server.",
   "workspaces": [
     "website",
     "admin-dashboard"
@@ -62,15 +62,11 @@
     "lightningcss-linux-x64-musl": "1.32.0",
     "lightningcss-win32-x64-msvc": "^1.32.0"
   },
-  "dependencies": {
- feat/i18n-localization-1397
-    "@prisma/client": "^7.8.0",
+  "dependencies": {    "@prisma/client": "^7.8.0",
     "i18next": "^26.3.1",
     "i18next-browser-languagedetector": "^8.2.1",
 
-    "@prisma/client": "^6.4.0",
- main
-    "jwt-decode": "^4.0.0",
+    "@prisma/client": "^6.4.0",    "jwt-decode": "^4.0.0",
     "lru-cache": "^11.5.1",
     "next-intl": "^4.13.0",
     "y-websocket": "^3.0.0",
@@ -83,3 +79,4 @@
     "engine.io-client": "^6.6.2"
   }
 }
+
