@@ -92,7 +92,7 @@ router.delete(
   adminAuthMiddleware.requireScope('events:write'),
   activityEventsController.deleteActivityEvent
 );
-router.post('/account-recovery/request', async (req, res) => {
+router.post('/account-recovery/request', authRateLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) {
     return res.status(400).json({ error: 'Email is required' });
@@ -105,7 +105,7 @@ router.post('/account-recovery/request', async (req, res) => {
     message: 'If an account with that email exists, a recovery code has been sent.',
   });
 });
-router.post('/account-recovery/verify', async (req, res) => {
+router.post('/account-recovery/verify', authRateLimiter, async (req, res) => {
   const { email, enteredCode } = req.body;
   if (!email || !enteredCode) {
     return res.status(400).json({ error: 'Email and code are required' });
