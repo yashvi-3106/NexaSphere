@@ -232,15 +232,17 @@ class BulkOperationsService {
       }
 
       // Log to audit log
-      if (oldState.length > 0 || newState.length > 0) {
-        await auditLogRepository.insertAuditLog({
-          adminId,
-          action: 'BULK_USER_IMPORT',
-          oldState: { operations: oldState },
-          newState: { operations: newState },
-        });
-        processed++;
-        this.updateJobProgress(jobId, processed, []);
+      try {
+        if (oldState.length > 0 || newState.length > 0) {
+          await auditLogRepository.insertAuditLog({
+            adminId,
+            action: 'BULK_USER_IMPORT',
+            oldState: { operations: oldState },
+            newState: { operations: newState },
+          });
+          processed++;
+          this.updateJobProgress(jobId, processed, []);
+        }
       } catch (err) {
         jobErrors.push(`Row ${user.row}: Database error - ${err.message}`);
       }

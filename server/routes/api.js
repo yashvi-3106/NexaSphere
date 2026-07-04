@@ -26,6 +26,7 @@ import * as portfolioAnalyticsController from '../controllers/portfolioAnalytics
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import * as localAuthController from '../controllers/localAuthController.js';
+import * as whiteboardController from '../controllers/whiteboardController.js';
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
@@ -55,6 +56,7 @@ router.post(
   recommendationsController.getProjectRecommendations
 );
 router.get('/api/users', usersController.getPublicUsers);
+router.post('/api/whiteboard/export-pdf', whiteboardController.exportPDF);
 router.get('/api/content/events', eventsController.listEvents);
 router.post(
   '/api/content/events/:eventId/register',
