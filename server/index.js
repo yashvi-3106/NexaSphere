@@ -5,6 +5,7 @@ import { setTraceIdResolver } from './utils/logContext.js';
 import { getActiveTraceId } from './observability/tracing.js';
 import helmet from 'helmet';
 import express from 'express';
+import morgan from 'morgan';
 import cors from 'cors';
 import csrf from 'csurf';
 import fs, { promises as fsp } from 'fs';
@@ -351,7 +352,7 @@ app.use(
     maxAge: 86400,
   })
 );
- main
+
 app.options('*', cors());
 
 app.use(enhancedTracingMiddleware);
@@ -359,12 +360,12 @@ app.use(enhancedTracingMiddleware);
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(xssSanitizer);
+const useStructuredHttpLog = process.env.USE_STRUCTURED_HTTP_LOG === 'true';
 if (useStructuredHttpLog) {
   app.use(apiLogger);
 } else {
   app.use(morgan('combined'));
 }
-app.use(apiLogger);
 app.use(performanceMonitor);
 app.use(cookieParser());
 
