@@ -5,6 +5,7 @@ import { useAuth } from './hooks/useAuth';
 import { Sidebar } from './components/Sidebar';
 import { Toast } from './components/Toast';
 import { OfflineBanner } from './components/OfflineBanner';
+import { ImpersonationBanner } from './components/ImpersonationBanner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { LoginPage } from './pages/LoginPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
@@ -28,8 +29,13 @@ import { StreamManager } from './pages/StreamManager';
 import { CircuitBreakerManager } from './pages/CircuitBreakerManager';
 import { WaitingRoomManager } from './pages/WaitingRoomManager';
 import { SponsorshipsManager } from './pages/SponsorshipsManager';
-import { ComprehensiveAnalytics } from './pages/ComprehensiveAnalytics';
 import { UserSegmentation } from './pages/UserSegmentation';
+import { ModerationManager } from './pages/ModerationManager';
+import { RBACManager } from './pages/RBACManager';
+import { BackupsManager } from './pages/BackupsManager';
+import { UserEngagementReport } from './pages/UserEngagementReport';
+import { ScheduledReports } from './pages/ScheduledReports';
+import { PlatformSettings } from './pages/PlatformSettings';
 import './styles/admin.css';
 
 function RequireAuth() {
@@ -94,6 +100,8 @@ export default function App() {
             <Route path="/dashboard/tasks" element={<ScheduledTasksManager />} />
             <Route path="/dashboard/backups" element={<BackupsManager />} />
             <Route path="/dashboard/sponsorships" element={<SponsorshipsManager />} />
+            <Route path="/dashboard/moderation" element={<ModerationManager />} />
+            <Route path="/dashboard/rbac" element={<RBACManager />} />
             <Route path="/dashboard/audit-logs" element={<AuditLogViewer />} />
             <Route path="/dashboard/reports" element={<UserEngagementReport />} />
             <Route path="/dashboard/scheduled-reports" element={<ScheduledReports />} />
@@ -104,4 +112,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-

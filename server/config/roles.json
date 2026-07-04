@@ -1,0 +1,26 @@
+{
+  "SuperAdmin": {
+    "name": "Super Admin",
+    "description": "Full access to everything, can create other admins",
+    "permissions": ["content:approve", "content:delete", "content:moderate"],
+    "hierarchy": 0
+  },
+  "Faculty": {
+    "name": "Faculty",
+    "description": "Approve and moderate events and content",
+    "permissions": ["content:approve", "content:moderate"],
+    "hierarchy": 1
+  },
+  "ClubLead": {
+    "name": "Club Lead",
+    "description": "Moderate own club content and posts",
+    "permissions": ["content:approve", "content:moderate"],
+    "hierarchy": 2
+  },
+  "Student": {
+    "name": "Student",
+    "description": "Basic student access",
+    "permissions": [],
+    "hierarchy": 3
+  }
+}
