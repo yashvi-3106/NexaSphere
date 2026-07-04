@@ -103,6 +103,8 @@ import financialsRouter from './routes/financials.js';
 import { schedulerService } from './services/schedulerService.js';
 import feedbackRouter from './routes/feedbackRoutes.js';
 import * as slackController from './controllers/slackController.js';
+import moderationRouter from './routes/moderation.js';
+import rbacRouter from './routes/rbac.js';
 
 validateLimiters();
 
@@ -427,6 +429,12 @@ app.use('/api/admin/scheduled-tasks', adminAuth, scheduledTasksRouter);
 
 // User Segments
 app.use('/api/admin/segments', adminAuth, segmentsRouter);
+
+// Content Moderation
+app.use('/api/moderation', adminAuth, moderationRouter);
+
+// Role-Based Access Control
+app.use('/api/admin/rbac', adminAuth, rbacRouter);
 
 // Database Backup & Recovery Endpoints
 app.get('/api/admin/backups', adminAuth, backupController.getBackups);
