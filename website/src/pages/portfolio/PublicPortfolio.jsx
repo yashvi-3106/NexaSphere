@@ -4,7 +4,6 @@ import { getApiBase } from '../../utils/runtimeConfig';
 import { useCertificateExport } from '../../hooks/useCertificateExport';
 import { projectsData } from '../../data/projectsData';
 import { roadmapData } from '../../data/roadmapData';
-import ResumePrintTemplate from '../../components/portfolio/ResumePrintTemplate';
 import { Helmet } from 'react-helmet-async';
 import { generatePortfolioMeta } from '../../utils/seoUtils';
 import { safeHref } from '../../utils/safeHref';
@@ -53,11 +52,11 @@ export default function PublicPortfolio({ username, onBack }) {
   // SEO & Social sharing headers dynamic updates removed from useEffect
   // We use react-helmet-async directly in the render now.
 
-  const printRef = useRef();
+  const portfolioRef = useRef();
 
   const { handlePrint, isExporting } = useCertificateExport({
-    content: () => printRef.current,
-    documentTitle: `${username}_Resume`,
+    content: () => portfolioRef.current,
+    documentTitle: `${username}_Portfolio`,
     removeAfterPrint: true,
   });
 
@@ -195,7 +194,7 @@ export default function PublicPortfolio({ username, onBack }) {
   const meta = generatePortfolioMeta(portfolio);
 
   return (
-    <div className={`portfolio-presentation-container theme-${theme}`}>
+    <div className={`portfolio-presentation-container theme-${theme}`} ref={portfolioRef}>
       <Helmet>
         <title>{meta.title}</title>
         <meta name="description" content={meta.description} />
@@ -220,11 +219,9 @@ export default function PublicPortfolio({ username, onBack }) {
         <meta name="twitter:image" content={meta.image} />
       </Helmet>
 
-      <div style={{ display: 'none' }}>
-        <ResumePrintTemplate ref={printRef} portfolio={portfolio} />
-      </div>
+
       {/* Dynamic floating toolbar above showcase */}
-      <div className="action-floating-header">
+      <div className="action-floating-header no-print">
         <button className="btn btn-outline" onClick={onBack} aria-label="Back to main page">
           ← Back
         </button>
@@ -647,6 +644,7 @@ export default function PublicPortfolio({ username, onBack }) {
         </main>
 
         <footer
+          className="no-print"
           style={{
             marginTop: 'auto',
             paddingTop: '30px',
