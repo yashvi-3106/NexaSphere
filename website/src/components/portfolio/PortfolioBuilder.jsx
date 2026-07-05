@@ -94,15 +94,15 @@ export default function PortfolioBuilder() {
   }, []);
 
   const loadControllerRef = useRef(null);
+  const loadGenRef = useRef(0);
 
   const handleLoadConfig = async () => {
     if (!username || username.length < 3) return;
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (loadControllerRef.current) {
-      loadControllerRef.current.abort();
-    }
+    const gen = ++loadGenRef.current;
+    loadControllerRef.current?.abort();
     const controller = new AbortController();
     loadControllerRef.current = controller;
 
@@ -110,6 +110,7 @@ export default function PortfolioBuilder() {
       const base = getApiBase();
       const url = base ? `${base}/api/portfolio/${username}` : `/api/portfolio/${username}`;
       const data = await apiClient(url, { signal: controller.signal });
+      if (gen !== loadGenRef.current) return;
       if (data) {
         setTitle(data.title || '');
         setBio(data.bio || '');
@@ -136,6 +137,7 @@ export default function PortfolioBuilder() {
       }
     } catch (err) {
       if (err.name === 'AbortError') return;
+      if (gen !== loadGenRef.current) return;
       if (err.status === 404) {
         return;
       }
