@@ -29,6 +29,9 @@ import { eventRemindersQueue } from './services/queueService.js';
 import { slackIntegrationService } from './services/slackIntegrationService.js';
 import { initializeSocketIO } from './config/socket.js';
 import adminStreamRouter from './routes/adminStream.js';
+import faqRouter from './routes/faqRoutes.js';
+import emailTemplateRouter from './routes/emailTemplateRoutes.js';
+import { setupAuditContext } from './middleware/adminAuditMiddleware.js';
 import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
 import healthRouter from './routes/health.js';
@@ -268,6 +271,17 @@ app.use(
         ],
 
         objectSrc: ["'none'"],
+        // ✅ CRITICAL FIX: Missing directives added below
+        baseUri: ["'self'"],                                    // Prevents <base> tag injection
+        frameAncestors: ["'none'"],                             // Prevents clickjacking
+        formAction: ["'self'"],                                 // Prevents form submission to external sites
+        workerSrc: ["'self'", 'blob:'],                         // Restricts web worker sources
+        manifestSrc: ["'self'"],                                // Restricts manifest sources
+        mediaSrc: ["'self'"],                                   // Restricts media sources
+        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'], // Restricts iframe sources
+        childSrc: ["'none'"],                                   // Restricts child browsing contexts
+        upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
+
         baseUri: ["'self'"],
         frameAncestors: ["'none'"],
         formAction: ["'self'"],
@@ -276,7 +290,6 @@ app.use(
         mediaSrc: ["'self'"],
         frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
         childSrc: ["'none'"],
-        upgradeInsecureRequests: [],
         reportUri: '/api/v1/csp-violation',
       },
     },
@@ -401,6 +414,7 @@ app.use('/api/admin/scheduled-tasks', adminAuth, scheduledTasksRouter);
 
 // User Segments
 app.use('/api/admin/segments', adminAuth, segmentsRouter);
+app.use('/api/admin/email-templates', adminAuth, emailTemplateRouter);
 
 // Database Backup & Recovery Endpoints
 app.get('/api/admin/backups', adminAuth, backupController.getBackups);
@@ -427,6 +441,8 @@ const defaultContent = {
   activityEvents: {},
   coreTeam: [],
 };
+
+
 
 // â”€â”€ File Upload Configuration â”€â”€
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
