@@ -30,7 +30,6 @@ import { slackIntegrationService } from './services/slackIntegrationService.js';
 import { initializeSocketIO } from './config/socket.js';
 import adminStreamRouter from './routes/adminStream.js';
 import faqRouter from './routes/faqRoutes.js';
-import emailTemplateRouter from './routes/emailTemplateRoutes.js';
 import { setupAuditContext } from './middleware/adminAuditMiddleware.js';
 import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
@@ -271,6 +270,8 @@ app.use(
         ],
 
         objectSrc: ["'none'"],
+
+
         // ✅ CRITICAL FIX: Missing directives added below
         baseUri: ["'self'"],                                    // Prevents <base> tag injection
         frameAncestors: ["'none'"],                             // Prevents clickjacking
@@ -397,6 +398,7 @@ app.use('/api', formsRouter);
 app.use('/api', portfolioAnalyticsRouter);
 app.use('/api', portfolioRouter);
 app.use('/api', recoveryRouter);
+app.use('/api/faqs', faqRouter);
 app.use('/', notificationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', learningPathRouter);
