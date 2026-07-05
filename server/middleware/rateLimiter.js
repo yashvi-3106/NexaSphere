@@ -201,6 +201,16 @@ export const portfolioRateLimiter = rateLimit({
   ),
 });
 
+// Sync batch rate limiter — 30 requests per IP per 15 minutes
+export const syncRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: true,
+  store: createRateLimitStore('rate-limit:sync:'),
+  handler: createLimiterHandler('Sync rate limit exceeded', 'Too many sync requests.'),
+});
+
 // Event registration rate limiter — 10 requests per IP per hour
 export const eventRegistrationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -225,25 +235,6 @@ export const eventRegistrationLimiter = rateLimit({
 // Throws immediately if any limiter failed to initialise, preventing the silent
 // "undefined middleware" failure mode that this issue was created to fix.
 // ---------------------------------------------------------------------------
-
-// Sync rate limiter: 10 batch sync requests per minute per IP (authenticated, write-heavy).
-export const syncRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // 10 requests per minute
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: createRateLimitStore('rate-limit:sync:'),
-  handler: (req, res, next, options) => {
-    logger.warn('Sync rate limit exceeded', {
-      ip: req.ip,
-      path: req.originalUrl || req.path,
-    });
-    res.status(options.statusCode).json({
-      error: 'Too many sync requests. Please slow down.',
-    });
-  },
-});
-
 export function validateLimiters() {
   const limiters = {
     apiRateLimiter,
