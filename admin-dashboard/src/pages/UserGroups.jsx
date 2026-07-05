@@ -59,7 +59,7 @@ export default function UserGroups() {
   };
 
   const handleDeleteGroup = async (id) => {
-    if (!confirm('Delete this group?')) return;
+    if (!window.confirm('Delete this group?')) return;
     try {
       const res = await fetch(`/api/admin/groups/${id}`, {
         method: 'DELETE',
