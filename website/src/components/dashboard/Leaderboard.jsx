@@ -66,14 +66,31 @@ export default function Leaderboard({ users, currentUserId, timeframe, setTimefr
                 {index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : `#${index + 1} `}
                 {user.username} {isMe && '(You)'}
               </span>
-              <span
-                style={{
-                  color: isMe ? '#FFD700' : 'inherit',
-                  fontWeight: isMe ? 'bold' : 'normal',
-                }}
-              >
-                {user.xp} XP
-              </span>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                {user.streak > 0 && (
+                  <span
+                    title={`${user.streak} day streak!`}
+                    style={{
+                      color: '#F59E0B',
+                      fontWeight: 'bold',
+                      fontSize: '0.9rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    {user.streak} 🔥
+                  </span>
+                )}
+                <span
+                  style={{
+                    color: isMe ? '#FFD700' : 'inherit',
+                    fontWeight: isMe ? 'bold' : 'normal',
+                  }}
+                >
+                  {user.xp} XP
+                </span>
+              </div>
             </div>
           );
         })}
