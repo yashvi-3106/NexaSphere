@@ -18,6 +18,13 @@ export const eventRemindersQueue = connection
   ? new Queue(eventRemindersQueueName, { connection })
   : null;
 
+export const bulkOperationsQueueName = 'bulk-operations';
+
+// Initialize the queue if Redis is configured
+export const bulkOperationsQueue = connection
+  ? new Queue(bulkOperationsQueueName, { connection })
+  : null;
+
 /**
  * Schedule an event reminder job.
  * @param {string} eventId
