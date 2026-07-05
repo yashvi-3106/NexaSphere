@@ -475,75 +475,284 @@
 
 /**
  * @swagger
- * /api/portfolio/{username}/analytics:
- *   get:
- *     summary: Get portfolio analytics
- *     description: Retrieve portfolio performance analytics including profile visits, engagement, downloads, and project popularity.
- *     tags:
- *       - Portfolio
- *     parameters:
- *       - in: path
- *         name: username
- *         required: true
- *         schema:
- *           type: string
- *         description: Portfolio username
- *     responses:
- *       200:
- *         description: Portfolio analytics retrieved successfully
- *       404:
- *         description: Portfolio not found
- */
-/**
- * @swagger
- * /api/portfolio/{username}/visit:
- *   post:
- *     summary: Record portfolio visit
- *     description: Records a visit to a user's portfolio for analytics purposes.
- *     tags:
- *       - Portfolio
- *     parameters:
- *       - in: path
- *         name: username
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Visit recorded successfully
- *       404:
- *         description: Portfolio not found
- */
-/**
- * @swagger
- * /api/portfolio/{username}/monthly-report:
- *   get:
- *     summary: Get monthly analytics report
- *     description: Returns the monthly portfolio performance report.
- *     tags:
- *       - Portfolio
- *     parameters:
- *       - in: path
- *         name: username
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Monthly report retrieved successfully
- *       404:
- *         description: Portfolio not found
- */
-/**
- * @swagger
- * /api/portfolio/{username}/monthly-report:
- *   get:
- *     ...
+ * tags:
+ *   - name: Duplicate Detection
+ *     description: Intelligent Duplicate Detection APIs
  */
 
 /**
  * @swagger
- * ...
+ * /api/duplicates/overview:
+ *   get:
+ *     summary: Get duplicate detection overview
+ *     tags: [Duplicate Detection]
+ *     responses:
+ *       200:
+ *         description: Duplicate overview retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/duplicates/check:
+ *   post:
+ *     summary: Check a record for possible duplicates
+ *     tags: [Duplicate Detection]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Duplicate check completed.
+ */
+
+/**
+ * @swagger
+ * /api/duplicates/events:
+ *   get:
+ *     summary: Detect duplicate events
+ *     tags: [Duplicate Detection]
+ *     responses:
+ *       200:
+ *         description: Duplicate events retrieved.
+ */
+
+/**
+ * @swagger
+ * /api/duplicates/media:
+ *   get:
+ *     summary: Detect duplicate media
+ *     tags: [Duplicate Detection]
+ *     responses:
+ *       200:
+ *         description: Duplicate media retrieved.
+ */
+
+/**
+ * @swagger
+ * /api/duplicates/portfolios:
+ *   get:
+ *     summary: Detect duplicate portfolios
+ *     tags: [Duplicate Detection]
+ *     responses:
+ *       200:
+ *         description: Duplicate portfolios retrieved.
+ */
+
+/**
+ * @swagger
+ * /api/duplicates/clubs:
+ *   get:
+ *     summary: Detect duplicate club registrations
+ *     tags: [Duplicate Detection]
+ *     responses:
+ *       200:
+ *         description: Duplicate club registrations retrieved.
+ */
+
+/**
+ * @swagger
+ * /api/duplicates/merge:
+ *   post:
+ *     summary: Merge duplicate records
+ *     tags: [Duplicate Detection]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id1:
+ *                 type: string
+ *               id2:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Records merged successfully.
+ */
+
+/**
+ * @swagger
+ * /api/duplicates/{id}:
+ *   delete:
+ *     summary: Delete duplicate record
+ *     tags: [Duplicate Detection]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Duplicate record deleted successfully.
+ */
+
+/**
+ * @swagger
+ * /api/duplicates/stats:
+ *   get:
+ *     summary: Get duplicate detection statistics
+ *     tags: [Duplicate Detection]
+ *     responses:
+ *       200:
+ *         description: Duplicate statistics retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   name: Operational Insights
+ *   description: Platform Operational Insights & Health Command Center APIs
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/overview:
+ *   get:
+ *     summary: Get dashboard overview
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Dashboard overview retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/health:
+ *   get:
+ *     summary: Get system health
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: System health retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/users:
+ *   get:
+ *     summary: Get active user statistics
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: User statistics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/traffic:
+ *   get:
+ *     summary: Get API traffic analytics
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: API traffic retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/database:
+ *   get:
+ *     summary: Get database performance
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Database performance retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/jobs:
+ *   get:
+ *     summary: Get background job status
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Background jobs retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/storage:
+ *   get:
+ *     summary: Get storage utilization
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Storage usage retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/notifications:
+ *   get:
+ *     summary: Get notification delivery statistics
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Notification statistics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/errors:
+ *   get:
+ *     summary: Get error monitoring logs
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Error logs retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/maintenance:
+ *   get:
+ *     summary: Get scheduled maintenance
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Maintenance schedule retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/dependencies:
+ *   get:
+ *     summary: Get service dependency status
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Dependencies retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/resources:
+ *   get:
+ *     summary: Get resource consumption
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Resource utilization retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/operational-insights/reports:
+ *   get:
+ *     summary: Get operational reports
+ *     tags: [Operational Insights]
+ *     responses:
+ *       200:
+ *         description: Operational reports retrieved successfully
  */
 
 export default {};
