@@ -5,7 +5,12 @@ const ALLOWED_PREFIXES = ['response:', 'query:', 'view:'];
 export function cacheResponse(duration = 3600) {
   return async (req, res, next) => {
     const cacheKey = cacheService.buildKey('response', req.originalUrl || req.url);
-    const cached = await cacheService.get(cacheKey);
+    let cached = null;
+    try {
+      cached = await cacheService.get(cacheKey);
+    } catch (error) {
+      console.warn('Cache read failed, continuing without cached response:', error.message);
+    }
 
     if (cached) {
       res.setHeader('X-Cache', 'HIT');
