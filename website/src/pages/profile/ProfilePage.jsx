@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-
+import { useUnsavedChangesWarning } from "../../hooks/useUnsavedChangesWarning";
 const styles = {
   page: {
     minHeight: '100vh',
@@ -210,9 +209,14 @@ export default function ProfilePage() {
   const [activeTab,  setActiveTab]  = useState("registrations");
   const [editForm,   setEditForm]   = useState({ fullName: "", bio: "", socialLinks: { github: "", linkedin: "", portfolio: "" } });
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  const isDirty = editing && profile && (
+    editForm.fullName !== (profile.fullName || profile.name || "") ||
+    editForm.bio !== (profile.bio || "") ||
+    JSON.stringify(editForm.socialLinks) !== JSON.stringify(profile.socialLinks || { github: "", linkedin: "", portfolio: "" })
+  );
+  useUnsavedChangesWarning(isDirty);
+
+  useEffect(() => { fetchProfile(); }, []);
 
   const fetchProfile = async () => {
     try {
