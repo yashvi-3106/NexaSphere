@@ -1,15 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getApiBase } from '../utils/runtimeConfig';
 
-function useDebounce(value, delay = 300) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debouncedValue;
-}
-
 function matchesText(value, query) {
   return typeof value === 'string' && value.toLowerCase().includes(query);
 }
@@ -37,7 +28,6 @@ export function useEventSearch(activities, events) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
-  const debouncedQuery = useDebounce(query, 300);
   const abortRef = useRef(null);
 
   const searchApi = useCallback(
@@ -63,18 +53,22 @@ export function useEventSearch(activities, events) {
   );
 
   useEffect(() => {
-    if (!debouncedQuery.trim()) {
+    let active = true;
+
+    if (!query.trim()) {
       setResults([]);
       setLoading(false);
       setApiError(null);
       return;
     }
 
-    const q = debouncedQuery.toLowerCase();
+    const q = query.toLowerCase();
     setLoading(true);
 
     const doSearch = async () => {
-      const apiResults = await searchApi(debouncedQuery, filter === 'all' ? 'all' : filter);
+      const apiResults = await searchApi(query, filter === 'all' ? 'all' : filter);
+      if (!active) return;
+
       if (apiResults && apiResults.results) {
         setResults(apiResults.results);
         setLoading(false);
@@ -125,6 +119,7 @@ export function useEventSearch(activities, events) {
         const base = getApiBase();
         try {
           const res = await fetch(`${base}/api/content/team`);
+          if (!active) return;
           if (!res.ok) {
             setApiError(`Team member search unavailable (${res.status})`);
           } else {
@@ -155,12 +150,18 @@ export function useEventSearch(activities, events) {
         }
       }
 
-      setResults(all);
-      setLoading(false);
+      if (active) {
+        setResults(all);
+        setLoading(false);
+      }
     };
 
     doSearch();
-  }, [debouncedQuery, filter, activities, events, searchApi]);
+
+    return () => {
+      active = false;
+    };
+  }, [query, filter, activities, events, searchApi]);
 
   const clearSearch = useCallback(() => {
     setQuery('');

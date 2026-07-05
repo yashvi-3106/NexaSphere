@@ -63,6 +63,22 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
     events
   );
 
+  const [localQuery, setLocalQuery] = useState('');
+  const timeoutRef = useRef(null);
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setLocalQuery(val);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setQuery(val);
+    }, 350);
+  };
+
+  useEffect(() => {
+    setLocalQuery(query);
+  }, [query]);
+
   useEffect(() => {
     if (open) {
       const t = setTimeout(() => inputRef.current?.focus(), 120);
@@ -169,8 +185,8 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
               <Search size={20} color="var(--c1)" style={{ flexShrink: 0 }} />
               <input
                 ref={inputRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                value={localQuery}
+                onChange={handleInputChange}
                 placeholder="Search events, members, activities…"
                 aria-label="Search"
                 style={{
