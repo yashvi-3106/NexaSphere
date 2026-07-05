@@ -3,34 +3,7 @@ import logger from './logger.js';
 import { recordCacheHit, recordCacheMiss } from '../observability/metrics.js';
 
 let redisClient = null;
-let lastHealthCheck = 0;
-const HEALTH_CHECK_INTERVAL_MS = 30000;
-const HEALTH_CHECK_TIMEOUT_MS = 5000;
-
-function isRedisHealthy() {
-  if (!redisClient) return false;
-  if (redisClient.status !== 'ready') return false;
-  const now = Date.now();
-  if (now - lastHealthCheck < HEALTH_CHECK_INTERVAL_MS) return true;
-  lastHealthCheck = now;
-  return true;
-}
-
-async function performHealthCheck() {
-  if (!redisClient) return false;
-  try {
-    const result = await redisClient.ping();
-    if (result === 'PONG') {
-      lastHealthCheck = Date.now();
-      return true;
-    }
-    logger.warn('Redis health check failed: unexpected ping response');
-    return false;
-  } catch (err) {
-    logger.error('Redis health check failed:', err.message);
-    return false;
-  }
-}
+const inFlightQueries = new Map();
 
 export function getRedisClient() {
   if (!redisClient) {
@@ -102,17 +75,35 @@ export async function getCachedQuery(key, queryFn, ttlSeconds = 300) {
     logger.warn('Redis cache read error, falling back to database query:', err);
   }
 
-  const result = await queryFn();
-
-  try {
-    client.set(key, JSON.stringify(result), 'EX', ttlSeconds).catch((err) => {
-      logger.error('Error setting Redis cache:', err);
-    });
-  } catch (err) {
-    logger.warn('Redis cache write error:', err);
+  const existingQuery = inFlightQueries.get(key);
+  if (existingQuery) {
+    return existingQuery;
   }
 
-  return result;
+  const queryPromise = (async () => {
+    const result = await queryFn();
+
+    // Best-effort cache write
+    try {
+      client.set(key, JSON.stringify(result), 'EX', ttlSeconds).catch((err) => {
+        logger.error('Error setting Redis cache:', err);
+      });
+    } catch (err) {
+      logger.warn('Redis cache write error:', err);
+    }
+
+    return result;
+  })();
+
+  inFlightQueries.set(key, queryPromise);
+
+  try {
+    return await queryPromise;
+  } finally {
+    if (inFlightQueries.get(key) === queryPromise) {
+      inFlightQueries.delete(key);
+    }
+  }
 }
 
 export function clearCache(keyPattern) {
