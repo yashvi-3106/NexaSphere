@@ -56,6 +56,10 @@ import { notificationPreferencesRepository } from './repositories/notificationPr
 import notificationsService from './services/notificationsService.js';
 import { studentAuthService } from './services/studentAuthService.js';
 import { initializeSentry, addSentryErrorHandler } from './utils/sentry.js';
+import morgan from 'morgan';
+import { recordCompressionRatio } from './observability/metrics.js';
+import { logEvent } from './controllers/analyticsController.js';
+import healthDashboardRouter from './routes/healthDashboard.js';
 import {
   apiRateLimiter,
   formRateLimiter,
@@ -144,6 +148,8 @@ const ADMIN_PASSWORD = requiredStrongPassword('ADMIN_PASSWORD');
 
 
 const app = express();
+
+const useStructuredHttpLog = (process.env.LOG_FORMAT || '').toLowerCase() === 'json';
 
 // RECTIFIED: Enable 'trust proxy' to correctly extract client IPs from X-Forwarded-For headers when behind ALBs/Serverless layers
 app.set('trust proxy', 1);
@@ -271,7 +277,6 @@ app.use(
 
         objectSrc: ["'none'"],
 
-
         // ✅ CRITICAL FIX: Missing directives added below
         baseUri: ["'self'"],                                    // Prevents <base> tag injection
         frameAncestors: ["'none'"],                             // Prevents clickjacking
@@ -283,14 +288,6 @@ app.use(
         childSrc: ["'none'"],                                   // Restricts child browsing contexts
         upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
 
-        baseUri: ["'self'"],
-        frameAncestors: ["'none'"],
-        formAction: ["'self'"],
-        workerSrc: ["'self'", 'blob:'],
-        manifestSrc: ["'self'"],
-        mediaSrc: ["'self'"],
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
-        childSrc: ["'none'"],
         reportUri: '/api/v1/csp-violation',
       },
     },
@@ -325,6 +322,7 @@ app.use(
     },
   })
 );
+
 
 app.use(
   cors({
@@ -386,7 +384,6 @@ app.use('/api', tierRateLimiter());
 app.use(readOnlyGuard);
 
 // Mount route modules
-app.use('/api/form-submissions', formSubmissionsRouter);
 app.post('/api/analytics/track', logEvent);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/health-dashboard', healthDashboardRouter);
