@@ -108,7 +108,8 @@ export default function PortfolioBuilder() {
 
     try {
       const base = getApiBase();
-      const url = base ? `${base}/api/portfolio/${username}` : `/api/portfolio/${username}`;
+      const encodedUsername = encodeURIComponent(username);
+      const url = base ? `${base}/api/portfolio/${encodedUsername}` : `/api/portfolio/${encodedUsername}`;
       const data = await apiClient(url, { signal: controller.signal });
       if (gen !== loadGenRef.current) return;
       if (data) {
@@ -305,7 +306,7 @@ export default function PortfolioBuilder() {
 
   const getPortfolioUrl = () => {
     const base = typeof window !== 'undefined' ? window.location.origin : '';
-    return `${base}/p/${username}`;
+    return `${base}/p/${encodeURIComponent(username)}`;
   };
 
   const handleCopyLink = () => {
@@ -970,7 +971,7 @@ export default function PortfolioBuilder() {
                   {copied ? 'Copied Showcase Link!' : 'Copy Public URL'}
                 </button>
                 <a
-                  href={`/p/${username}`}
+                  href={`/p/${encodeURIComponent(username)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-primary"
