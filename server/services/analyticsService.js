@@ -32,11 +32,10 @@ export const analyticsService = {
       );
       const activeUsers = parseInt(userRows[0]?.count || 0, 10);
 
-      // 2. Events this month
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-      const { rows: eventRows } = await client.query(
-        `SELECT COUNT(*) as count FROM analytics_events WHERE created_at >= $1`,
-        [startOfMonth]
+      // Events this month (approximate via events table)
+      const { rows: eventsRows } = await client.query(
+        `SELECT COUNT(*) AS count FROM analytics_events WHERE created_at >= $1`,
+        [firstDayOfMonth]
       );
       const eventsThisMonth = parseInt(eventRows[0]?.count || 0, 10);
 
