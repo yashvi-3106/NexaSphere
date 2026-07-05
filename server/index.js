@@ -118,6 +118,8 @@ import * as slackController from './controllers/slackController.js';
 import activityTimelineRoutes from "./routes/activityTimeline.js";
 app.use("/api/activity-timeline", activityTimelineRoutes);
 
+import { initializeTypesenseCollections } from './config/typesense.js';
+
 validateLimiters();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -125,6 +127,9 @@ const __dirname = path.dirname(__filename);
 const CONTENT_FILE = path.join(__dirname, 'data', 'content.json');
 
 validateEnvironment();
+initializeTypesenseCollections().catch((err) => {
+  console.error('Failed to initialize Typesense collections:', err);
+});
 
 function requiredStrongPassword(name) {
   const value = String(process.env[name] || '').trim();

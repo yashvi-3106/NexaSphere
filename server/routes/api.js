@@ -35,12 +35,18 @@ import waitlistRoutes from "./waitlist.js";
 import * as localAuthController from '../controllers/localAuthController.js';
 >>>>>>> upstream/main
 
-const bookmarkRoutes = require("./bookmark");
+import * as recommendationsController from '../controllers/recommendationsController.js';
+import * as gamificationController from '../controllers/gamificationController.js';
+import multer from 'multer';
 
 const router = Router();
-const recommendationEngine = require("./recommendationEngine");
 
-const operationalInsightsRoutes = require("./operationalInsights");
+router.use(rateLimitAdminRoutes);
+router.use(throttleMiddleware);
+
+const upload = multer({
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+});
 
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
