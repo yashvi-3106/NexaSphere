@@ -1,27 +1,17 @@
-export const activateReadOnlyMode = () => {
-  return {
-    status: 'READ_ONLY_ENABLED',
-    activatedAt: new Date().toISOString(),
-  };
-};
+import {
+  getReadOnlyStatus as getStatus,
+  activateReadOnlyMode as activateMode,
+  deactivateReadOnlyMode as deactivateMode,
+  logIncident,
+} from '../services/readOnlyService.js';
 
-export const deactivateReadOnlyMode = () => {
-  return {
-    status: 'READ_ONLY_DISABLED',
-    deactivatedAt: new Date().toISOString(),
-  };
-};
+export const getReadOnlyStatus = () => getStatus();
 
-export const getReadOnlyStatus = () => {
-  return {
-    enabled: false,
-    message: 'System operating normally',
-  };
-};
+export const activateReadOnlyMode = (reason) => activateMode(reason);
 
-export const createIncidentLog = () => {
-  return {
-    action: 'READ_ONLY_MODE_CHECK',
-    timestamp: new Date().toISOString(),
-  };
-};
+export const deactivateReadOnlyMode = () => deactivateMode();
+
+export const createIncidentLog = (incident) =>
+  logIncident(
+    incident || { severity: 'info', message: 'Read-only mode check', createdBy: 'system' }
+  );

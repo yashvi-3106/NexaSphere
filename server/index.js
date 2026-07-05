@@ -71,6 +71,7 @@ import * as activityEventsController from './controllers/activityEventsControlle
 import * as streamController from './controllers/streamController.js';
 import * as coreTeamController from './controllers/coreTeamController.js';
 import { coreTeamService } from './services/coreTeamService.js';
+import { readOnlyGuard } from './services/readOnlyService.js';
 import { HAS_SUPABASE, SUPABASE_URL, SUPABASE_SERVICE_KEY } from './storage/supabaseClient.js';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
@@ -387,6 +388,9 @@ app.use(csrfProtection);
 // Global API rate limiter â€” protects all /api routes from request flooding
 app.use('/api', apiRateLimiter);
 app.use('/api', tierRateLimiter());
+
+// Read-only guard — blocks non-GET requests when system is in maintenance mode
+app.use(readOnlyGuard);
 
 // Mount route modules
 app.use('/api/form-submissions', formSubmissionsRouter);
