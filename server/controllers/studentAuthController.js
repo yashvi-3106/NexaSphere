@@ -202,6 +202,7 @@ export const getProfile = async (req, res) => {
       email:       user.email,
       avatar:      user.avatar_url,
       bio:         user.bio || '',
+      phoneNumber: user.phone_number || '',
       socialLinks: user.social_links || {},
       role:        user.role,
       createdAt:   user.created_at,
@@ -225,7 +226,7 @@ export const updateProfile = async (req, res) => {
   }
   try {
     const userId  = req.studentUser.sub || req.studentUser.id;
-    const allowed = ['fullName', 'bio', 'socialLinks'];
+    const allowed = ['fullName', 'bio', 'socialLinks', 'phoneNumber'];
     const updates = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
@@ -235,6 +236,7 @@ export const updateProfile = async (req, res) => {
     const dbUpdates = {};
     if (updates.fullName    !== undefined) dbUpdates.full_name    = updates.fullName;
     if (updates.bio         !== undefined) dbUpdates.bio          = updates.bio;
+    if (updates.phoneNumber !== undefined) dbUpdates.phone_number = updates.phoneNumber;
     if (updates.socialLinks !== undefined) dbUpdates.social_links = JSON.stringify(updates.socialLinks);
 
     const updatedUser = await studentUsersRepository.updateProfile(userId, dbUpdates);
@@ -245,6 +247,7 @@ export const updateProfile = async (req, res) => {
       fullName:    updatedUser.full_name,
       email:       updatedUser.email,
       bio:         updatedUser.bio || '',
+      phoneNumber: updatedUser.phone_number || '',
       socialLinks: updatedUser.social_links || {},
     });
   } catch (err) {

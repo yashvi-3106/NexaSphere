@@ -67,8 +67,8 @@ export async function adminCreateUser(req, res) {
 export async function adminUpdateUser(req, res) {
   try {
     const { id } = req.params;
-    const { display_name, email, admin_roles } = req.body;
-    const user = await usersRepository.updateUser(id, { display_name, email, admin_roles });
+    const { display_name, email, phone_number, admin_roles } = req.body;
+    const user = await usersRepository.updateUser(id, { display_name, email, phone_number, admin_roles });
     if (!user) return res.status(404).json({ error: 'User not found' });
     return res.json({ user });
   } catch (error) {

@@ -1,4 +1,4 @@
-﻿import { promises as fs } from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { withDb } from './db.js';
@@ -60,6 +60,9 @@ export const studentUsersRepository = {
       `);
       await client.query(`
         ALTER TABLE student_users ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '{}'::jsonb;
+      `);
+      await client.query(`
+        ALTER TABLE student_users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20) DEFAULT NULL;
       `);
     });
   },
@@ -264,6 +267,10 @@ export const studentUsersRepository = {
             ? updates.social_links
             : JSON.stringify(updates.social_links)
         );
+      }
+      if (updates.phone_number !== undefined) {
+        setClauses.push(`phone_number = $${idx++}`);
+        values.push(updates.phone_number);
       }
 
       if (setClauses.length === 0) {
