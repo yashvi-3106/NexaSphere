@@ -71,7 +71,7 @@ export function auditPermissionCheck(req, res, next) {
     return next();
   }
 
-  const originalJson = res.json;
+  const originalJson = res.json.bind(res);
   res.json = function (body) {
     if (res.statusCode === 403) {
       const auditLog = {
