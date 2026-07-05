@@ -161,9 +161,11 @@ export async function sendWaitlistPromotionEmail(to, data) {
 }
 
 export async function sendEventReminderEmail(to, data) {
+  const timeText =
+    data.timeUntilEvent && data.timeUntilEvent !== 'soon' ? `in ${data.timeUntilEvent}` : 'soon';
   return sendEmail({
     to,
-    subject: `Reminder: ${data.eventName} is starting soon`,
+    subject: `Reminder: ${data.eventName} is starting ${timeText}`,
     templateName: 'event-reminder',
     data: { name: data.name, ...data },
   });

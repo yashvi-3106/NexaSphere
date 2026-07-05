@@ -56,15 +56,30 @@ export const eventsService = {
     try {
       const eventDate = new Date(created.date);
       if (!isNaN(eventDate.getTime())) {
+        const now = Date.now();
+
+        // Schedule reminder 24 hours before the event
+        const delay24h = eventDate.getTime() - 24 * 60 * 60 * 1000 - now;
+        if (delay24h > 0) {
+          await scheduleReminderJob({
+            eventId: created.id,
+            type: 'event-reminder-24h',
+            delayMs: delay24h,
+          });
+        }
+
         // Schedule reminder 1 hour before the event
-        const reminderTime = eventDate.getTime() - 60 * 60 * 1000;
-        const delay = reminderTime - Date.now();
-        if (delay > 0) {
-          await scheduleReminderJob({ eventId: created.id, delayMs: delay });
+        const delay1h = eventDate.getTime() - 60 * 60 * 1000 - now;
+        if (delay1h > 0) {
+          await scheduleReminderJob({
+            eventId: created.id,
+            type: 'event-reminder-1h',
+            delayMs: delay1h,
+          });
         }
       }
     } catch (err) {
-      logger.warn(`Could not schedule reminder for event ${created.id}: ${err.message}`);
+      logger.warn(`Could not schedule reminders for event ${created.id}: ${err.message}`);
     }
 
     return created;
@@ -78,16 +93,28 @@ export const eventsService = {
       try {
         const eventDate = new Date(updated.date);
         if (!isNaN(eventDate.getTime())) {
-          const reminderTime = eventDate.getTime() - 60 * 60 * 1000;
-          const delay = reminderTime - Date.now();
-          if (delay > 0) {
-            // Note: In a complete system we might cancel the old job and schedule a new one,
-            // but for now we simply schedule the new reminder time.
-            await scheduleReminderJob({ eventId: updated.id, delayMs: delay });
+          const now = Date.now();
+
+          const delay24h = eventDate.getTime() - 24 * 60 * 60 * 1000 - now;
+          if (delay24h > 0) {
+            await scheduleReminderJob({
+              eventId: updated.id,
+              type: 'event-reminder-24h',
+              delayMs: delay24h,
+            });
+          }
+
+          const delay1h = eventDate.getTime() - 60 * 60 * 1000 - now;
+          if (delay1h > 0) {
+            await scheduleReminderJob({
+              eventId: updated.id,
+              type: 'event-reminder-1h',
+              delayMs: delay1h,
+            });
           }
         }
       } catch (err) {
-        logger.warn(`Could not update reminder for event ${updated.id}: ${err.message}`);
+        logger.warn(`Could not update reminders for event ${updated.id}: ${err.message}`);
       }
     }
 
