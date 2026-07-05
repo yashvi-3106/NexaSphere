@@ -5,6 +5,7 @@ import { projectsData } from '../../data/projectsData';
 import { roadmapData } from '../../data/roadmapData';
 import { RepoCardSkeleton } from '../ui/skeleton/RepoCardSkeleton';
 import AdvancedCustomizer from './AdvancedCustomizer';
+import { buildGithubReposUrl } from './githubReposConfig';
 
 export default function PortfolioBuilder() {
   const [username, setUsername] = useState('');
@@ -186,7 +187,7 @@ export default function PortfolioBuilder() {
       const base = getApiBase();
       const url = base ? `${base}/api/portfolio` : `/api/portfolio`;
 
-      const data = await apiClient(url, {
+      await apiClient(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -243,15 +244,17 @@ export default function PortfolioBuilder() {
     setIsFetchingGh(true);
     setGhError('');
     try {
-      const response = await fetch(
-        `https://api.github.com/users/${ghUsername.trim()}/repos?sort=updated&per_page=30`,
-        { signal: controller.signal }
-      );
+      const response = await fetch(buildGithubReposUrl(ghUsername), { signal: controller.signal });
 
       if (response.status === 403 || response.status === 429) {
-        const resetHeader = response.headers.get('X-RateLimit-Reset');
-        const resetTime = resetHeader
-          ? new Date(parseInt(resetHeader, 10) * 1000).toLocaleTimeString()
+        let errorDetail = {};
+        try {
+          errorDetail = await response.json();
+        } catch {
+          // Keep default rate-limit message below.
+        }
+        const resetTime = errorDetail.rateLimitReset
+          ? new Date(errorDetail.rateLimitReset).toLocaleTimeString()
           : 'soon';
         setGhError(
           `GitHub rate limit reached. Too many requests from this network. Please try again after ${resetTime}.`
@@ -267,7 +270,15 @@ export default function PortfolioBuilder() {
       }
 
       if (!response.ok) {
-        setGhError(`GitHub API error: ${response.status} ${response.statusText}`);
+        let errorDetail = {};
+        try {
+          errorDetail = await response.json();
+        } catch {
+          // Keep fallback message below.
+        }
+        setGhError(
+          errorDetail.error || `GitHub API error: ${response.status} ${response.statusText}`
+        );
         return;
       }
 
