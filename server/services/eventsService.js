@@ -3,7 +3,7 @@ import { eventSchema } from '../validators/eventSchemas.js';
 import { recordEventCreated } from '../observability/metrics.js';
 import { scheduleReminderJob } from './queueService.js';
 import logger from '../utils/logger.js';
-import { emitToRoom } from '../config/socket.js';
+import { getCachedQuery, clearCache } from '../utils/redis.js';
 
 export const eventsService = {
   async listEvents({
@@ -17,23 +17,30 @@ export const eventsService = {
     location,
     search,
   } = {}) {
-    return eventsRepository.list({
-      page,
-      limit,
-      status,
-      studentGroups,
-      startDate,
-      endDate,
-      category,
-      location,
-      search,
-    });
+    const cacheKey = `events:list:${JSON.stringify({ page, limit, status, studentGroups, startDate, endDate, category, location, search })}`;
+    return getCachedQuery(
+      cacheKey,
+      () =>
+        eventsRepository.list({
+          page,
+          limit,
+          status,
+          studentGroups,
+          startDate,
+          endDate,
+          category,
+          location,
+          search,
+        }),
+      300
+    ); // 5 minutes cache
   },
 
   async createEvent(input) {
     const event = eventSchema.parse(input);
     const created = await eventsRepository.create(event);
     recordEventCreated();
+    clearCache('events:list:*');
 
     // Emit real-time notification to all connected clients
     try {
@@ -66,8 +73,8 @@ export const eventsService = {
   async updateEvent(id, input) {
     const patch = eventSchema.partial().parse({ ...input, id });
     const updated = await eventsRepository.update(id, patch);
-
     if (updated) {
+      clearCache('events:list:*');
       try {
         const eventDate = new Date(updated.date);
         if (!isNaN(eventDate.getTime())) {
@@ -88,7 +95,9 @@ export const eventsService = {
   },
 
   async deleteEvent(id) {
-    return eventsRepository.delete(id);
+    const deleted = await eventsRepository.delete(id);
+    clearCache('events:list:*');
+    return deleted;
   },
   async adminListEvents({
     page = 1,
