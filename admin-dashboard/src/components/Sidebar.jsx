@@ -96,9 +96,6 @@ const links = [
     to: '/dashboard/audit-logs',
     label: 'Audit Logs',
     icon: 'FileText',
-    to: '/dashboard/audit-logs',
-    label: 'Audit Logs',
-    icon: 'FileText',
     requiredScope: 'settings:admin',
   },
   {
@@ -117,10 +114,6 @@ const links = [
     to: '/dashboard/reports',
     label: 'Reports',
     icon: 'Target',
-    to: '/dashboard/settings',
-    label: 'Platform Settings',
-    icon: 'Settings',
-    requiredScope: 'settings:admin',
   },
   {
     to: '/dashboard/settings',
@@ -310,6 +303,7 @@ export function Sidebar() {
                 to={to}
                 end={to === '/dashboard'}
                 className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                aria-current={({ isActive }) => (isActive ? 'page' : undefined)}
                 onClick={close}
               >
                 <AdminIcon name={icon} size={16} aria-hidden="true" />
@@ -356,4 +350,3 @@ export function Sidebar() {
     </>
   );
 }
-
