@@ -34,7 +34,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: nexasphere
-          POSTGRES_PASSWORD: nexasphere
+          POSTGRES_PASSWORD: ${{ secrets.E2E_DB_PASSWORD || 'nexasphere' }}
           POSTGRES_DB: nexasphere_test
         ports:
           - 5432:5432
