@@ -1108,7 +1108,7 @@ export default function PortfolioBuilder() {
                 className="portfolio-intro"
                 style={{ flexDirection: 'column', textAlign: 'center', gap: '12px' }}
               >
-                <img
+                <img loading="lazy"
                   src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${username || 'preview'}`}
                   alt="avatar"
                   className="portfolio-avatar"

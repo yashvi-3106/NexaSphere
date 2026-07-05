@@ -787,7 +787,7 @@ function QRTicketCard({ event, ticket, color, rgb, onCalendarDownload }) {
             }}
           >
             {ticket.qrDataUrl ? (
-              <img src={ticket.qrDataUrl} alt="Entry QR" width={160} height={160} />
+              <img loading="lazy" src={ticket.qrDataUrl} alt="Entry QR" width={160} height={160} />
             ) : (
               <canvas ref={canvasRef} width={160} height={160} style={{ display: 'block' }} />
             )}

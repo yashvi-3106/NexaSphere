@@ -42,7 +42,7 @@ export default function TeamMemberCard({ member, onClick, extraClass = '', style
       aria-label={`View ${member.name}'s profile`}
     >
       <div className="team-card-photo-wrap">
-        <img
+        <img loading="lazy"
           src={
             imgError
               ? 'https://api.dicebear.com/7.x/initials/svg?seed=' +
