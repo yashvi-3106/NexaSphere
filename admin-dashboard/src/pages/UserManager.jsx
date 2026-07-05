@@ -18,8 +18,6 @@ export default function UserManager() {
   });
   const [editUser, setEditUser] = useState(null);
   const [timelineUser, setTimelineUser] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState(null);
   const [form, setForm] = useState({
     username: '',
     display_name: '',
@@ -33,8 +31,6 @@ export default function UserManager() {
   const [importJobId, setImportJobId] = useState(null);
   const [importProgress, setImportProgress] = useState(null);
   const [importErrors, setImportErrors] = useState([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState(null);
 
   async function fetchUsers() {
     setLoading(true);
