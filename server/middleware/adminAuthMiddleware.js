@@ -427,17 +427,13 @@ async function login(req, res) {
         scopes,
         secret,
         backupCodes,
-        ip,
-        userAgent,
-        suspicious,
       });
 
       return res.status(200).json({
         requiresTwoFactorSetup: true,
         setupToken,
-        qrCodeDataUrl,
+        qrCode: qrCodeDataUrl,
         backupCodes,
-        expiresAt: Date.now() + PENDING_2FA_TTL_MS,
       });
     }
 
