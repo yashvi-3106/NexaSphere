@@ -15,7 +15,6 @@ import './i18n';
 // Core structural elements
 import AppProviders from './providers/AppProviders';
 import AppRoutes from './router/routes';
-
 import useAppBootstrap from './hooks/useAppBootstrap';
 import { useTheme } from './hooks/useTheme';
 import { useDeveloperMode } from './hooks/useDeveloperMode';
@@ -51,12 +50,11 @@ const isPlaywright =
 import { BookmarkProvider } from './context/BookmarkContext';
 import { StudentAuthProvider, useStudentAuth } from './context/StudentAuthContext';
 
-import ErrorBoundary from './components/common/ErrorBoundary';
+
 
 // Lazy-loaded heavy pages
 const RecruitmentPage = lazy(() => import('./pages/recruitment/RecruitmentPage'));
 const MembershipPage = lazy(() => import('./pages/membership/MembershipPage'));
-
 const ActivitiesPage = lazy(() => import('./pages/activities/ActivitiesPage'));
 const ActivityDetailPage = lazy(() => import('./pages/activities/ActivityDetailPage'));
 const EventsPage = lazy(() => import('./pages/events/EventsPage'));
@@ -68,7 +66,6 @@ const ContactPage = lazy(() => import('./pages/contact/ContactPage'));
 const RoadmapsPage = lazy(() => import('./pages/roadmaps/RoadmapsPage'));
 const ProjectsPage = lazy(() => import('./pages/projects/ProjectsPage'));
 const CertificateVerifyPage = lazy(() => import('./pages/certificates/CertificateVerifyPage'));
-
 const PortfolioBuilder = lazy(() => import('./components/portfolio/PortfolioBuilder'));
 const PortfolioAnalytics = lazy(() => import('./pages/portfolio/PortfolioAnalytics'));
 const PublicPortfolio = lazy(() => import('./pages/portfolio/PublicPortfolio'));
@@ -85,6 +82,63 @@ const StatusPage = lazy(() => import('./pages/StatusPage'));
 const LiveStreamPage = lazy(() => import('./pages/streaming/LiveStreamPage'));
 const NotificationHistoryPage = lazy(() => import('./pages/notifications/NotificationHistoryPage'));
 const SponsorsPage = lazy(() => import('./pages/sponsors/SponsorsPage'));
+
+/* â”€â”€ Page wipe transition â”€â”€ */
+const Wipe = memo(function Wipe({ on: wipeOn, ph }) {
+  if (!wipeOn) return null;
+  return (
+    <>
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 8000,
+          background: 'var(--bg)',
+          animation: `${ph === 'out' ? 'wipeDown .27s' : 'wipeUp .30s'} cubic-bezier(.77,0,.18,1) forwards`,
+          pointerEvents: 'all',
+        }}
+      />
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 8001,
+          background: 'linear-gradient(90deg,#CC1111,#880000,#EE2222)',
+          opacity: 0.09,
+          animation: `${ph === 'out' ? 'wipeDown .20s .04s' : 'wipeUp .24s .04s'} cubic-bezier(.77,0,.18,1) forwards`,
+          pointerEvents: 'none',
+        }}
+      />
+      {ph === 'out' && <div className="wipe-shimmer" aria-hidden="true" />}
+      {ph === 'in' && <PageFlash />}
+      {ph === 'out' && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%,-50%)',
+            zIndex: 8002,
+            pointerEvents: 'none',
+            opacity: 0,
+            animation: 'splashIn .16s .1s ease forwards',
+          }}
+        >
+          <img
+            src={nexasphereLogo}
+            style={{
+              height: '46px',
+              mixBlendMode: 'screen',
+              filter: 'drop-shadow(0 0 12px var(--c1))',
+              opacity: 0.6,
+            }}
+            alt=""
+          />
+        </div>
+      )}
+    </>
+  );
+});
 
 /* â”€â”€ Page enter animation â”€â”€ */
 const PageIn = memo(function PageIn({ children, k }) {
