@@ -1,3 +1,4 @@
+import { Router } from 'express';
 import { throttleMiddleware } from '../middleware/throttleMiddleware.js';
 import rateLimitAdminRoutes from './rateLimitAdminRoutes.js';
 import { auditLogController } from '../controllers/auditLogController.js';
@@ -33,6 +34,8 @@ import * as recommendationsController from '../controllers/recommendationsContro
 import * as gamificationController from '../controllers/gamificationController.js';
 import multer from 'multer';
 import * as analyticsController from '../controllers/analyticsController.js';
+
+const router = Router();
 
 const router = Router();
 
