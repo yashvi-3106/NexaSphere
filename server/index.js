@@ -116,7 +116,8 @@ import financialsRouter from './routes/financials.js';
 import { schedulerService } from './services/schedulerService.js';
 import feedbackRouter from './routes/feedbackRoutes.js';
 import * as slackController from './controllers/slackController.js';
-import notificationPreferenceRoutes from "./routes/notificationPreference.js";
+import activityTimelineRoutes from "./routes/activityTimeline.js";
+app.use("/api/activity-timeline", activityTimelineRoutes);
 
 validateLimiters();
 

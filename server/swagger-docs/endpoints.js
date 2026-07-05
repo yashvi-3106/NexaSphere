@@ -593,152 +593,60 @@
 
 /**
  * @swagger
- * /api/recommendations/{userId}:
+ * /api/announcements:
  *   get:
- *     summary: Get personalized recommendations
+ *     summary: Get all announcements
+ *     description: Returns all announcements sorted by priority and pinned status.
  *     tags:
- *       - Recommendation Engine
+ *       - Announcements
  *     responses:
  *       200:
- *         description: Personalized recommendations
- */
-
-/**
- * @swagger
- * /api/recommendations/trending:
- *   get:
- *     summary: Get trending recommendations
- *     tags:
- *       - Recommendation Engine
- *     responses:
- *       200:
- *         description: Trending recommendations
- */
-
-/**
- * @swagger
- * /api/recommendations/{userId}/feedback:
+ *         description: List of announcements retrieved successfully.
+ *
  *   post:
- *     summary: Submit recommendation feedback
+ *     summary: Create a new announcement
+ *     description: Creates a new announcement with priority, audience, and expiration.
  *     tags:
- *       - Recommendation Engine
- *     responses:
- *       200:
- *         description: Feedback submitted
- */
-
-/**
- * @swagger
- * /api/recommendations/{userId}/interests:
- *   put:
- *     summary: Update user interests
- *     tags:
- *       - Recommendation Engine
- *     responses:
- *       200:
- *         description: Interests updated
- */
-
-/**
- * @swagger
- * /api/recommendations/stats:
- *   get:
- *     summary: Recommendation analytics
- *     tags:
- *       - Recommendation Engine
- *     responses:
- *       200:
- *         description: Recommendation statistics
- */
-
-/**
- * @swagger
- * tags:
- *   name: Draft Recovery
- *   description: Draft and Auto-Save Recovery APIs
- */
-
-/**
- * @swagger
- * /api/drafts/{userId}:
- *   post:
- *     summary: Create a new draft
- *     tags: [Draft Recovery]
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
+ *       - Announcements
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - title
+ *               - message
  *             properties:
- *               module:
- *                 type: string
- *                 example: events
  *               title:
  *                 type: string
- *                 example: AI Workshop Draft
- *               content:
+ *               message:
  *                 type: string
- *                 example: Event description goes here...
+ *               priority:
+ *                 type: string
+ *                 enum: [Critical, High, Medium, Low]
+ *               pinned:
+ *                 type: boolean
+ *               expiresAt:
+ *                 type: string
+ *                 format: date-time
+ *               audience:
+ *                 type: string
  *     responses:
  *       201:
- *         description: Draft created successfully
+ *         description: Announcement created successfully.
  */
 
 /**
  * @swagger
- * /api/drafts/{userId}:
- *   get:
- *     summary: Get all drafts for a user
- *     tags: [Draft Recovery]
+ * /api/announcements/{id}/priority:
+ *   patch:
+ *     summary: Update announcement priority
+ *     tags:
+ *       - Announcements
  *     parameters:
  *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: List of user drafts
- */
-
-/**
- * @swagger
- * /api/drafts/{userId}/{draftId}:
- *   get:
- *     summary: Get a specific draft
- *     tags: [Draft Recovery]
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: draftId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Draft retrieved successfully
- */
-
-/**
- * @swagger
- * /api/drafts/{draftId}:
- *   put:
- *     summary: Update an existing draft (Auto Save)
- *     tags: [Draft Recovery]
- *     parameters:
- *       - in: path
- *         name: draftId
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
@@ -749,310 +657,454 @@
  *           schema:
  *             type: object
  *             properties:
- *               content:
+ *               priority:
  *                 type: string
- *                 example: Updated draft content...
+ *                 enum: [Critical, High, Medium, Low]
  *     responses:
  *       200:
- *         description: Draft updated successfully
+ *         description: Priority updated successfully.
  */
 
 /**
  * @swagger
- * /api/drafts/{draftId}:
- *   delete:
- *     summary: Delete a draft
- *     tags: [Draft Recovery]
- *     parameters:
- *       - in: path
- *         name: draftId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Draft deleted successfully
- */
-
-/**
- * @swagger
- * /api/drafts/{draftId}/restore:
- *   post:
- *     summary: Restore latest version of a draft
- *     tags: [Draft Recovery]
- *     parameters:
- *       - in: path
- *         name: draftId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Draft restored successfully
- */
-
-/**
- * @swagger
- * /api/drafts/{draftId}/history:
- *   get:
- *     summary: Get version history of a draft
- *     tags: [Draft Recovery]
- *     parameters:
- *       - in: path
- *         name: draftId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Version history retrieved successfully
- */
-
-/**
- * @swagger
- * /api/drafts/{draftId}/sync:
- *   post:
- *     summary: Synchronize draft across devices
- *     tags: [Draft Recovery]
- *     parameters:
- *       - in: path
- *         name: draftId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Draft synchronized successfully
- */
-
-/**
- * @swagger
- * /api/drafts/stats:
- *   get:
- *     summary: Get draft recovery statistics
- *     tags: [Draft Recovery]
- *     responses:
- *       200:
- *         description: Draft statistics retrieved successfully
- */
-
-/**
- * @swagger
- * tags:
- *   - name: Event Resources
- *     description: Event Resource & Inventory Management APIs
- */
-
-/**
- * @swagger
- * /api/event-resources:
- *   get:
- *     summary: Get all event resources
+ * /api/announcements/{id}/pin:
+ *   patch:
+ *     summary: Pin or unpin an announcement
  *     tags:
- *       - Event Resources
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pinned:
+ *                 type: boolean
  *     responses:
  *       200:
- *         description: List of resources
- *
+ *         description: Announcement updated successfully.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/{id}/read:
  *   post:
- *     summary: Create a new resource
+ *     summary: Mark announcement as read
  *     tags:
- *       - Event Resources
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Announcement marked as read.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/analytics:
+ *   get:
+ *     summary: Get announcement analytics
+ *     description: Returns announcement statistics including views, reads, and priority distribution.
+ *     tags:
+ *       - Announcements
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/conflicts:
+ *   get:
+ *     summary: Detect event scheduling conflicts
+ *     description: Returns events that overlap in time or venue.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Conflict list returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/venue:
+ *   get:
+ *     summary: Check venue availability
+ *     description: Verify whether a venue is available for a selected date.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: venue
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Venue availability returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/attendance-impact:
+ *   get:
+ *     summary: Attendance impact analysis
+ *     description: Analyze attendance impact caused by conflicting events.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Attendance analysis generated.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/recommendations:
+ *   get:
+ *     summary: Smart scheduling recommendations
+ *     description: Returns recommended schedules for events.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Scheduling recommendations returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/calendar:
+ *   get:
+ *     summary: Calendar integration
+ *     description: Returns event data formatted for calendar integration.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Calendar events returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/alerts:
+ *   get:
+ *     summary: Organizer alerts
+ *     description: Returns scheduling alerts for organizers.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Organizer alerts returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/join:
+ *   post:
+ *     summary: Join an event waitlist
+ *     description: Adds a user to the waitlist when an event is full.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully added to waitlist.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/position:
+ *   get:
+ *     summary: Get waitlist position
+ *     description: Returns the user's current position in the event waitlist.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Waitlist position returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/auto-enroll:
+ *   post:
+ *     summary: Auto-enroll next waitlisted user
+ *     description: Automatically enrolls the first user from the waitlist when a seat becomes available.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User enrolled successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/notifications:
+ *   get:
+ *     summary: Get waitlist notifications
+ *     description: Returns notification history for waitlisted users.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Notifications retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/analytics:
+ *   get:
+ *     summary: Waitlist analytics
+ *     description: Returns statistics about waitlists and enrollments.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/deadline:
+ *   post:
+ *     summary: Set registration deadline
+ *     description: Configure the registration deadline for an event.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Registration deadline updated successfully.
+ */
+
+/**
+ * @swagger
+ * /api/search:
+ *   get:
+ *     summary: Global Search
+ *     description: Search across events, team members, portfolios, and resources.
+ *     tags:
+ *       - Global Search
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Search keyword
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum:
+ *             - all
+ *             - events
+ *             - members
+ *             - portfolios
+ *             - resources
+ *         description: Filter search by category
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Maximum results
+ *     responses:
+ *       200:
+ *         description: Search results returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/search/trending:
+ *   get:
+ *     summary: Trending Searches
+ *     description: Returns the most popular search queries.
+ *     tags:
+ *       - Global Search
+ *     responses:
+ *       200:
+ *         description: Trending searches retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/search/recent:
+ *   get:
+ *     summary: Recent Searches
+ *     description: Returns the user's recent search history.
+ *     tags:
+ *       - Global Search
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Recent searches returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/search/suggestions:
+ *   get:
+ *     summary: Instant Search Suggestions
+ *     description: Returns autocomplete suggestions while typing.
+ *     tags:
+ *       - Global Search
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Suggestions returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/search/analytics:
+ *   get:
+ *     summary: Search Analytics Dashboard
+ *     description: Returns analytics about search usage, popular keywords and categories.
+ *     tags:
+ *       - Global Search
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}:
+ *   get:
+ *     summary: Get user activity timeline
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User activity timeline
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}:
+ *   post:
+ *     summary: Add activity to timeline
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
  *     requestBody:
  *       required: true
  *     responses:
- *       201:
- *         description: Resource created
+ *       200:
+ *         description: Activity added successfully
  */
 
 /**
  * @swagger
- * /api/event-resources/{id}:
+ * /api/activity-timeline/{userId}/summary:
  *   get:
- *     summary: Get resource by ID
+ *     summary: Monthly activity summary
  *     tags:
- *       - Event Resources
+ *       - Activity Timeline
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: userId
  *         required: true
  *         schema:
  *           type: string
  *     responses:
  *       200:
- *         description: Resource details
- *
- *   put:
- *     summary: Update resource
+ *         description: Monthly summary
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}/stats:
+ *   get:
+ *     summary: Activity statistics
  *     tags:
- *       - Event Resources
+ *       - Activity Timeline
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: userId
  *         required: true
  *         schema:
  *           type: string
  *     responses:
  *       200:
- *         description: Resource updated
- *
- *   delete:
- *     summary: Delete resource
- *     tags:
- *       - Event Resources
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Resource deleted
+ *         description: Activity statistics
  */
-
-/**
- * @swagger
- * /api/event-resources/{id}/reserve:
- *   post:
- *     summary: Reserve a resource
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: Resource reserved
- */
-
-/**
- * @swagger
- * /api/event-resources/{id}/return:
- *   post:
- *     summary: Return a reserved resource
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: Resource returned
- */
-
-/**
- * @swagger
- * /api/event-resources/{id}/assign:
- *   post:
- *     summary: Assign resource to an event
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: Resource assigned
- */
-
-/**
- * @swagger
- * /api/event-resources/{id}/report-damage:
- *   post:
- *     summary: Report damaged resource
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: Damage reported
- */
-
-/**
- * @swagger
- * /api/event-resources/{id}/maintenance:
- *   put:
- *     summary: Update maintenance status
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: Maintenance status updated
- */
-
-/**
- * @swagger
- * /api/event-resources/{id}/availability:
- *   get:
- *     summary: Check resource availability
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: Availability information
- */
-
-/**
- * @swagger
- * /api/event-resources/conflicts/all:
- *   get:
- *     summary: Detect resource conflicts
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: Conflict report
- */
-
-/**
- * @swagger
- * /api/event-resources/calendar/availability:
- *   get:
- *     summary: View availability calendar
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: Availability calendar
- */
-
-/**
- * @swagger
- * /api/event-resources/{id}/qrcode:
- *   get:
- *     summary: Generate QR code for resource
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: QR code generated
- */
-
-/**
- * @swagger
- * /api/event-resources/{id}/history:
- *   get:
- *     summary: Get borrow history
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: Borrow history
- */
-
-/**
- * @swagger
- * /api/event-resources/analytics/inventory:
- *   get:
- *     summary: Inventory analytics
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: Inventory analytics
- */
-
-/**
- * @swagger
- * /api/event-resources/analytics/utilization:
- *   get:
- *     summary: Resource utilization report
- *     tags:
- *       - Event Resources
- *     responses:
- *       200:
- *         description: Utilization analytics
- */
-
 export default {};

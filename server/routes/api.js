@@ -26,8 +26,13 @@ import * as subscriptionsController from '../controllers/subscriptionsController
 import * as portfolioAnalyticsController from '../controllers/portfolioAnalyticsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
-import platformAnalyticsRoutes from "./platformAnalytics.js";
+<<<<<<< HEAD
+import announcementPriorityRouter from "./announcementPriority.js";
+import eventConflictRouter from "./eventConflict.js";
+import waitlistRoutes from "./waitlist.js";
+=======
 import * as localAuthController from '../controllers/localAuthController.js';
+>>>>>>> upstream/main
 
 const bookmarkRoutes = require("./bookmark");
 
@@ -298,7 +303,14 @@ router.get(
   portfolioAnalyticsController.getPortfolioAnalytics
 );
 
+<<<<<<< HEAD
+router.post(
+  '/api/portfolio/:username/visit',
+  portfolioAnalyticsController.recordPortfolioVisit
+);
+=======
 router.post('/api/portfolio/:username/visit', portfolioAnalyticsController.recordPortfolioVisit);
+>>>>>>> upstream/main
 
 router.get(
   '/api/portfolio/:username/monthly-report',
@@ -391,6 +403,19 @@ router.post('/api/admin/impersonate/stop', adminAuthMiddleware.requireAdmin, (re
 router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (req, res) => {
   const active = impersonationService.getActive(req.adminSession.token);
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
+<<<<<<< HEAD
+});
+router.use(
+"/api/announcements",
+announcementPriorityRouter
+);
+
+router.use("/api/events", eventConflictRouter);
+
+router.use(
+  "/api/admin/waitlist",
+  waitlistRoutes
+=======
 }); // Audit Log Viewer APIs
 router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
 
@@ -398,6 +423,7 @@ router.get(
   '/api/admin/audit-logs/stats',
   adminAuthMiddleware.requireAdmin,
   auditLogController.getStats
+>>>>>>> upstream/main
 );
 router.use(
   "/recommendations",
