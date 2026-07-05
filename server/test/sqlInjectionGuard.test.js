@@ -43,9 +43,30 @@ test('sqlInjectionGuard allows legitimate free-text content', async (t) => {
   }
 });
 
+test('sqlInjectionGuard allows boolean words inside quoted SQL string literals', async (t) => {
+  const quotedLiteralInputs = [
+    "status = 'draft OR published'",
+    "department = 'research AND development'",
+    "title = 'AI OR 1=1 workshop'",
+  ];
+
+  for (const input of quotedLiteralInputs) {
+    await t.test(`allows quoted literal: ${input}`, () => {
+      const { nextCalled, statusCode } = runGuard({ filter: input });
+      assert.equal(
+        nextCalled,
+        true,
+        'next() should be called when boolean words are inside quoted literals'
+      );
+      assert.equal(statusCode, null, 'no error status should be set');
+    });
+  }
+});
+
 test('sqlInjectionGuard still blocks real injection payloads', async (t) => {
   const maliciousInputs = [
-    "1 OR 1=1",
+    '1 OR 1=1',
+    "status = 'draft' OR 1=1",
     "'; DROP TABLE users; --",
     "SELECT * FROM users WHERE 1=1; WAITFOR DELAY '0:0:5'",
     'UNION SELECT * FROM INFORMATION_SCHEMA.TABLES',
