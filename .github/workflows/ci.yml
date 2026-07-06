@@ -126,8 +126,8 @@ jobs:
         env:
           NODE_ENV: test
           ADMIN_USERNAME: test-admin
-          ADMIN_PASSWORD: 'Ci_test_password_stub1!'
-          ADMIN_EVENT_PASSWORD: 'Ci_test_event_password_stub1!'
+          ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD || 'ci_test_password_stub' }}
+          ADMIN_EVENT_PASSWORD: ${{ secrets.CI_ADMIN_EVENT_PASSWORD || 'ci_test_event_password_stub' }}
           PORT: 8787
           CORS_ORIGIN: 'http://localhost,http://127.0.0.1'
 
@@ -136,8 +136,8 @@ jobs:
         env:
           NODE_ENV: test
           ADMIN_USERNAME: test-admin
-          ADMIN_PASSWORD: 'Ci_test_password_stub1!'
-          ADMIN_EVENT_PASSWORD: 'Ci_test_event_password_stub1!'
+          ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD || 'ci_test_password_stub' }}
+          ADMIN_EVENT_PASSWORD: ${{ secrets.CI_ADMIN_EVENT_PASSWORD || 'ci_test_event_password_stub' }}
           PORT: 8787
           CORS_ORIGIN: 'http://localhost,http://127.0.0.1'
 
