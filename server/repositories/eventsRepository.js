@@ -54,21 +54,50 @@ export const eventsRepository = {
 
   async update(id, patch) {
     return withDb(async (client) => {
-      const { rows } = await client.query(
-        `update events set
-           name = coalesce($2, name),
-           short_name = coalesce($3, short_name),
-           date_text = coalesce($4, date_text),
-           description = coalesce($5, description),
-           status = coalesce($6, status),
-           icon = coalesce($7, icon),
-           tags = coalesce($8, tags),
-           updated_at = now()
-         where id = $1
-         returning *`,
-        [id, patch.name ?? null, patch.shortName ?? null, patch.date ?? null, patch.description ?? null, patch.status ?? null, patch.icon ?? null, patch.tags ?? null]
-      );
+      const keys = Object.keys(patch);
+      
+      // If the patch payload is empty, skip the DB call and just return the current record
+      if (keys.length === 0) {
+        const { rows } = await client.query('select * from events where id = $1', [id]);
+        return rows.length ? mapRow(rows[0]) : null;
+      }
+
+      // Map JavaScript camelCase properties back to database snake_case columns
+      const fieldMap = {
+        name: 'name',
+        shortName: 'short_name',
+        date: 'date_text',
+        description: 'description',
+        status: 'status',
+        icon: 'icon',
+        tags: 'tags'
+      };
+
+      const setClauses = [];
+      const values = [id]; // $1 is always the ID for the WHERE clause
+      let paramIndex = 2;   // Dynamic parameters start at $2
+
+      for (const key of keys) {
+        // Ensure the key exists in our map (prevents arbitrary injection of unmapped properties)
+        if (fieldMap[key] !== undefined) {
+          setClauses.push(`${fieldMap[key]} = $${paramIndex}`);
+          values.push(patch[key]); // This safely passes explicit nulls, strings, etc.
+          paramIndex++;
+        }
+      }
+
+      // Always append the updated timestamp
+      setClauses.push(`updated_at = now()`);
+
+      const queryText = `
+        update events 
+        set ${setClauses.join(', ')} 
+        where id = $1 
+        returning *`;
+
+      const { rows } = await client.query(queryText, values);
       if (!rows.length) return null;
+      
       return mapRow(rows[0]);
     });
   },
