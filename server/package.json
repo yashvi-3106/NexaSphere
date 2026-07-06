@@ -69,6 +69,7 @@
     "rate-limit-redis": "^5.0.0",
     "redis": "^6.1.0",
     "redoc-express": "^1.0.0",
+    "rrule": "^2.8.1",
     "socket.io": "^4.7.2",
     "stripe": "^17.1.0",
     "swagger-jsdoc": "^6.3.0",
