@@ -102,18 +102,25 @@ function RolesGuideModal({ onClose }) {
 
   return (
     <>
-      <div
+      <button
         onClick={onClose}
+        aria-label="Close roles guide"
         style={{
           position: 'fixed',
           inset: 0,
           zIndex: 99998,
           background: 'rgba(0,0,0,.65)',
           backdropFilter: 'blur(4px)',
+          border: 'none',
+          cursor: 'pointer',
+          width: '100%',
         }}
       />
 
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Core Team Structure & Roles"
         style={{
           position: 'fixed',
           top: 0,
@@ -167,6 +174,7 @@ function RolesGuideModal({ onClose }) {
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close roles guide panel"
             style={{
               background: 'var(--card2)',
               border: '1px solid var(--bdr2)',
@@ -525,6 +533,16 @@ export default function RecruitmentPage({ onBack }) {
   const [submittedEmail, setSubmittedEmail] = useState('');
   const [showRoles, setShowRoles] = useState(false);
   const topRef = useRef(null);
+  // Ref to the step title heading — focus moves here on each step change
+  // so keyboard/screen-reader users hear the new step announced.
+  const stepHeadingRef = useRef(null);
+
+  // Move focus to the step heading whenever the current step changes
+  useEffect(() => {
+    if (stepHeadingRef.current) {
+      stepHeadingRef.current.focus({ preventScroll: true });
+    }
+  }, [step]);
 
   const [form, setForm] = useState({
     fullName: '',
@@ -1438,7 +1456,15 @@ export default function RecruitmentPage({ onBack }) {
                       flexWrap: 'wrap',
                     }}
                   >
-                    <span>{done ? 'Submission Complete' : current.title}</span>
+                    <span
+                      ref={stepHeadingRef}
+                      tabIndex={-1}
+                      aria-live="polite"
+                      aria-label={done ? 'Submission Complete' : `${current.title}, step ${step + 1} of ${steps.length}`}
+                      style={{ outline: 'none' }}
+                    >
+                      {done ? 'Submission Complete' : current.title}
+                    </span>
                     {!done ? (
                       <span
                         style={{

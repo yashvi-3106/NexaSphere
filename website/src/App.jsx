@@ -10,6 +10,7 @@ import './styles/portfolio.css';
 import './styles/pwa.css';
 import './styles/aurora.css';
 import './styles/motion.css';
+import './styles/accessibility.css';
 import './i18n';
 
 // Core structural elements
@@ -50,6 +51,7 @@ const isPlaywright =
 import { BookmarkProvider } from './context/BookmarkContext';
 import { StudentAuthProvider, useStudentAuth } from './context/StudentAuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import SkipLink from './components/common/SkipLink';
 
 // Lazy-loaded heavy pages
 const RecruitmentPage = lazy(() => import('./pages/recruitment/RecruitmentPage'));
@@ -224,6 +226,9 @@ function AppShell() {
 
   return (
     <>
+      {/* Skip-to-content link: visible only on first Tab press */}
+      <SkipLink targetId="main-content" />
+
       <OfflineBanner />
       <InstallPrompt />
       {swUpdateFn && <UpdatePrompt updateSW={swUpdateFn} />}
@@ -452,7 +457,12 @@ function MainRouter({
 
       <Wipe on={wipeOn} ph={wipePh} />
 
-      <main style={{ paddingTop: nh, position: 'relative', zIndex: 1 }}>
+      <main
+        id="main-content"
+        tabIndex={-1}
+        style={{ paddingTop: nh, position: 'relative', zIndex: 1 }}
+        aria-label="Main content"
+      >
         <Suspense fallback={<PageLoadingSpinner />}>
           <Routes>
             {/* â”€â”€ Home (scrollable sections) â”€â”€ */}
