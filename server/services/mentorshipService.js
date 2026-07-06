@@ -57,3 +57,18 @@ export const mentorshipService = {
     return mentorshipRepository.adminListMentors(params);
   },
 };
+export const calculateCompatibility = (mentor, mentee) => {
+  let score = 0;
+
+  // 1. Skill Match (e.g., intersection of arrays)
+  const sharedSkills = mentor.skills.filter((skill) => mentee.skills.includes(skill));
+  score += sharedSkills.length * 25; // Weighted heavy
+
+  // 2. Timezone/Overlapping Hours Match
+  if (mentor.timezone === mentee.timezone) score += 20;
+
+  // 3. Learning Style Match
+  if (mentor.communication_style === mentee.communication_style) score += 15;
+
+  return score;
+};

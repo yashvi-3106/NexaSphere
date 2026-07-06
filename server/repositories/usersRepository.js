@@ -10,6 +10,7 @@ export const usersRepository = {
           display_name, 
           avatar_url, 
           bio, 
+          phone_number,
           created_at as joined_at
         FROM users
         ORDER BY created_at DESC
@@ -28,6 +29,7 @@ export const usersRepository = {
           display_name, 
           avatar_url, 
           bio, 
+          phone_number,
           created_at as joined_at,
           email,
           admin_roles,
@@ -54,7 +56,7 @@ export const usersRepository = {
   async getUserById(id) {
     return withDb(async (client) => {
       const { rows } = await client.query(
-        'SELECT id, username, display_name, email, admin_roles, created_at FROM users WHERE id = $1',
+        'SELECT id, username, display_name, email, phone_number, admin_roles, created_at FROM users WHERE id = $1',
         [id]
       );
       return rows[0] || null;
@@ -74,13 +76,17 @@ export const usersRepository = {
         fields.push(`email = $${i++}`);
         values.push(updates.email);
       }
+      if (updates.phone_number !== undefined) {
+        fields.push(`phone_number = $${i++}`);
+        values.push(updates.phone_number);
+      }
       if (updates.admin_roles !== undefined) {
         fields.push(`admin_roles = $${i++}`);
         values.push(updates.admin_roles);
       }
       if (fields.length === 0) return null;
       values.push(id);
-      const queryText = `UPDATE users SET ${fields.join(', ')} WHERE id = $${i} RETURNING id, username, display_name, email, admin_roles, created_at as joined_at`;
+      const queryText = `UPDATE users SET ${fields.join(', ')} WHERE id = $${i} RETURNING id, username, display_name, email, phone_number, admin_roles, created_at as joined_at`;
       const { rows } = await client.query(queryText, values);
       return rows[0] || null;
     });

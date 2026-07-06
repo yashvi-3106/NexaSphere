@@ -60,7 +60,7 @@ function MemberCard({ member, idx, onClick }) {
       }}
     >
       <div className="team-card-photo-wrap">
-        <img
+        <img loading="lazy"
           src={
             !member.photo || imgError
               ? 'https://api.dicebear.com/7.x/initials/svg?seed=' +

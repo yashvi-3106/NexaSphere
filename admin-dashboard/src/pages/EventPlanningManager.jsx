@@ -5,7 +5,7 @@ import { eventEmitter, EVENTS } from '../services/eventEmitter';
 export function EventPlanningManager() {
   const [plans, setPlans] = useState({});
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [budgetTotal, setBudgetTotal] = useState('');
+  const [budgetTotals, setBudgetTotals] = useState({});
 
   useEffect(() => {
     api.eventPlanning
@@ -16,7 +16,7 @@ export function EventPlanningManager() {
 
   const updateBudget = async (eventId) => {
     try {
-      await api.eventPlanning.updateBudget(eventId, { total: Number(budgetTotal) });
+      await api.eventPlanning.updateBudget(eventId, { total: Number(budgetTotals[eventId] || 0) });
       eventEmitter.emit(EVENTS.NOTIFY, { type: 'success', message: 'Budget updated' });
     } catch (e) {
       eventEmitter.emit(EVENTS.NOTIFY, { type: 'error', message: e.message });
@@ -94,8 +94,10 @@ export function EventPlanningManager() {
                   <input
                     type="number"
                     placeholder="Budget total"
-                    value={budgetTotal}
-                    onChange={(e) => setBudgetTotal(e.target.value)}
+                    value={budgetTotals[eventId] || ''}
+                    onChange={(e) =>
+                      setBudgetTotals((prev) => ({ ...prev, [eventId]: e.target.value }))
+                    }
                     className="form-input"
                     style={{ width: 160 }}
                   />

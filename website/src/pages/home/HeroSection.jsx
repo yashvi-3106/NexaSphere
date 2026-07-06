@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { apiClient } from '../../utils/apiClient';
 import { useTranslation } from 'react-i18next';
 
 import { BRAND_LOGO_ICON } from '../../shared/brandAssets';
@@ -349,9 +350,23 @@ export default function HeroSection({ onTabChange, onApply, onJoin, theme = 'dar
   const { t } = useTranslation();
   const [ready, setReady] = useState(false);
   const [statsVis, setStatsVis] = useState(false);
+  const [activeBanner, setActiveBanner] = useState(null);
   const isLight = theme === 'light';
 
   useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const res = await apiClient('/api/content/banners');
+        if (res.banners && res.banners.length > 0) {
+          // simple rotation logic: pick random or first. Here we pick the first scheduled active banner
+          setActiveBanner(res.banners[0]);
+        }
+      } catch (e) {
+        console.error('Failed to fetch banners', e);
+      }
+    };
+    fetchBanners();
+
     const t1 = setTimeout(() => setReady(true), 80);
     const t2 = setTimeout(() => setStatsVis(true), 900);
     return () => {
@@ -401,11 +416,15 @@ export default function HeroSection({ onTabChange, onApply, onJoin, theme = 'dar
       </div>
       <Atmosphere isLight={isLight} />
 
-      <div
-        className="hero-content"
-        style={{ position: 'relative', zIndex: 2, paddingBottom: '80px' }}
-      >
-        <Logo3D ready={ready} isLight={isLight} />
+      <div className="hero-content" style={{ position: 'relative', zIndex: 2, paddingBottom: '80px' }}>
+          {activeBanner ? (
+            <div className="mb-8 w-full max-w-4xl mx-auto cursor-pointer" onClick={() => activeBanner.linkUrl ? window.open(activeBanner.linkUrl, '_blank') : null}>
+              <img src={activeBanner.imageUrl} alt={activeBanner.title} style={{ width: '100%', borderRadius: '16px', boxShadow: '0 12px 32px rgba(0,0,0,0.4)', objectFit: 'cover', maxHeight: '400px' }} />
+            </div>
+          ) : (
+            <Logo3D ready={ready} isLight={isLight} />
+          )}
+
         <HeroTitle isLight={isLight} />
 
         <p

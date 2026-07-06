@@ -6,9 +6,9 @@
  *  - In-app prompt on next login
  */
 
-const cron = require('node-cron');
-const db = require('../db');
-const { sendEmail } = require('./emailService');
+import cron from 'node-cron';
+import db from '../db.js';
+import { sendEmail } from './emailService.js';
 
 /**
  * Schedule a feedback request for a single event.
@@ -19,8 +19,8 @@ async function scheduleFeedbackForEvent(eventId) {
   if (!event) throw new Error(`Event ${eventId} not found`);
 
   const endTime = new Date(event.end_time);
-  const firstEmailAt = new Date(endTime.getTime() + 60 * 60 * 1000); // +1 hour
-  const reminderAt = new Date(endTime.getTime() + 25 * 60 * 60 * 1000); // +25 hours
+  const firstEmailAt = new Date(endTime.getTime() + 60 * 60 * 1000);
+  const reminderAt = new Date(endTime.getTime() + 25 * 60 * 60 * 1000);
 
   await db('feedback_schedule')
     .insert({
@@ -59,7 +59,7 @@ async function sendFeedbackRequest(eventId) {
 
     await sendEmail({
       to: attendee.email,
-      subject: `How was "${event.title}"? Share your feedback ✨`,
+      subject: `How was "${event.title}"? Share your feedback \u2728`,
       template: 'feedback-request',
       data: {
         name: attendee.name,
@@ -69,7 +69,6 @@ async function sendFeedbackRequest(eventId) {
       },
     });
 
-    // Set in-app prompt flag
     await db('user_notifications').insert({
       user_id: attendee.id,
       type: 'feedback_prompt',
@@ -104,7 +103,7 @@ async function sendFeedbackReminder(eventId) {
   for (const attendee of pending) {
     await sendEmail({
       to: attendee.email,
-      subject: `Last chance: Your feedback on "${event.title}" matters 🙏`,
+      subject: `Last chance: Your feedback on "${event.title}" matters \ud83d\ude4f`,
       template: 'feedback-reminder',
       data: {
         name: attendee.name,
@@ -128,27 +127,33 @@ function startScheduler() {
   cron.schedule('*/5 * * * *', async () => {
     const now = new Date();
 
-    // Initial emails due
     const firstDue = await db('feedback_schedule')
       .where({ first_sent: false })
       .where('first_email_at', '<=', now);
     for (const row of firstDue) {
-      await sendFeedbackRequest(row.event_id).catch(console.error);
+      try {
+        await sendFeedbackRequest(row.event_id);
+      } catch (error) {
+        console.error(`[FeedbackScheduler] Failed to send initial feedback for event ${row.event_id}. Will retry in 5 minutes. Error:`, error.message);
+      }
     }
 
-    // Reminders due
     const reminderDue = await db('feedback_schedule')
       .where({ first_sent: true, reminder_sent: false })
       .where('reminder_at', '<=', now);
     for (const row of reminderDue) {
-      await sendFeedbackReminder(row.event_id).catch(console.error);
+      try {
+        await sendFeedbackReminder(row.event_id);
+      } catch (error) {
+        console.error(`[FeedbackScheduler] Failed to send feedback reminders for event ${row.event_id}. Will retry in 5 minutes. Error:`, error.message);
+      }
     }
   });
 
   console.log('[FeedbackScheduler] Cron started — checking every 5 minutes');
 }
 
-module.exports = {
+export {
   scheduleFeedbackForEvent,
   sendFeedbackRequest,
   sendFeedbackReminder,

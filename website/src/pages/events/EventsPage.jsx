@@ -28,6 +28,8 @@ export default function EventsPage({
     location: '',
     search: '',
   });
+  const EVENTS_PER_PAGE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
 
   const getEffectiveStatus = (ev) => {
     if (ev.status === 'completed') return 'completed';
@@ -89,6 +91,23 @@ export default function EventsPage({
         return da - db;
       });
   }, [filteredEvents]);
+
+  // Reset to page 1 when filters change. Adjusting state during render
+  // (rather than in a useEffect) avoids an extra cascading render pass —
+  // this is React's recommended pattern for 'resetting state when a prop
+  // changes' (https://react.dev/learn/you-might-not-need-an-effect).
+  const [prevFilters, setPrevFilters] = useState(filters);
+  if (filters !== prevFilters) {
+    setPrevFilters(filters);
+    setCurrentPage(1);
+  }
+
+  const totalPages = Math.max(1, Math.ceil(sortedEvents.length / EVENTS_PER_PAGE));
+
+  const paginatedEvents = useMemo(() => {
+    const start = (currentPage - 1) * EVENTS_PER_PAGE;
+    return sortedEvents.slice(start, start + EVENTS_PER_PAGE);
+  }, [sortedEvents, currentPage]);
 
   const { recommendations, loading: recsLoading } = useRecommendations(user?.sub || user?.id || '');
 
@@ -289,8 +308,9 @@ export default function EventsPage({
             onEventClick={onEventClick}
           />
         ) : view === 'timeline' ? (
+          <>
           <div className="events-timeline ns-reveal">
-            {sortedEvents.map((ev, i) => {
+            {paginatedEvents.map((ev, i) => {
               const hasDetailPage = ev.hasDetailPage !== false;
               const dynamicGradient = buildGradient(ev);
               const glowColor = ev.gradientColors?.[0] || null;
@@ -485,27 +505,95 @@ export default function EventsPage({
               );
             })}
 
-            <div className="timeline-item">
-              <div className="timeline-dot upcoming" />
-              <div
-                className="timeline-card pop-in fired"
+            {currentPage === totalPages && (
+              <div className="timeline-item">
+                <div className="timeline-dot upcoming" />
+                <div
+                  className="timeline-card pop-in fired"
+                  style={{
+                    textAlign: 'center',
+                    color: 'var(--t3)',
+                  }}
+                >
+                  <DynamicIcon
+                    name="Rocket"
+                    size={24}
+                    style={{ color: 'var(--c1)', marginBottom: '8px' }}
+                  />
+                  <p style={{ marginTop: '6px', fontSize: '.84rem' }}>
+                    More events coming soon. Watch this space!
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {totalPages > 1 && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '10px',
+                marginTop: '32px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <button
+                onClick={() => {
+                  setCurrentPage((p) => Math.max(1, p - 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={currentPage === 1}
                 style={{
-                  textAlign: 'center',
-                  color: 'var(--t3)',
-                  animationDelay: `${sortedEvents.length * 0.11}s`,
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--bdr)',
+                  background: 'var(--card)',
+                  color: currentPage === 1 ? 'var(--t3)' : 'var(--t1)',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  fontSize: '.82rem',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 600,
+                  opacity: currentPage === 1 ? 0.5 : 1,
                 }}
               >
-                <DynamicIcon
-                  name="Rocket"
-                  size={24}
-                  style={{ color: 'var(--c1)', marginBottom: '8px' }}
-                />
-                <p style={{ marginTop: '6px', fontSize: '.84rem' }}>
-                  More events coming soon. Watch this space!
-                </p>
-              </div>
+                ← Previous
+              </button>
+              <span
+                style={{
+                  fontSize: '.82rem',
+                  color: 'var(--t2)',
+                  fontFamily: "'Space Mono', monospace",
+                  padding: '0 8px',
+                }}
+              >
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => {
+                  setCurrentPage((p) => Math.min(totalPages, p + 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--bdr)',
+                  background: 'var(--card)',
+                  color: currentPage === totalPages ? 'var(--t3)' : 'var(--t1)',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  fontSize: '.82rem',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 600,
+                  opacity: currentPage === totalPages ? 0.5 : 1,
+                }}
+              >
+                Next →
+              </button>
             </div>
-          </div>
+          )}
+          </>
         ) : (
           <EventCalendarView events={sortedEvents} onEventClick={onEventClick} />
         )}

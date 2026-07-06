@@ -18,7 +18,7 @@ export function DashboardHome() {
       api.membership.getAll().catch(() => ({ responses: [] })),
     ]).then(([eventsData, teamData, membershipData]) => {
       const events = eventsData?.events ?? [];
-      const team = teamData?.members ?? teamData ?? [];
+      const team = teamData?.members || teamData?.data || (Array.isArray(teamData) ? teamData : []);
       const applications = membershipData?.responses ?? [];
       setStats({
         totalEvents: events.length,

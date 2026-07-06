@@ -8,6 +8,8 @@ process.env.ADMIN_LOGIN_WINDOW_MS = '100';
 process.env.ADMIN_LOGIN_MAX_ATTEMPTS = '2';
 process.env.ADMIN_LOGIN_MAX_TRACKED_IPS = '5';
 
+const { adminAuthMiddleware } = await import('../middleware/adminAuthMiddleware.js');
+
 // Helper
 const createMockReqRes = (ip, username, password) => {
   const req = {
@@ -54,7 +56,6 @@ const createMockReqRes = (ip, username, password) => {
 };
 
 test('Security + Concurrency Validation', async (t) => {
-  const { adminAuthMiddleware } = await import('../middleware/adminAuthMiddleware.js');
 
   await t.test('Initial map is empty', () => {
     adminAuthMiddleware._clearAllLoginAttempts();

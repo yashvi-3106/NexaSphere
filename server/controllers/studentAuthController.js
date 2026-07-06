@@ -4,10 +4,14 @@ import { studentAuthService } from '../services/studentAuthService.js';
 import { withDb } from '../repositories/db.js';
 import { intrusionDetectionService, EVENT_TYPES } from '../services/intrusionDetectionService.js';
 
-export const googleAuth = passport.authenticate('google', {
-  session: false,
-  scope: ['profile', 'email'],
-});
+export const googleAuth = (req, res, next) => {
+  const state = req.query.token || '';
+  passport.authenticate('google', {
+    session: false,
+    scope: ['profile', 'email'],
+    state,
+  })(req, res, next);
+};
 
 export const googleCallback = (req, res, next) => {
   passport.authenticate('google', { session: false }, (err, data, info) => {
@@ -29,10 +33,14 @@ export const googleCallback = (req, res, next) => {
   })(req, res, next);
 };
 
-export const githubAuth = passport.authenticate('github', {
-  session: false,
-  scope: ['user:email'],
-});
+export const githubAuth = (req, res, next) => {
+  const state = req.query.token || '';
+  passport.authenticate('github', {
+    session: false,
+    scope: ['user:email'],
+    state,
+  })(req, res, next);
+};
 
 export const githubCallback = (req, res, next) => {
   passport.authenticate('github', { session: false }, (err, data, info) => {
@@ -53,7 +61,22 @@ export const githubCallback = (req, res, next) => {
     return res.redirect(`${frontendUrl}/dashboard`);
   })(req, res, next);
 };
+export const githubPortfolioAuth = passport.authenticate('github-portfolio', {
+  session: false,
+  scope: ['read:user'],
+});
 
+export const githubPortfolioCallback = (req, res, next) => {
+  passport.authenticate('github-portfolio', { session: false }, (err, data) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5175';
+    if (err || !data?.githubUsername) {
+      return res.redirect(`${frontendUrl}/portfolio-builder?githubError=1`);
+    }
+    return res.redirect(
+      `${frontendUrl}/portfolio-builder?github=${encodeURIComponent(data.githubUsername)}`
+    );
+  })(req, res, next);
+};
 export const getMe = async (req, res) => {
   if (!req.studentUser) {
     return res.status(401).json({ error: 'Not authenticated' });
@@ -142,16 +165,15 @@ export const getProfile = async (req, res) => {
   try {
     const userId = req.studentUser.sub || req.studentUser.id;
 
-    const user = await studentUsersRepository.findByProvider(
-      req.studentUser.provider,
-      userId
-    ) || await studentUsersRepository.findByEmail(req.studentUser.email);
+    const user =
+      (await studentUsersRepository.findByProvider(req.studentUser.provider, userId)) ||
+      (await studentUsersRepository.findByEmail(req.studentUser.email));
 
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     // Safely count related data — tables may not exist yet in all envs
     let registrations = [];
-    let forumPosts    = 0;
+    let forumPosts = 0;
     let mentorSessions = 0;
 
     try {
@@ -166,33 +188,43 @@ export const getProfile = async (req, res) => {
           'events.location as event_location'
         )
         .orderBy('registrations.created_at', 'desc');
-    } catch (_) { /* table may not exist yet */ }
+    } catch (_) {
+      /* table may not exist yet */
+    }
 
     try {
       const { default: db } = await import('../db/index.js');
-      const [{ count }] = await db('forum_threads').where({ author_id: user.id }).count('id as count');
+      const [{ count }] = await db('forum_threads')
+        .where({ author_id: user.id })
+        .count('id as count');
       forumPosts = Number(count);
-    } catch (_) { /* table may not exist yet */ }
+    } catch (_) {
+      /* table may not exist yet */
+    }
 
     try {
       const { default: db } = await import('../db/index.js');
-      const [{ count }] = await db('mentor_sessions').where({ mentee_id: user.id }).count('id as count');
+      const [{ count }] = await db('mentor_sessions')
+        .where({ mentee_id: user.id })
+        .count('id as count');
       mentorSessions = Number(count);
-    } catch (_) { /* table may not exist yet */ }
+    } catch (_) {
+      /* table may not exist yet */
+    }
 
     const attendedEvents = registrations.filter(
-      r => r.attended || r.status === 'attended'
+      (r) => r.attended || r.status === 'attended'
     ).length;
 
     return res.json({
-      id:          user.id,
-      fullName:    user.full_name,
-      email:       user.email,
-      avatar:      user.avatar_url,
-      bio:         user.bio || '',
+      id: user.id,
+      fullName: user.full_name,
+      email: user.email,
+      avatar: user.avatar_url,
+      bio: user.bio || '',
       socialLinks: user.social_links || {},
-      role:        user.role,
-      createdAt:   user.created_at,
+      role: user.role,
+      createdAt: user.created_at,
       stats: {
         totalRegistrations: registrations.length,
         attendedEvents,
@@ -212,7 +244,7 @@ export const updateProfile = async (req, res) => {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   try {
-    const userId  = req.studentUser.sub || req.studentUser.id;
+    const userId = req.studentUser.sub || req.studentUser.id;
     const allowed = ['fullName', 'bio', 'socialLinks'];
     const updates = {};
     for (const key of allowed) {
@@ -221,18 +253,19 @@ export const updateProfile = async (req, res) => {
 
     // Map camelCase keys to snake_case DB columns
     const dbUpdates = {};
-    if (updates.fullName    !== undefined) dbUpdates.full_name    = updates.fullName;
-    if (updates.bio         !== undefined) dbUpdates.bio          = updates.bio;
-    if (updates.socialLinks !== undefined) dbUpdates.social_links = JSON.stringify(updates.socialLinks);
+    if (updates.fullName !== undefined) dbUpdates.full_name = updates.fullName;
+    if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+    if (updates.socialLinks !== undefined)
+      dbUpdates.social_links = JSON.stringify(updates.socialLinks);
 
     const updatedUser = await studentUsersRepository.updateProfile(userId, dbUpdates);
     if (!updatedUser) return res.status(404).json({ error: 'User not found' });
 
     return res.json({
-      id:          updatedUser.id,
-      fullName:    updatedUser.full_name,
-      email:       updatedUser.email,
-      bio:         updatedUser.bio || '',
+      id: updatedUser.id,
+      fullName: updatedUser.full_name,
+      email: updatedUser.email,
+      bio: updatedUser.bio || '',
       socialLinks: updatedUser.social_links || {},
     });
   } catch (err) {
@@ -262,83 +295,13 @@ export const getRegistrations = async (req, res) => {
           'events.location as event_location'
         )
         .orderBy('registrations.created_at', 'desc');
-    } catch (_) { /* table may not exist yet */ }
+    } catch (_) {
+      /* table may not exist yet */
+    }
 
     return res.json(registrations);
   } catch (err) {
     console.error('getRegistrations error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
-  }
-};
-export const exportData = async (req, res) => {
-  try {
-    const userId = req.studentUser.id;
-    const data = await withDb(async (client) => {
-      // Get profile
-      const { rows: profiles } = await client.query('SELECT * FROM student_users WHERE id = $1', [userId]);
-      const profile = profiles[0] || {};
-      
-      // Get registrations
-      let registrations = [];
-      try {
-        const { rows } = await client.query('SELECT * FROM event_registrations WHERE user_id = $1', [userId]);
-        registrations = rows;
-      } catch (e) {}
-
-      // Get portfolio
-      let portfolios = [];
-      try {
-        const { rows } = await client.query('SELECT * FROM portfolios WHERE user_id = $1', [userId]);
-        portfolios = rows;
-      } catch (e) {}
-
-      // Get forum posts
-      let forumPosts = [];
-      try {
-        const { rows } = await client.query('SELECT * FROM forum_threads WHERE author_id = $1', [userId]);
-        forumPosts = rows;
-      } catch (e) {}
-
-      return {
-        exportedAt: new Date().toISOString(),
-        profile,
-        registrations,
-        portfolios,
-        forumPosts
-      };
-    });
-    
-    return res.json(data);
-  } catch (err) {
-    console.error('exportData error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
-  }
-};
-
-export const deleteAccount = async (req, res) => {
-  try {
-    const userId = req.studentUser.id;
-    await withDb(async (client) => {
-      // Soft delete user record by clearing PII
-      await client.query(
-        "UPDATE student_users SET email = $1, full_name = 'Deleted User', avatar_url = null, bio = null WHERE id = $2",
-        ["deleted-$userId@anonymized.local", userId]
-      );
-      
-      // Cascade delete or anonymize related data
-      try {
-        await client.query('DELETE FROM portfolios WHERE user_id = $1', [userId]);
-      } catch (e) {}
-      
-      try {
-        await client.query('DELETE FROM event_registrations WHERE user_id = $1', [userId]);
-      } catch (e) {}
-    });
-
-    res.clearCookie('ns_student_token');
-    return res.json({ success: true, message: 'Account permanently deleted' });
-  } catch (err) {
-    console.error('deleteAccount error:', err);
     return res.status(500).json({ error: 'Server error', detail: err.message });
   }
 };

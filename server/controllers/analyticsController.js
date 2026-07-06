@@ -1,4 +1,5 @@
 import { analyticsService, FUNNEL_STEP_TYPES } from '../services/analyticsService.js';
+import { analyticsRepository } from '../repositories/analyticsRepository.js';
 
 function wrapAsync(fn) {
   return (req, res, next) => {
@@ -83,4 +84,71 @@ export const saveCustomReport = wrapAsync(async (req, res) => {
 export const getCustomReports = wrapAsync(async (req, res) => {
   const reports = await analyticsService.getCustomReports();
   res.json({ success: true, reports });
+});
+
+export const startSession = wrapAsync(async (req, res) => {
+  const sessionData = req.body; // { id, device, browser, os }
+  sessionData.user_id = req.user?.id; // If authenticated
+  const session = await analyticsRepository.createSession(sessionData);
+  res.status(201).json(session);
+});
+
+export const endSession = wrapAsync(async (req, res) => {
+  const { sessionId } = req.params;
+  const session = await analyticsRepository.endSession(sessionId);
+  res.json(session);
+});
+
+export const ingestEvents = wrapAsync(async (req, res) => {
+  const { sessionId, events } = req.body;
+  const userId = req.user?.id;
+  await analyticsService.processEventBatch(sessionId, userId, events);
+  res.status(201).json({ success: true });
+});
+
+export const saveRecording = wrapAsync(async (req, res) => {
+  const { sessionId, eventsJson } = req.body;
+  const rec = await analyticsRepository.saveRecording(sessionId, eventsJson);
+  res.status(201).json(rec);
+});
+
+export const adminGetRecordings = wrapAsync(async (req, res) => {
+  const recordings = await analyticsRepository.getRecordingsList();
+  res.json(recordings);
+});
+
+export const adminGetRecording = wrapAsync(async (req, res) => {
+  const { sessionId } = req.params;
+  const events = await analyticsRepository.getRecording(sessionId);
+  res.json(events || []);
+});
+
+export const adminGetHeatmap = wrapAsync(async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'url required' });
+  const data = await analyticsRepository.getHeatmapData(url);
+  res.json(data);
+});
+
+export const adminGetSegments = wrapAsync(async (req, res) => {
+  const segments = await analyticsRepository.getAllSegments();
+  res.json(segments);
+});
+
+export const adminCreateSegment = wrapAsync(async (req, res) => {
+  const segment = await analyticsRepository.createSegment(req.body);
+  res.status(201).json(segment);
+});
+
+export const adminPerformSegmentAction = wrapAsync(async (req, res) => {
+  const { segmentId } = req.params;
+  const result = await analyticsService.performSegmentAction(segmentId, req.body);
+  res.json(result);
+});
+
+export const adminGetCohortAnalysis = wrapAsync(async (req, res) => {
+  const { month } = req.query; // YYYY-MM
+  if (!month) return res.status(400).json({ error: 'month required' });
+  const data = await analyticsRepository.getCohortData(month);
+  res.json(data);
 });

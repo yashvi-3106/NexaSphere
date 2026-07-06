@@ -13,6 +13,12 @@ import notificationsService from '../services/notificationsService.js';
 
 const router = Router();
 
+const GITHUB_USERNAME_PATTERN = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/;
+
+function getGitHubToken() {
+  return String(process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN || '').trim();
+}
+
 // ── Passkey brute-force lockout ────────────────────────────────────────────
 // Tracks failed attempts per IP and per username with exponential backoff.
 // Hard cap on tracked entries prevents memory exhaustion under attack.
@@ -117,6 +123,76 @@ function clearPasskeyAttempts(username, ip) {
 }
 
 // ── Routes ─────────────────────────────────────────────────────────────────
+
+/**
+ * GET /api/portfolio/github-repos/:username — Server-side GitHub repository import.
+ * Keeps GitHub API credentials off the browser and avoids unauthenticated client calls.
+ */
+router.get('/portfolio/github-repos/:username', async (req, res) => {
+  const username = String(req.params.username || '').trim();
+  if (!GITHUB_USERNAME_PATTERN.test(username)) {
+    return res.status(400).json({
+      error: 'Invalid GitHub username format.',
+    });
+  }
+
+  const token = getGitHubToken();
+  if (!token) {
+    return res.status(503).json({
+      error: 'GitHub repository import is unavailable because the server token is not configured.',
+    });
+  }
+
+  const sort =
+    req.query.sort === 'created' || req.query.sort === 'pushed' ? req.query.sort : 'updated';
+  const perPage = Math.min(Math.max(Number.parseInt(req.query.per_page, 10) || 30, 1), 30);
+  const githubUrl = new URL(`https://api.github.com/users/${encodeURIComponent(username)}/repos`);
+  githubUrl.searchParams.set('sort', sort);
+  githubUrl.searchParams.set('per_page', String(perPage));
+
+  try {
+    const response = await fetch(githubUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'NexaSphere-PortfolioBuilder',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    });
+
+    if (response.status === 403 || response.status === 429) {
+      const resetHeader = response.headers.get('X-RateLimit-Reset');
+      const resetDate = resetHeader
+        ? new Date(Number.parseInt(resetHeader, 10) * 1000).toISOString()
+        : null;
+      return res.status(response.status).json({
+        error: 'GitHub rate limit reached. Please try again later.',
+        rateLimitReset: resetDate,
+      });
+    }
+
+    if (response.status === 404) {
+      return res.status(404).json({
+        error: `GitHub user "${username}" not found. Please check the username and try again.`,
+      });
+    }
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: `GitHub API error: ${response.status} ${response.statusText}`,
+      });
+    }
+
+    const repos = await response.json();
+    res.set('Cache-Control', 'private, max-age=60');
+    return res.json(repos);
+  } catch (err) {
+    console.error('Error fetching GitHub repositories:', err);
+    return res.status(502).json({
+      error: 'Failed to fetch repositories from GitHub.',
+    });
+  }
+});
 
 /**
  * GET /api/portfolio/:username — Public portfolio lookup.
@@ -266,7 +342,10 @@ router.put('/portfolio', protectedActionRateLimiter, async (req, res) => {
           projectName: lastProject.name,
         });
       } catch (socketErr) {
-        console.warn('[Portfolio] Could not emit project-approved notification:', socketErr.message);
+        console.warn(
+          '[Portfolio] Could not emit project-approved notification:',
+          socketErr.message
+        );
       }
     }
 
