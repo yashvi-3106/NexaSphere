@@ -421,13 +421,14 @@ function MessageCTA() {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
   const copyTimeoutRef = useRef(null);
 
   useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => setCopied(false), 2200);
+    if (!copied && !copyError) return;
+    const timer = setTimeout(() => { setCopied(false); setCopyError(false); }, 2200);
     return () => clearTimeout(timer);
-  }, [copied]);
+  }, [copied, copyError]);
 
   const handleCopy = () => {
     if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
@@ -435,9 +436,15 @@ function MessageCTA() {
       .writeText(EMAIL)
       .then(() => {
         setCopied(true);
-        copyTimeoutRef.current = setTimeout(() => setCopied(false), 2200);
+        setCopyError(false);
+        copyTimeoutRef.current = setTimeout(() => { setCopied(false); setCopyError(false); }, 2200);
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('Failed to copy to clipboard', err);
+        setCopyError(true);
+        setCopied(false);
+        copyTimeoutRef.current = setTimeout(() => setCopyError(false), 2200);
+      });
   };
 
   useEffect(() => {
@@ -567,7 +574,7 @@ function MessageCTA() {
           onClick={handleCopy}
           style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}
         >
-          {copied ? '✅ Copied!' : '📋 Copy Email'}
+          {copyError ? '❌ Copy failed' : copied ? '✅ Copied!' : '📋 Copy Email'}
         </button>
       </div>
 
