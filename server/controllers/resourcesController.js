@@ -48,8 +48,8 @@ export const createResource = wrapAsync(async (req, res) => {
     category: req.body.category,
     tags: req.body.tags,
     difficulty_level: req.body.difficulty_level,
-    uploaded_by: req.body.uploaded_by || req.adminSession?.username || 'Anonymous',
-    status: req.body.status || 'pending',
+    uploaded_by: req.studentSession?.username || req.adminSession?.username || 'Anonymous',
+    status: 'pending',
   };
 
   const created = await resourcesService.createResource(input);

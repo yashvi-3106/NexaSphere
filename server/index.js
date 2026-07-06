@@ -1683,7 +1683,7 @@ app.get('/api/recommendations', searchRateLimiter, searchController.recommendati
 // Public resource endpoints
 app.get('/api/resources', resourcesController.listResources);
 app.get('/api/resources/:id', resourcesController.getResource);
-app.post('/api/resources', resourcesController.createResource);
+app.post('/api/resources', requireStudentAuth, resourcesController.createResource);
 app.post('/api/resources/:id/vote', resourcesController.voteResource);
 app.post('/api/resources/:id/download', resourcesController.downloadResource);
 app.post('/api/resources/:id/download-track', resourcesController.downloadResource);
