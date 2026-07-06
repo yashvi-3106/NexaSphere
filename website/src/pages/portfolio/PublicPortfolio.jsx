@@ -34,7 +34,9 @@ export default function PublicPortfolio({ username, onBack }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ referrer: document.referrer || null }),
-        }).catch(() => {});
+        }).catch((err) => {
+          console.error('[PublicPortfolio] View tracking failed:', err);
+        });
       } catch (err) {
         if (alive) {
           setError(err.message);
