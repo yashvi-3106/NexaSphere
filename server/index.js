@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import { tracedFetch } from './config/appContext.js';
 import { initObservability } from './observability/index.js';
 import { setTraceIdResolver } from './utils/logContext.js';
@@ -19,8 +19,6 @@ import { adminAuthMiddleware } from './middleware/adminAuthMiddleware.js';
 import analyticsRouter from './routes/analytics.js';
 import apiRouter from './routes/api.js';
 import formSubmissionsRouter from './routes/forms.js';
-import { logEvent } from './controllers/analyticsController.js';
-import healthDashboardRouter from './routes/healthDashboard.js';
 import complianceRouter from './routes/compliance.js';
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
@@ -43,6 +41,7 @@ import portfolioExportRouter from './routes/portfolioExport.js';
 import userGroupsRouter from './routes/userGroups.js';
 import notificationsRouter from './routes/notifications.js';
 import adminRouter from './routes/admin.js';
+import projectHealthRouter from './routes/projectHealth.js';
 import portfolioAnalyticsRouter from './routes/portfolioAnalytics.js';
 import announcementsRouter from './routes/announcements.js';
 import bulkRouter from './routes/bulk.js';
@@ -55,7 +54,6 @@ import { notificationAnalyticsRepository } from './repositories/notificationAnal
 import { notificationPreferencesRepository } from './repositories/notificationPreferencesRepository.js';
 import notificationsService from './services/notificationsService.js';
 import { initializeSentry, addSentryErrorHandler } from './utils/sentry.js';
-import morgan from 'morgan';
 import { recordCompressionRatio } from './observability/metrics.js';
 import { logEvent } from './controllers/analyticsController.js';
 import healthDashboardRouter from './routes/healthDashboard.js';
@@ -115,8 +113,6 @@ import financialsRouter from './routes/financials.js';
 import { schedulerService } from './services/schedulerService.js';
 import feedbackRouter from './routes/feedbackRoutes.js';
 import * as slackController from './controllers/slackController.js';
-import activityTimelineRoutes from "./routes/activityTimeline.js";
-app.use("/api/activity-timeline", activityTimelineRoutes);
 
 import { initializeTypesenseCollections } from './config/typesense.js';
 import moderationRouter from './routes/moderation.js';
@@ -258,25 +254,14 @@ app.use(
           }
         : false,
 
-fix/search-clear-button-1487
- HEAD
     // Strict Content Security Policy with ALL directives
-
-    // ✅ FIXED: Strict Content Security Policy with ALL directives
- 921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
-
-    // ✅ FIXED: Strict Content Security Policy with ALL directives
- main
     contentSecurityPolicy: {
       useDefaults: false,
 
       directives: {
         defaultSrc: ["'self'"],
-
         scriptSrc: ["'self'", 'https://challenges.cloudflare.com'],
-
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-
         imgSrc: [
           "'self'",
           'data:',
@@ -284,9 +269,7 @@ fix/search-clear-button-1487
           'https://api.dicebear.com',
           'https://images.unsplash.com',
         ],
-
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
-
         connectSrc: [
           "'self'",
           'https://challenges.cloudflare.com',
@@ -295,68 +278,25 @@ fix/search-clear-button-1487
           process.env.FRONTEND_URL || 'http://localhost:5173',
           `wss://${process.env.DOMAIN || 'localhost'}`,
         ],
-
         objectSrc: ["'none'"],
-
- fix/search-clear-button-1487
-
- feat/i18n-localization-1397
- feat/i18n-localization-1397
-
- fix/csp-helmet-config-1475
- main
- main
-        // ✅ CRITICAL FIX: Missing directives added below
-        baseUri: ["'self'"],                                    // Prevents <base> tag injection
-        frameAncestors: ["'none'"],                             // Prevents clickjacking
-        formAction: ["'self'"],                                 // Prevents form submission to external sites
-        workerSrc: ["'self'", 'blob:'],                         // Restricts web worker sources
-        manifestSrc: ["'self'"],                                // Restricts manifest sources
-        mediaSrc: ["'self'"],                                   // Restricts media sources
-fix/search-clear-button-1487
- HEAD
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
-
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'], // Restricts iframe sources
- 921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
-        childSrc: ["'none'"],                                   // Restricts child browsing contexts
-        upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
-
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'], // Restricts iframe sources
-        childSrc: ["'none'"],                                   // Restricts child browsing contexts
-        upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
-
         baseUri: ["'self'"],
-
         frameAncestors: ["'none'"],
-
         formAction: ["'self'"],
-
-        upgradeInsecureRequests: [],
-
         workerSrc: ["'self'", 'blob:'],
-
         manifestSrc: ["'self'"],
-
         mediaSrc: ["'self'"],
-
         frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
-
         childSrc: ["'none'"],
- main
- main
-
+        upgradeInsecureRequests: [],
         reportUri: '/api/v1/csp-violation',
       },
     },
 
     // Safer cross-origin behavior
     crossOriginEmbedderPolicy: false,
-
     crossOriginOpenerPolicy: {
       policy: 'same-origin',
     },
-
     crossOriginResourcePolicy: {
       policy: 'same-origin',
     },
@@ -380,12 +320,7 @@ fix/search-clear-button-1487
     },
   })
 );
- fix/search-clear-button-1487
- HEAD feat/i18n-localization-1397
- feat/i18n-localization-1397
 
-
- main
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -415,11 +350,7 @@ app.use(
     maxAge: 86400,
   })
 );
-fix/search-clear-button-1487
- 921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
 
- main
- main
 app.options('*', cors());
 
 app.use(enhancedTracingMiddleware);
@@ -465,6 +396,7 @@ app.use('/api', recoveryRouter);
 app.use('/api/faqs', faqRouter);
 app.use('/', notificationsRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/admin', projectHealthRouter);
 app.use('/api', learningPathRouter);
 app.use('/', syncRouter);
 app.use('/api/feedback', feedbackRouter);
@@ -1533,20 +1465,17 @@ app.put('/api/notifications/preferences/bulk', adminAuth, async (req, res) => {
   }
 });
 
- fix/search-clear-button-1487
-
 // Notification analytics (lightweight collector)
 app.post('/api/notifications/analytics', async (req, res) => {
   try {
     const event = req.body || {};
-    // Minimal validation â€” in future route can forward to analytics pipeline
+    // Minimal validation — in future route can forward to analytics pipeline
     console.log('[notification-analytics]', event.type || 'unknown', event);
     return res.json({ ok: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 });
- main
 
 app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
   try {
