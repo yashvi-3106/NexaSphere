@@ -49,7 +49,9 @@ export function ComprehensiveAnalytics() {
         const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/feedback`);
         if (!res.ok) throw new Error('Feedback endpoint unavailable');
         const data = await res.json();
-        const entries = Array.isArray(data) ? data : data.feedbacks || data.analytics?.feedbacks || [];
+        const entries = Array.isArray(data)
+          ? data
+          : data.feedbacks || data.analytics?.feedbacks || [];
         setFeedbackReport(buildFeedbackAnalyticsReport(entries));
       } catch {
         const fallback = [
@@ -124,7 +126,11 @@ export function ComprehensiveAnalytics() {
           {/* Overview Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <MetricCard title="Active Users" value={summary?.activeUsers || 0} trend="+12%" />
-            <MetricCard title="Events This Month" value={summary?.eventsThisMonth || 0} trend="+3%" />
+            <MetricCard
+              title="Events This Month"
+              value={summary?.eventsThisMonth || 0}
+              trend="+3%"
+            />
             <MetricCard
               title="Total Registrations"
               value={summary?.totalRegistrations || 0}
@@ -195,65 +201,76 @@ export function ComprehensiveAnalytics() {
             </div>
           </div>
 
-      {feedbackReport && (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="font-bold">Feedback Insights</h3>
-              <p className="text-sm text-gray-500">Sentiment, themes, aspect analysis, and suggestions</p>
-            </div>
-            <span className="text-sm font-semibold text-indigo-600">
-              Overall: {feedbackReport.summary.overallSentiment}
-            </span>
-          </div>
+          {feedbackReport && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h3 className="font-bold">Feedback Insights</h3>
+                  <p className="text-sm text-gray-500">
+                    Sentiment, themes, aspect analysis, and suggestions
+                  </p>
+                </div>
+                <span className="text-sm font-semibold text-indigo-600">
+                  Overall: {feedbackReport.summary.overallSentiment}
+                </span>
+              </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(feedbackReport.summary.sentimentPercentages).map(([label, value]) => (
-                  <div key={label} className="bg-gray-50 p-3 rounded border">
-                    <p className="text-sm text-gray-500">{label}</p>
-                    <p className="text-lg font-semibold">{value}%</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {Object.entries(feedbackReport.summary.sentimentPercentages).map(
+                      ([label, value]) => (
+                        <div key={label} className="bg-gray-50 p-3 rounded border">
+                          <p className="text-sm text-gray-500">{label}</p>
+                          <p className="text-lg font-semibold">{value}%</p>
+                        </div>
+                      )
+                    )}
                   </div>
-                ))}
-              </div>
-              <div className="bg-gray-50 p-3 rounded border">
-                <h4 className="font-semibold mb-2">Aspect Ratings</h4>
-                <div className="space-y-2 text-sm">
-                  {Object.entries(feedbackReport.summary.aspectRatings).map(([aspect, value]) => (
-                    <div key={aspect} className="flex justify-between">
-                      <span>{aspect}</span>
-                      <span className="font-medium">{value.sentiment}</span>
+                  <div className="bg-gray-50 p-3 rounded border">
+                    <h4 className="font-semibold mb-2">Aspect Ratings</h4>
+                    <div className="space-y-2 text-sm">
+                      {Object.entries(feedbackReport.summary.aspectRatings).map(
+                        ([aspect, value]) => (
+                          <div key={aspect} className="flex justify-between">
+                            <span>{aspect}</span>
+                            <span className="font-medium">{value.sentiment}</span>
+                          </div>
+                        )
+                      )}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-3 rounded border">
-                <h4 className="font-semibold mb-2">Top Themes</h4>
-                <div className="flex flex-wrap gap-2">
-                  {feedbackReport.summary.topThemes.slice(0, 6).map((theme) => (
-                    <span key={theme.theme} className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-sm">
-                      {theme.theme} ({theme.count})
-                    </span>
-                  ))}
+                <div className="space-y-4">
+                  <div className="bg-gray-50 p-3 rounded border">
+                    <h4 className="font-semibold mb-2">Top Themes</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {feedbackReport.summary.topThemes.slice(0, 6).map((theme) => (
+                        <span
+                          key={theme.theme}
+                          className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-sm"
+                        >
+                          {theme.theme} ({theme.count})
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded border">
+                    <h4 className="font-semibold mb-2">Actionable Suggestions</h4>
+                    <ul className="space-y-2 text-sm">
+                      {feedbackReport.summary.suggestions.map((suggestion) => (
+                        <li key={suggestion.topic} className="leading-5">
+                          • {suggestion.suggestion}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
-              <div className="bg-gray-50 p-3 rounded border">
-                <h4 className="font-semibold mb-2">Actionable Suggestions</h4>
-                <ul className="space-y-2 text-sm">
-                  {feedbackReport.summary.suggestions.map((suggestion) => (
-                    <li key={suggestion.topic} className="leading-5">
-                      • {suggestion.suggestion}
-                    </li>
-                  ))}
-                </ul>
-              </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
       {/* Custom Report Builder */}

@@ -1183,6 +1183,9 @@ async function fetchWithAuth(url, options = {}) {
 }
 
 export const api = {
+  projectHealth: {
+    getOverview: () => fetchWithAuth('/api/admin/project-health'),
+  },
   resources: {
     getAll: (params = '') => fetchWithAuth(`/api/admin/resources${params}`),
     update: async (id, data) => {
@@ -1786,8 +1789,7 @@ export const api = {
       return fetchWithAuth(`/api/moderation/flags${query ? `?${query}` : ''}`);
     },
     getFlagById: (id) => fetchWithAuth(`/api/moderation/flags/${id}`),
-    approveFlag: (id) =>
-      fetchWithAuth(`/api/moderation/flags/${id}/approve`, { method: 'PUT' }),
+    approveFlag: (id) => fetchWithAuth(`/api/moderation/flags/${id}/approve`, { method: 'PUT' }),
     rejectFlag: (id, reason) =>
       fetchWithAuth(`/api/moderation/flags/${id}/remove`, {
         method: 'PUT',
@@ -1860,5 +1862,4 @@ export const api = {
   },
 };
 
-
-export { auth, eventEmitter, EVENTS };
+export { auth, eventEmitter, EVENTS, fetchWithAuth };

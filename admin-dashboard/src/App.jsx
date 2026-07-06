@@ -15,6 +15,7 @@ import { CustomEventTracking } from './pages/CustomEventTracking';
 import { ForumManager } from './pages/ForumManager';
 import { MentorshipManager } from './pages/MentorshipManager';
 import { DashboardHome } from './pages/DashboardHome';
+import { ProjectHealthDashboard } from './pages/ProjectHealthDashboard';
 import { EventsManager } from './pages/EventsManager';
 import { ActivityEventsManager } from './pages/ActivityEventsManager';
 import { ScheduledTasksManager } from './pages/ScheduledTasksManager';
@@ -31,15 +32,15 @@ import { CircuitBreakerManager } from './pages/CircuitBreakerManager';
 import { WaitingRoomManager } from './pages/WaitingRoomManager';
 import { SponsorshipsManager } from './pages/SponsorshipsManager';
 import { UserSegmentation } from './pages/UserSegmentation';
-import { PlatformSettings } from './pages/dashboard/PlatformSettings';
+import PlatformSettings from './pages/dashboard/PlatformSettings';
 import { SsoInvitePage } from './pages/SsoInvitePage';
 import { ModerationManager } from './pages/ModerationManager';
 import { RBACManager } from './pages/RBACManager';
 import { BackupsManager } from './pages/BackupsManager';
 import { UserEngagementReport } from './pages/UserEngagementReport';
-import { ScheduledReports } from './pages/ScheduledReports';
-import './styles/admin.css';
 
+import ScheduledReports from './pages/dashboard/ScheduledReports';
+import './styles/admin.css';
 function RequireAuth() {
   const { isLoading, isVerified } = useAuth();
 
@@ -83,6 +84,7 @@ export default function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard/settings" element={<PlatformSettings />} />
             <Route path="/dashboard" element={<DashboardHome />} />
+            <Route path="/dashboard/project-health" element={<ProjectHealthDashboard />} />
             <Route path="/dashboard/analytics" element={<ComprehensiveAnalytics />} />
             <Route path="/dashboard/segments" element={<UserSegmentation />} />
             <Route path="/dashboard/events" element={<EventsManager />} />

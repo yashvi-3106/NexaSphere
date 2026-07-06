@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiClient } from '../services/api';
+import { fetchWithAuth } from '../services/api';
 
 export function BannersManager() {
   const [banners, setBanners] = useState([]);
@@ -15,7 +15,7 @@ export function BannersManager() {
 
   const fetchBanners = async () => {
     try {
-      const res = await apiClient('/api/admin/banners');
+      const res = await fetchWithAuth('/api/admin/banners');
       setBanners(res.banners || []);
     } catch (e) {
       console.error(e);
@@ -31,12 +31,19 @@ export function BannersManager() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await apiClient('/api/admin/banners', {
+      await fetchWithAuth('/api/admin/banners', {
         method: 'POST',
-        body: JSON.stringify(formState)
+        body: JSON.stringify(formState),
       });
       fetchBanners();
-      setFormState({ title: '', imageUrl: '', linkUrl: '', startTime: '', endTime: '', isActive: true });
+      setFormState({
+        title: '',
+        imageUrl: '',
+        linkUrl: '',
+        startTime: '',
+        endTime: '',
+        isActive: true,
+      });
     } catch (e) {
       console.error(e);
       alert('Error saving banner');
@@ -46,7 +53,7 @@ export function BannersManager() {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this banner?')) return;
     try {
-      await apiClient(`/api/admin/banners/${id}`, { method: 'DELETE' });
+      await fetchWithAuth(`/api/admin/banners/${id}`, { method: 'DELETE' });
       fetchBanners();
     } catch (e) {
       console.error(e);
@@ -57,7 +64,7 @@ export function BannersManager() {
   return (
     <div className="manager-page p-6">
       <h1 className="text-2xl font-bold mb-4">Banner & Hero Image Management</h1>
-      
+
       <div className="card mb-6 p-4 border rounded">
         <h2 className="text-xl mb-4">Upload / Create Banner</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md">
@@ -124,13 +131,20 @@ export function BannersManager() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {banners.map((b) => (
               <div key={b.id} className="border p-4 rounded shadow-sm">
-                <img src={b.imageUrl} alt={b.title} className="w-full h-32 object-cover mb-2 rounded" />
+                <img
+                  src={b.imageUrl}
+                  alt={b.title}
+                  className="w-full h-32 object-cover mb-2 rounded"
+                />
                 <h3 className="font-bold">{b.title}</h3>
                 <p className="text-sm text-gray-600">
                   Status: {b.isActive ? 'Active' : 'Inactive'}
                 </p>
                 <div className="mt-4 flex gap-2">
-                  <button onClick={() => handleDelete(b.id)} className="btn text-red-600 border border-red-600 p-1 rounded text-sm">
+                  <button
+                    onClick={() => handleDelete(b.id)}
+                    className="btn text-red-600 border border-red-600 p-1 rounded text-sm"
+                  >
                     Delete / Archive
                   </button>
                 </div>
