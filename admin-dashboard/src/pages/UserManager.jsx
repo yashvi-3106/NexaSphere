@@ -191,7 +191,7 @@ export default function UserManager() {
   }
 
   async function handleDeactivate(id) {
-    if (!confirm('Deactivate this user?')) return;
+    if (!window.confirm('Deactivate this user?')) return;
     setDeleting(id);
     try {
       const res = await fetch(`/api/admin/users/${id}`, {
@@ -235,7 +235,7 @@ export default function UserManager() {
   }
 
   async function handleUnlock(id) {
-    if (!confirm('Unlock this user account?')) return;
+    if (!window.confirm('Unlock this user account?')) return;
     try {
       const res = await fetch(`/api/admin/users/${id}/unlock`, {
         method: 'POST',
