@@ -164,7 +164,7 @@ export default function AiMentor() {
           >
             {result.suggestions &&
               result.suggestions.map((s, i) => (
-                <li key={`suggestion-${i}`} style={{ marginBottom: '4px' }}>
+                <li key={`${s}-${i}`} style={{ marginBottom: '4px' }}>
                   {s}
                 </li>
               ))}
