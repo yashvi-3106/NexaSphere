@@ -3,7 +3,7 @@
  */
 
 import { Router } from 'express';
-import Redis from 'ioredis';
+import { getRedisClient } from '../utils/redis.js';
 import logger from '../utils/logger.js';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import rateLimit from 'express-rate-limit';
@@ -21,41 +21,21 @@ const router = Router();
 router.use(
   rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false })
 );
-
-let _redis = null;
 async function redis() {
-  if (_redis) return _redis;
-  try {
-    if (process.env.REDIS_URL) {
-      _redis = new Redis(process.env.REDIS_URL);
-    } else {
-      _redis = new Redis();
-    }
-    _redis.on('error', () => {});
-  } catch (err) {
-    _redis = null;
-  }
-  return _redis;
+  return getRedisClient();
 }
 
 async function scanKeys(pattern) {
   const r = await redis();
   if (!r) return [];
+  const keys = [];
   return new Promise((resolve, reject) => {
-    const stream = r.scanStream({
-      match: pattern,
-      count: 200,
-    });
-    const keys = [];
+    const stream = r.scanStream({ match: pattern, count: 200 });
     stream.on('data', (resultKeys) => {
       keys.push(...resultKeys);
     });
-    stream.on('end', () => {
-      resolve(keys);
-    });
-    stream.on('error', (err) => {
-      reject(err);
-    });
+    stream.on('end', () => resolve(keys));
+    stream.on('error', reject);
   });
 }
 
@@ -165,7 +145,7 @@ router.post(
         return res.status(400).json({ error: 'identifier and limitPerMinute are required' });
 
       const r = await redis();
-      if (r) await r.set(`ratelimit:override:${identifier}`, String(limitPerMinute), 'EX', 86400);
+      if (r) await r.set(`ratelimit:override:${identifier}`, String(limitPerMinute), { EX: 86400 });
 
       logger.info('Rate limit override set', {
         identifier,
