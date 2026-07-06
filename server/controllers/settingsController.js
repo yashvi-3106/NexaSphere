@@ -11,10 +11,17 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import redis from '../config/redis.js';
+import { getRedisClient } from '../utils/redis.js';
 import crypto from 'crypto';
 
-const prisma = new PrismaClient();
+let prisma;
+try {
+  prisma = new PrismaClient();
+} catch (err) {
+  if (process.env.NODE_ENV !== 'test') {
+    console.warn('PrismaClient initialization failed (run prisma generate):', err.message);
+  }
+}
 
 // ─── Redis cache helpers ────────────────────────────────────────────────────
 
@@ -22,6 +29,8 @@ const CACHE_TTL = 300; // 5 minutes
 
 async function getCached(key) {
   try {
+    const redis = getRedisClient();
+    if (!redis) return null;
     const val = await redis.get(key);
     return val ? JSON.parse(val) : null;
   } catch {
@@ -31,7 +40,10 @@ async function getCached(key) {
 
 async function setCache(key, value) {
   try {
-    await redis.set(key, JSON.stringify(value), 'EX', CACHE_TTL);
+    const redis = getRedisClient();
+    if (redis) {
+      await redis.set(key, JSON.stringify(value), 'EX', CACHE_TTL);
+    }
   } catch {
     // Redis unavailable — continue without cache
   }
@@ -39,7 +51,10 @@ async function setCache(key, value) {
 
 async function invalidateCache(env) {
   try {
-    await redis.del(`settings:${env}`);
+    const redis = getRedisClient();
+    if (redis) {
+      await redis.del(`settings:${env}`);
+    }
   } catch {
     // ignore
   }

@@ -6,6 +6,22 @@ import { parseCSV, generateCSV } from '../utils/csvParser.js';
 import { sendEmail } from './emailService.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { Queue } from 'bullmq';
+import logger from '../utils/logger.js';
+
+export let bulkOperationsQueue = null;
+
+if (process.env.REDIS_URL) {
+  try {
+    bulkOperationsQueue = new Queue('bulkOperations', {
+      connection: {
+        url: process.env.REDIS_URL,
+      },
+    });
+  } catch (err) {
+    logger.warn('Failed to initialize bulkOperationsQueue', { err: err.message });
+  }
+}
 
 class BulkOperationsService {
   constructor() {
@@ -231,20 +247,7 @@ class BulkOperationsService {
         }
       }
 
-      // Log to audit log
-      if (oldState.length > 0 || newState.length > 0) {
-        await auditLogRepository.insertAuditLog({
-          adminId,
-          action: 'BULK_USER_IMPORT',
-          oldState: { operations: oldState },
-          newState: { operations: newState },
-        });
-        processed++;
-        this.updateJobProgress(jobId, processed, []);
-      } catch (err) {
-        jobErrors.push(`Row ${user.row}: Database error - ${err.message}`);
-      }
-    }
+
 
     // Log to audit log
     if (oldState.length > 0 || newState.length > 0) {

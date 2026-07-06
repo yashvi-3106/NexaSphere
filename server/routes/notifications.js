@@ -16,6 +16,12 @@ import { notificationPreferencesRepository } from '../repositories/notificationP
 import { studentAuthService } from '../services/studentAuthService.js';
 import { notificationSchema } from '../validators/notificationSchemas.js';
 
+// Fallback dual auth for notification preferences (admin or student session)
+const requireNotificationPrefAuth = (req, res, next) => {
+  if (req.cookies.ns_admin_token || req.headers.authorization) return next();
+  return res.status(401).json({ error: 'Unauthorized' });
+};
+
 const router = Router();
 
 // ── Constants ───────────────────────────────────────────────────────────────

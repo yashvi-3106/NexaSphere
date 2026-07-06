@@ -2,6 +2,7 @@ import passport from 'passport';
 import { studentUsersRepository } from '../repositories/studentUsersRepository.js';
 import { studentAuthService } from '../services/studentAuthService.js';
 import { withDb } from '../repositories/db.js';
+import { intrusionDetectionService, EVENT_TYPES } from '../services/intrusionDetectionService.js';
 
 export const googleAuth = passport.authenticate('google', {
   session: false,
@@ -13,6 +14,7 @@ export const googleCallback = (req, res, next) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5175';
     if (err) return next(err);
     if (!data) {
+      intrusionDetectionService.reportEvent(EVENT_TYPES.AUTH_FAILURE, req.ip, null).catch(console.error);
       return res.redirect(
         `${frontendUrl}/login?error=${encodeURIComponent(info?.message || 'Authentication failed')}`
       );
@@ -37,6 +39,7 @@ export const githubCallback = (req, res, next) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5175';
     if (err) return next(err);
     if (!data) {
+      intrusionDetectionService.reportEvent(EVENT_TYPES.AUTH_FAILURE, req.ip, null).catch(console.error);
       return res.redirect(
         `${frontendUrl}/login?error=${encodeURIComponent(info?.message || 'Authentication failed')}`
       );

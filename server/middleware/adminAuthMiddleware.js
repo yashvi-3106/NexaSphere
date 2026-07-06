@@ -27,6 +27,7 @@ import { getRedisClient } from '../utils/redis.js';
 import crypto from 'crypto';
 import QRCode from 'qrcode';
 import { getScopesForRole } from '../config/rbac.js';
+import { intrusionDetectionService, EVENT_TYPES } from '../services/intrusionDetectionService.js';
 
 // lgtm[js/weak-cryptographic-algorithm]
 function safeEqual(a, b) {
@@ -136,6 +137,10 @@ async function recordLoginAttempt(ip) {
       expiresAt: now + LOGIN_WINDOW_MS,
     };
     loginAttemptsByIp.set(ip, entry);
+    if (loginAttemptsByIp.size > LOGIN_MAX_TRACKED_IPS) {
+      const firstKey = loginAttemptsByIp.keys().next().value;
+      loginAttemptsByIp.delete(firstKey);
+    }
     return entry;
   } catch (err) {
     console.error('[Redis Error] Failed to record login attempt:', err.message);
@@ -339,6 +344,7 @@ function requireRole(allowedRoles) {
     const userRole = req.adminSession.metadata?.role || 'user';
 
     if (!allowedRoles.includes(userRole)) {
+      intrusionDetectionService.reportEvent(EVENT_TYPES.PRIVILEGE_ESCALATION, req.ip, req.adminSession?.username).catch(console.error);
       return res.status(403).json({ error: 'Forbidden: Insufficient privileges' });
     }
 
@@ -359,6 +365,7 @@ function requireScope(requiredScope) {
 
       const sessionScopes = req.adminSession?.metadata?.scopes || [];
       if (!sessionScopes.includes(requiredScope)) {
+        intrusionDetectionService.reportEvent(EVENT_TYPES.PRIVILEGE_ESCALATION, req.ip, req.adminSession?.username).catch(console.error);
         return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
       }
 
@@ -400,6 +407,7 @@ async function login(req, res) {
 
     if (!matchedUser) {
       await recordLoginAttempt(ip);
+      intrusionDetectionService.reportEvent(EVENT_TYPES.AUTH_FAILURE, ip, u).catch(console.error);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -421,24 +429,13 @@ async function login(req, res) {
         username: u,
         role,
         scopes,
-      },
-    });
+      });
 
-    // Write session to shared Redis for cross-service validation
-    try {
-      const tokenHash = hashToken(session.token);
-      const redisKey = REDIS_SESSION_PREFIX + tokenHash;
-      const redisPayload = JSON.stringify({
-        token: tokenHash,
-        email: u,
-        createdAt: new Date().toISOString(),
-        expiresAt: session.expiresAt,
-        metadata: {
-          userAgent: req.get('user-agent') || '',
-          ip,
-          role,
-          scopes,
-        },
+      return res.status(200).json({
+        requiresSetup: true,
+        setupToken,
+        qrCodeDataUrl,
+        backupCodes,
       });
     }
 

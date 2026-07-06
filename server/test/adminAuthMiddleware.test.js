@@ -191,7 +191,7 @@ test('Security + Concurrency Validation', async (t) => {
   });
 });
 
-await t.test('safeEqual verifies string equality securely and correctly', () => {
+test('safeEqual verifies string equality securely and correctly', () => {
   const { _safeEqual } = adminAuthMiddleware;
 
   // Correct comparison
