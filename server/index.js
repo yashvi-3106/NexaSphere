@@ -1,4 +1,4 @@
-﻿import 'dotenv/config';
+import 'dotenv/config';
 import { tracedFetch } from './config/appContext.js';
 import { initObservability } from './observability/index.js';
 import { setTraceIdResolver } from './utils/logContext.js';
@@ -259,11 +259,6 @@ app.use(
 
         objectSrc: ["'none'"],
 
- feat/i18n-localization-1397
- feat/i18n-localization-1397
-
- fix/csp-helmet-config-1475
- main
         // ✅ CRITICAL FIX: Missing directives added below
         baseUri: ["'self'"],                                    // Prevents <base> tag injection
         frameAncestors: ["'none'"],                             // Prevents clickjacking
@@ -274,25 +269,6 @@ app.use(
         frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'], // Restricts iframe sources
         childSrc: ["'none'"],                                   // Restricts child browsing contexts
         upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
-
-        baseUri: ["'self'"],
-
-        frameAncestors: ["'none'"],
-
-        formAction: ["'self'"],
-
-        upgradeInsecureRequests: [],
-
-        workerSrc: ["'self'", 'blob:'],
-
-        manifestSrc: ["'self'"],
-
-        mediaSrc: ["'self'"],
-
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
-
-        childSrc: ["'none'"],
- main
 
         reportUri: '/api/v1/csp-violation',
       },
@@ -328,11 +304,6 @@ app.use(
     },
   })
 );
- feat/i18n-localization-1397
- feat/i18n-localization-1397
-
- fix/csp-helmet-config-1475
- main
 
 
 app.use(
@@ -364,7 +335,6 @@ app.use(
     maxAge: 86400,
   })
 );
- main
 app.options('*', cors());
 
 app.use(enhancedTracingMiddleware);
