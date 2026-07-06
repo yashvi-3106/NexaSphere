@@ -27,13 +27,11 @@ import * as subscriptionsController from '../controllers/subscriptionsController
 import * as portfolioAnalyticsController from '../controllers/portfolioAnalyticsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
-<<<<<<< HEAD
 import announcementPriorityRouter from "./announcementPriority.js";
 import eventConflictRouter from "./eventConflict.js";
 import waitlistRoutes from "./waitlist.js";
-=======
 import * as localAuthController from '../controllers/localAuthController.js';
->>>>>>> upstream/main
+import * as authRefreshController from '../controllers/authRefreshController.js';
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
@@ -165,8 +163,20 @@ router.delete(
 );
 router.post('/api/admin/login', authRateLimiter, adminAuthMiddleware.login);
 
-// Local User Auth
+// Local User Auth (legacy — no refresh token rotation)
 router.post('/api/auth/local/login', authRateLimiter, localAuthController.localLogin);
+
+// ── Secure JWT Refresh Token Rotation (issue #3292) ───────────────────────────
+// Enhanced local login that issues both access and refresh tokens
+router.post('/api/auth/login', authRateLimiter, authRefreshController.localLogin);
+// Rotate a refresh token → new access token + new refresh token
+router.post('/api/auth/refresh', authRateLimiter, authRefreshController.refreshTokens);
+// Revoke the current device's refresh token (single logout)
+router.post('/api/auth/logout', authRefreshController.logout);
+// Revoke ALL refresh tokens for the authenticated user (logout everywhere)
+router.post('/api/auth/logout-all', requireStudentAuth, authRefreshController.logoutAll);
+// List active sessions for device management UI
+router.get('/api/auth/sessions', requireStudentAuth, authRefreshController.listSessions);
 
 router.post('/api/admin/2fa/verify', authRateLimiter, adminAuthMiddleware.verifyTwoFactor);
 router.post(
