@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import ShareHub from './ShareHub';
+import { useWalkthroughStep } from '../hooks/useWalkthroughStep';
 
-const EventCard = React.memo(function EventCard({ event, onClick, id }) {
+const EventCard = React.memo(function EventCard({ event, onClick, id, isFirstForWalkthrough }) {
   const [shareOpen, setShareOpen] = useState(false);
+  const ref = useWalkthroughStep(isFirstForWalkthrough ? 'register_event' : null);
 
   function handleShareClick(e) {
     e.stopPropagation(); // don't trigger the card's onClick
@@ -11,7 +13,7 @@ const EventCard = React.memo(function EventCard({ event, onClick, id }) {
 
   return (
     <>
-      <div className="event-card" onClick={() => onClick(id)} style={{ cursor: 'pointer' }}>
+      <div ref={ref} className="event-card" onClick={() => onClick(id)} style={{ cursor: 'pointer' }}>
         <h3>{event.title}</h3>
         <p>{event.date}</p>
         <p>{event.description}</p>

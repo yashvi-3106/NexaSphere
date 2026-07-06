@@ -192,13 +192,11 @@ export default function AdminPage({ onBack }) {
         </div>
       </header>
 
-      {loading && <div className="loader-overlay">Loading...</div>}
-
-      <DashboardStats stats={data.stats} />
+      <DashboardStats stats={data.stats} loading={loading} />
 
       <div className="charts-grid">
-        <UserGrowthChart data={data.growth} />
-        <EventAttendanceChart data={data.events} />
+        <UserGrowthChart data={data.growth} loading={loading} />
+        <EventAttendanceChart data={data.events} loading={loading} />
       </div>
     </div>
   );

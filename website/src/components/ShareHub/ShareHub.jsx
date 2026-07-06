@@ -74,7 +74,7 @@ export default function ShareHub({ isOpen, onClose, data }) {
 
         <div className="sharehub-preview">
           {data.image && (
-            <img
+            <img loading="lazy"
               src={data.image}
               alt={`Preview image for ${data.title}`}
               className="sharehub-preview-img"
@@ -131,7 +131,7 @@ export default function ShareHub({ isOpen, onClose, data }) {
 
         {showQR && (
           <div className="sharehub-qr">
-            <img src={getQRUrl(shareUrl)} alt="QR code for this link" width={200} height={200} />
+            <img loading="lazy" src={getQRUrl(shareUrl)} alt="QR code for this link" width={200} height={200} />
             <p className="sharehub-qr-hint">Scan to open on any device</p>
           </div>
         )}

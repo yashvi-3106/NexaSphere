@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { DynamicIcon } from '../../shared/Icons';
 import { getApiBase } from '../../utils/runtimeConfig';
 import apiClient from '../../utils/apiClient';
+import { downloadICS } from '../../utils/icsExport';
 
 function hexToRgb(hex) {
   if (!hex || !hex.startsWith('#')) return '0,212,255';
@@ -786,7 +787,7 @@ function QRTicketCard({ event, ticket, color, rgb, onCalendarDownload }) {
             }}
           >
             {ticket.qrDataUrl ? (
-              <img src={ticket.qrDataUrl} alt="Entry QR" width={160} height={160} />
+              <img loading="lazy" src={ticket.qrDataUrl} alt="Entry QR" width={160} height={160} />
             ) : (
               <canvas ref={canvasRef} width={160} height={160} style={{ display: 'block' }} />
             )}
@@ -956,9 +957,7 @@ export default function EventDetailPage({ event, activityColor, activityIcon, on
   };
 
   const handleCalendarDownload = () => {
-    const base = getApiBase();
-    const url = `${base}/api/content/events/${event.id}/calendar`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    downloadICS(event);
   };
 
   const color = activityColor || '#a855f7';
@@ -1162,6 +1161,35 @@ export default function EventDetailPage({ event, activityColor, activityIcon, on
                 <DynamicIcon name={status === 'completed' ? 'CheckCircle' : 'Calendar'} size={12} />{' '}
                 {status === 'completed' ? 'Completed' : 'Upcoming'}
               </span>
+              {isUpcoming && (
+                <button
+                  onClick={() => downloadICS(event)}
+                  title="Download Calendar Event"
+                  style={{
+                    background: `rgba(${rgb},0.1)`,
+                    border: `1px solid rgba(${rgb},0.3)`,
+                    color: color,
+                    borderRadius: '50%',
+                    width: '28px',
+                    height: '28px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = `rgba(${rgb},0.2)`;
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = `rgba(${rgb},0.1)`;
+                    e.currentTarget.style.transform = '';
+                  }}
+                >
+                  <DynamicIcon name="CalendarPlus" size={14} />
+                </button>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>

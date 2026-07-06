@@ -5,6 +5,7 @@ import { setTraceIdResolver } from './utils/logContext.js';
 import { getActiveTraceId } from './observability/tracing.js';
 import helmet from 'helmet';
 import express from 'express';
+import morgan from 'morgan';
 import cors from 'cors';
 import csrf from 'csurf';
 import fs, { promises as fsp } from 'fs';
@@ -17,8 +18,19 @@ import crypto from 'crypto';
 import { adminAuthMiddleware } from './middleware/adminAuthMiddleware.js';
 import analyticsRouter from './routes/analytics.js';
 import apiRouter from './routes/api.js';
+import formSubmissionsRouter from './routes/forms.js';
+import { logEvent } from './controllers/analyticsController.js';
+import healthDashboardRouter from './routes/healthDashboard.js';
+import complianceRouter from './routes/compliance.js';
+import { createBullBoard } from '@bull-board/api';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { ExpressAdapter } from '@bull-board/express';
+import { eventRemindersQueue } from './services/queueService.js';
+import { slackIntegrationService } from './services/slackIntegrationService.js';
 import { initializeSocketIO } from './config/socket.js';
 import adminStreamRouter from './routes/adminStream.js';
+import faqRouter from './routes/faqRoutes.js';
+import { setupAuditContext } from './middleware/adminAuditMiddleware.js';
 import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
 import healthRouter from './routes/health.js';
@@ -42,8 +54,11 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { notificationAnalyticsRepository } from './repositories/notificationAnalyticsRepository.js';
 import { notificationPreferencesRepository } from './repositories/notificationPreferencesRepository.js';
 import notificationsService from './services/notificationsService.js';
-import { studentAuthService } from './services/studentAuthService.js';
 import { initializeSentry, addSentryErrorHandler } from './utils/sentry.js';
+import morgan from 'morgan';
+import { recordCompressionRatio } from './observability/metrics.js';
+import { logEvent } from './controllers/analyticsController.js';
+import healthDashboardRouter from './routes/healthDashboard.js';
 import {
   apiRateLimiter,
   formRateLimiter,
@@ -52,7 +67,6 @@ import {
   portfolioRateLimiter,
   searchRateLimiter,
   validateLimiters,
-  searchRateLimiter,
 } from './middleware/rateLimiter.js';
 import {
   authRateLimiter,
@@ -67,10 +81,9 @@ import { CircuitBreaker, circuitBreakerRegistry } from './utils/circuitBreaker.j
 import { getPublicAppUrl } from './utils/publicAppUrl.js';
 import * as eventsController from './controllers/eventsController.js';
 import './workers/bulkWorker.js';
+import './workers/waitlistWorker.js';
 import * as activityEventsController from './controllers/activityEventsController.js';
 import * as streamController from './controllers/streamController.js';
-import * as coreTeamController from './controllers/coreTeamController.js';
-import { coreTeamService } from './services/coreTeamService.js';
 import { HAS_SUPABASE, SUPABASE_URL, SUPABASE_SERVICE_KEY } from './storage/supabaseClient.js';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
@@ -84,7 +97,6 @@ import { slackRepository } from './repositories/slackRepository.js';
 import * as studentAuthController from './controllers/studentAuthController.js';
 import * as forumController from './controllers/forumController.js';
 import { requireStudentAuth } from './middleware/studentAuthMiddleware.js';
-import { studentAuthService } from './services/studentAuthService.js';
 import { loadPersistedPushSubscriptions } from './routes/notifications.js';
 import * as mentorshipController from './controllers/mentorshipController.js';
 import { xssSanitizer } from './middleware/xssSanitizer.js';
@@ -103,6 +115,12 @@ import financialsRouter from './routes/financials.js';
 import { schedulerService } from './services/schedulerService.js';
 import feedbackRouter from './routes/feedbackRoutes.js';
 import * as slackController from './controllers/slackController.js';
+import activityTimelineRoutes from "./routes/activityTimeline.js";
+app.use("/api/activity-timeline", activityTimelineRoutes);
+
+import { initializeTypesenseCollections } from './config/typesense.js';
+import moderationRouter from './routes/moderation.js';
+import rbacRouter from './routes/rbac.js';
 
 validateLimiters();
 
@@ -111,6 +129,9 @@ const __dirname = path.dirname(__filename);
 const CONTENT_FILE = path.join(__dirname, 'data', 'content.json');
 
 validateEnvironment();
+initializeTypesenseCollections().catch((err) => {
+  console.error('Failed to initialize Typesense collections:', err);
+});
 
 function requiredStrongPassword(name) {
   const value = String(process.env[name] || '').trim();
@@ -130,13 +151,23 @@ function requiredStrongPassword(name) {
 }
 const ADMIN_EVENT_PASSWORD = requiredStrongPassword('ADMIN_EVENT_PASSWORD');
 const SESSION_SECRET = requiredStrongPassword('SESSION_SECRET');
+const ADMIN_PASSWORD = requiredStrongPassword('ADMIN_PASSWORD');
+
+
 
 const app = express();
+
+const useStructuredHttpLog = (process.env.LOG_FORMAT || '').toLowerCase() === 'json';
 
 // RECTIFIED: Enable 'trust proxy' to correctly extract client IPs from X-Forwarded-For headers when behind ALBs/Serverless layers
 app.set('trust proxy', 1);
 
 initializeSentry(app);
+app.use(compression());
+app.use(
+  "/api/notification-preferences",
+  notificationPreferenceRoutes
+);
 
 // Use compression with fallback (Brotli supported by default in compression v1.8 if zlib supports it)
 // Skip compression for responses smaller than 1KB (1024 bytes)
@@ -227,7 +258,15 @@ app.use(
           }
         : false,
 
+fix/search-clear-button-1487
+ HEAD
+    // Strict Content Security Policy with ALL directives
+
     // ✅ FIXED: Strict Content Security Policy with ALL directives
+ 921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
+
+    // ✅ FIXED: Strict Content Security Policy with ALL directives
+ main
     contentSecurityPolicy: {
       useDefaults: false,
 
@@ -305,11 +344,10 @@ app.use(
   })
 );
 
-
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (origin && allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
       if (process.env.NODE_ENV === 'test') {
@@ -335,6 +373,7 @@ app.use(
     maxAge: 86400,
   })
 );
+
 app.options('*', cors());
 
 app.use(enhancedTracingMiddleware);
@@ -342,11 +381,6 @@ app.use(enhancedTracingMiddleware);
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(xssSanitizer);
-if (useStructuredHttpLog) {
-  app.use(apiLogger);
-} else {
-  app.use(morgan('combined'));
-}
 app.use(apiLogger);
 app.use(performanceMonitor);
 app.use(cookieParser());
@@ -367,8 +401,10 @@ app.use(csrfProtection);
 app.use('/api', apiRateLimiter);
 app.use('/api', tierRateLimiter());
 
+// Read-only guard — blocks non-GET requests when system is in maintenance mode
+app.use(readOnlyGuard);
+
 // Mount route modules
-app.use('/api/form-submissions', formSubmissionsRouter);
 app.post('/api/analytics/track', logEvent);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/health-dashboard', healthDashboardRouter);
@@ -380,6 +416,7 @@ app.use('/api', formsRouter);
 app.use('/api', portfolioAnalyticsRouter);
 app.use('/api', portfolioRouter);
 app.use('/api', recoveryRouter);
+app.use('/api/faqs', faqRouter);
 app.use('/', notificationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', learningPathRouter);
@@ -397,6 +434,13 @@ app.use('/api/admin/scheduled-tasks', adminAuth, scheduledTasksRouter);
 
 // User Segments
 app.use('/api/admin/segments', adminAuth, segmentsRouter);
+app.use('/api/admin/email-templates', adminAuth, emailTemplateRouter);
+
+// Content Moderation
+app.use('/api/moderation', adminAuth, moderationRouter);
+
+// Role-Based Access Control
+app.use('/api/admin/rbac', adminAuth, rbacRouter);
 
 // Database Backup & Recovery Endpoints
 app.get('/api/admin/backups', adminAuth, backupController.getBackups);
@@ -424,26 +468,7 @@ const defaultContent = {
   coreTeam: [],
 };
 
-function requiredStrongPassword(name) {
-  const value = String(process.env[name] || '').trim();
-  if (!value) {
-    throw new Error(`Missing environment variable: ${name}`);
-  }
-  const hasLower = /[a-z]/.test(value);
-  const hasUpper = /[A-Z]/.test(value);
-  const hasNumber = /\d/.test(value);
-  const hasSymbol = /[^A-Za-z0-9]/.test(value);
 
-  if (value.length < 12 || !hasLower || !hasUpper || !hasNumber || !hasSymbol) {
-    throw new Error(
-      `${name} must be at least 12 characters and include uppercase, lowercase, number, and symbol`
-    );
-  }
-
-  return value;
-}
-
-const ADMIN_EVENT_PASSWORD = requiredStrongPassword('ADMIN_EVENT_PASSWORD');
 
 // â”€â”€ File Upload Configuration â”€â”€
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
@@ -1194,7 +1219,6 @@ app.use('/api/compliance', complianceRouter);
 // Admin Analytics & Metrics (mounted with admin auth)
 app.use('/api/admin/analytics', adminAuth, analyticsRouter);
 app.use('/api/admin/metrics', adminAuth, adminStreamRouter);
-app.use('/api/admin/scheduled-tasks', adminAuth, scheduledTasksRouter);
 
 // Setup Bull Board for background job monitoring
 const serverAdapter = new ExpressAdapter();
@@ -1210,13 +1234,16 @@ app.get('/api/auth/google', studentAuthController.googleAuth);
 app.get('/api/auth/google/callback', studentAuthController.googleCallback);
 app.get('/api/auth/github', studentAuthController.githubAuth);
 app.get('/api/auth/github/callback', studentAuthController.githubCallback);
+// Student Auth & Me Endpoints
 app.get('/api/auth/me', requireStudentAuth, studentAuthController.getMe);
+app.delete('/api/auth/me', requireStudentAuth, studentAuthController.deleteAccount);
+app.get('/api/auth/export', requireStudentAuth, studentAuthController.exportData);
 app.post('/api/auth/theme', requireStudentAuth, studentAuthController.updateTheme);
 app.post('/api/auth/logout', studentAuthController.logout);
 
 // Student Profile Endpoints
-app.get('/api/auth/profile',       requireStudentAuth, studentAuthController.getProfile);
-app.put('/api/auth/profile',       requireStudentAuth, studentAuthController.updateProfile);
+app.get('/api/auth/profile', requireStudentAuth, studentAuthController.getProfile);
+app.put('/api/auth/profile', requireStudentAuth, studentAuthController.updateProfile);
 app.get('/api/auth/registrations', requireStudentAuth, studentAuthController.getRegistrations);
 
 // Slack Integration Endpoints
@@ -1270,49 +1297,6 @@ app.get('/api/streams/:id/reactions', streamController.getReactions);
 app.get('/api/search', searchRateLimiter, searchController.search);
 app.get('/api/search/trending', searchRateLimiter, searchController.trending);
 app.get('/api/recommendations', searchRateLimiter, searchController.recommendations);
-
-// Public listings
-app.get('/api/content/team', async (req, res) => {
-  try {
-    const rawMembers = await coreTeamService.listMembers();
-    const members = (rawMembers || []).map((m) => {
-      let email = m.email || null;
-      if (email && !email.toLowerCase().endsWith('@glbajajgroup.org')) {
-        email = null;
-      }
-      return {
-        ...m,
-        email,
-        whatsapp: 'https://chat.whatsapp.com/FhpJEaod2g419jFMfqrhGZ',
-      };
-    });
-    return res.json({ members });
-  } catch (e) {
-    return res.status(500).json({ error: e?.message || 'Failed to load core team' });
-  }
-});
-
-// Admin Team Management
-app.get(
-  '/api/admin/core-team',
-  adminAuthMiddleware.requireScope('settings:admin'),
-  coreTeamController.adminListCoreTeamMembers
-);
-app.post(
-  '/api/admin/core-team',
-  adminAuthMiddleware.requireScope('settings:admin'),
-  coreTeamController.adminAddCoreTeamMember
-);
-app.put(
-  '/api/admin/core-team/:id',
-  adminAuthMiddleware.requireScope('settings:admin'),
-  coreTeamController.adminUpdateCoreTeamMember
-);
-app.delete(
-  '/api/admin/core-team/:id',
-  adminAuthMiddleware.requireScope('settings:admin'),
-  coreTeamController.adminDeleteCoreTeamMember
-);
 
 // Circuit Breaker Admin API
 app.get('/api/admin/circuit-breaker/metrics', adminAuth, async (req, res) => {
@@ -1446,52 +1430,9 @@ function clearPasskeyAttempts(username, ip) {
   failedPasskeyAttemptsByUsername.delete(userKey);
 }
 
-app.get('/api/notifications', async (req, res) => {
+app.get('/api/notifications', adminAuth, async (req, res) => {
   try {
     const userId = req.query.userId || 'global';
-
-    if (userId !== 'global') {
-      let authenticated = false;
-
-      // 1. Try Student Auth
-      let token = null;
-      const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.slice(7).trim();
-      }
-      if (!token && req.cookies?.ns_student_token) {
-        token = req.cookies.ns_student_token;
-      }
-      if (token) {
-        const payload = studentAuthService.verifyToken(token);
-        if (payload && (payload.sub === userId || payload.id === userId)) {
-          authenticated = true;
-        }
-      }
-
-      // 2. Try Admin Auth
-      if (!authenticated) {
-        let adminToken = null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          adminToken = authHeader.slice(7).trim();
-        }
-        if (!adminToken && req.cookies?.ns_admin_token) {
-          adminToken = req.cookies.ns_admin_token;
-        }
-        if (adminToken) {
-          const { getAdminSession } = await import('./repositories/adminSessionsRepository.js');
-          const session = await getAdminSession(adminToken);
-          if (session) {
-            authenticated = true;
-          }
-        }
-      }
-
-      if (!authenticated) {
-        return res.status(401).json({ error: 'Unauthorized to view these notifications' });
-      }
-    }
-
     const offset = parseInt(req.query.offset, 10) || 0;
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
     const list = await notificationsService.getNotifications(userId, offset, limit);
@@ -1501,26 +1442,7 @@ app.get('/api/notifications', async (req, res) => {
   }
 });
 
-function requireNotificationPrefAuth(req, res, next) {
-  adminAuthMiddleware.requireAdmin(req, res, (err) => {
-    if (!err && req.adminSession) {
-      return next();
-    }
-    requireStudentAuth(req, res, (err2) => {
-      if (err2 || !req.studentUser) {
-        return res.status(401).json({ error: 'Unauthorized: Authentication required' });
-      }
-      const userId = req.method === 'GET' ? (req.query.userId || 'global') : (req.body.userId || 'global');
-      if (req.studentUser.sub === userId || req.studentUser.id === userId) {
-        return next();
-      }
-      return res.status(403).json({ error: 'Forbidden: You cannot access or modify other users\' preferences' });
-    });
-  });
-}
-
-// Notification Preferences
-app.get('/api/notifications/preferences', requireNotificationPrefAuth, async (req, res) => {
+app.get('/api/notifications/preferences', adminAuth, async (req, res) => {
   try {
     const userId = req.query.userId || 'global';
     const prefs = await notificationPreferencesRepository.list(userId);
@@ -1529,8 +1451,8 @@ app.get('/api/notifications/preferences', requireNotificationPrefAuth, async (re
     return res.status(500).json({ error: err.message });
   }
 });
-
-app.put('/api/notifications/preferences', requireNotificationPrefAuth, async (req, res) => {
+// Notification analytics (lightweight collector)
+app.put('/api/notifications/preferences', adminAuth, async (req, res) => {
   try {
     const userId = req.body.userId || 'global';
     const { category, email, push, in_app, sms, frequency, quiet_start, quiet_end, dnd } = req.body;
@@ -1551,7 +1473,7 @@ app.put('/api/notifications/preferences', requireNotificationPrefAuth, async (re
   }
 });
 
-app.put('/api/notifications/preferences/bulk', requireNotificationPrefAuth, async (req, res) => {
+app.put('/api/notifications/preferences/bulk', adminAuth, async (req, res) => {
   try {
     const userId = req.body.userId || 'global';
     const { preferences } = req.body;
@@ -1565,6 +1487,8 @@ app.put('/api/notifications/preferences/bulk', requireNotificationPrefAuth, asyn
   }
 });
 
+ fix/search-clear-button-1487
+
 // Notification analytics (lightweight collector)
 app.post('/api/notifications/analytics', async (req, res) => {
   try {
@@ -1576,6 +1500,7 @@ app.post('/api/notifications/analytics', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
+ main
 
 app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
   try {
@@ -1689,8 +1614,16 @@ app.put(
   requireMentorshipAuth,
   mentorshipController.updateMentorshipStatus
 );
-app.post('/api/mentorship/requests/:id/sessions', requireStudentAuth, mentorshipController.logSession);
-app.get('/api/mentorship/requests/:id/sessions', requireStudentAuth, mentorshipController.listSessions);
+app.post(
+  '/api/mentorship/requests/:id/sessions',
+  requireStudentAuth,
+  mentorshipController.logSession
+);
+app.get(
+  '/api/mentorship/requests/:id/sessions',
+  requireStudentAuth,
+  mentorshipController.listSessions
+);
 app.post('/api/mentorship/buddy-pairs', requireStudentAuth, mentorshipController.createBuddyPair);
 app.get('/api/mentorship/buddy-pairs', requireStudentAuth, mentorshipController.listBuddyPairs);
 app.get('/api/admin/mentorships', adminAuth, mentorshipController.adminListAll);
@@ -1755,11 +1688,9 @@ if (process.env.NODE_ENV !== 'test') {
       server = app.listen(port, () => {
         console.log(`NexaSphere server listening on http://localhost:${port}`);
         schedulerService.init();
-
-        // Register Learning Path Nudges (Runs daily)
-        schedulerService.schedule('0 10 * * *', async () => {
-          await learningPathService.runNudgeJob();
-        });
+      });
+      server.on('error', (err) => {
+        console.error('SERVER LISTEN ERROR:', err.code, err.message);
       });
       initializeSocketIO(server);
     });

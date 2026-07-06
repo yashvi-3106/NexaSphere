@@ -136,6 +136,10 @@ async function recordLoginAttempt(ip) {
       expiresAt: now + LOGIN_WINDOW_MS,
     };
     loginAttemptsByIp.set(ip, entry);
+    if (loginAttemptsByIp.size > LOGIN_MAX_TRACKED_IPS) {
+      const oldestKey = loginAttemptsByIp.keys().next().value;
+      if (oldestKey) loginAttemptsByIp.delete(oldestKey);
+    }
     return entry;
   } catch (err) {
     console.error('[Redis Error] Failed to record login attempt:', err.message);
@@ -421,24 +425,21 @@ async function login(req, res) {
         username: u,
         role,
         scopes,
-      },
-    });
+        secret,
+        backupCodes,
+        ip,
+        userAgent,
+        suspicious,
+      });
 
-    // Write session to shared Redis for cross-service validation
-    try {
-      const tokenHash = hashToken(session.token);
-      const redisKey = REDIS_SESSION_PREFIX + tokenHash;
-      const redisPayload = JSON.stringify({
-        token: tokenHash,
-        email: u,
-        createdAt: new Date().toISOString(),
-        expiresAt: session.expiresAt,
-        metadata: {
-          userAgent: req.get('user-agent') || '',
-          ip,
-          role,
-          scopes,
-        },
+      return res.status(202).json({
+        requiresTwoFactorSetup: true,
+        setupToken,
+        qrCodeDataUrl,
+        otpAuthUrl,
+        secret,
+        backupCodes,
+        graceEndsAt: securityAccount?.grace_ends_at,
       });
     }
 
@@ -452,7 +453,7 @@ async function login(req, res) {
       suspicious,
     });
 
-    return res.status(200).json({
+    return res.status(202).json({
       requiresTwoFactor: true,
       challengeToken,
       expiresAt: Date.now() + PENDING_2FA_TTL_MS,
@@ -505,7 +506,7 @@ async function completeAdminLogin({ req, res, username, role, scopes, ip, userAg
       if (err) console.error('[Session] Error regenerating session:', err);
     });
   }
-  
+
   res.cookie('ns_admin_token', session.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

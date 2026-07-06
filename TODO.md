@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # TODO - Event Stream Processing & Real-Time Analytics (#1776)
 
 - [ ] Create plan + confirm approach (done)
@@ -9,10 +8,10 @@
 - [ ] Ensure tests use MockQueue + mock outbox without DB dependency
 - [ ] Expand StreamProcessor windowing/hourly + richer dashboard payload
 - [ ] Implement fraud rules (IP/payment) + enforcement
-- [ ] Implement real-time recommendation regeneration pipeline
+- [ ] Implement real-time recommendation recommendation pipeline
 - [ ] Persist processed analytics for historical queries
 - [ ] Extend QA tests to cover outbox delivery, ordering, aggregates, anomaly, fraud, recommendations
-=======
+
 # TODO - #1754 Real-Time Collaborative Whiteboard
 
 - [ ] Create a minimal viable whiteboard component (canvas-based) with: pen/highlighter/eraser, shapes (rect/circle/triangle/line/arrow), text boxes, sticky notes, undo/redo per user.
@@ -25,4 +24,3 @@
 - [ ] Add performance optimizations: pan/zoom smooth, lazy loading for large boards, ensure 1000+ elements handling.
 - [ ] Mobile/touch drawing support.
 - [ ] Add QA/concurrency test plan + minimal automated tests where possible.
->>>>>>> 9bc8f289 (feat(events): event whiteboard collaboration (CRDT/Yjs))

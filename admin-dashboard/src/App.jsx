@@ -5,6 +5,7 @@ import { useAuth } from './hooks/useAuth';
 import { Sidebar } from './components/Sidebar';
 import { Toast } from './components/Toast';
 import { OfflineBanner } from './components/OfflineBanner';
+import { ImpersonationBanner } from './components/ImpersonationBanner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { LoginPage } from './pages/LoginPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
@@ -18,6 +19,7 @@ import { EventsManager } from './pages/EventsManager';
 import { ActivityEventsManager } from './pages/ActivityEventsManager';
 import { ScheduledTasksManager } from './pages/ScheduledTasksManager';
 import UserGroups from './pages/UserGroups';
+import { RolesManager } from './pages/RolesManager';
 import { CoreTeamManager } from './pages/CoreTeamManager';
 import { MembershipResponsesManager } from './pages/MembershipResponsesManager';
 import { RecruitmentResponsesManager } from './pages/RecruitmentResponsesManager';
@@ -28,8 +30,14 @@ import { StreamManager } from './pages/StreamManager';
 import { CircuitBreakerManager } from './pages/CircuitBreakerManager';
 import { WaitingRoomManager } from './pages/WaitingRoomManager';
 import { SponsorshipsManager } from './pages/SponsorshipsManager';
-import { ComprehensiveAnalytics } from './pages/ComprehensiveAnalytics';
 import { UserSegmentation } from './pages/UserSegmentation';
+import { PlatformSettings } from './pages/dashboard/PlatformSettings';
+import { SsoInvitePage } from './pages/SsoInvitePage';
+import { ModerationManager } from './pages/ModerationManager';
+import { RBACManager } from './pages/RBACManager';
+import { BackupsManager } from './pages/BackupsManager';
+import { UserEngagementReport } from './pages/UserEngagementReport';
+import { ScheduledReports } from './pages/ScheduledReports';
 import './styles/admin.css';
 
 function RequireAuth() {
@@ -91,12 +99,16 @@ export default function App() {
             <Route path="/dashboard/circuit-breaker" element={<CircuitBreakerManager />} />
             <Route path="/dashboard/waiting-room" element={<WaitingRoomManager />} />
             <Route path="/dashboard/groups" element={<UserGroups />} />
+            <Route path="/dashboard/roles" element={<RolesManager />} />
             <Route path="/dashboard/tasks" element={<ScheduledTasksManager />} />
             <Route path="/dashboard/backups" element={<BackupsManager />} />
             <Route path="/dashboard/sponsorships" element={<SponsorshipsManager />} />
+            <Route path="/dashboard/moderation" element={<ModerationManager />} />
+            <Route path="/dashboard/rbac" element={<RBACManager />} />
             <Route path="/dashboard/audit-logs" element={<AuditLogViewer />} />
             <Route path="/dashboard/reports" element={<UserEngagementReport />} />
             <Route path="/dashboard/scheduled-reports" element={<ScheduledReports />} />
+            <Route path="/dashboard/sso-invites" element={<SsoInvitePage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
@@ -104,4 +116,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-

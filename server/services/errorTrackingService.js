@@ -1,10 +1,4 @@
 import 'dotenv/config';
-import { validateEnvironment } from '../utils/envValidator.js';
-
-validateEnvironment();
-
-import helmet from 'helmet';
-import express from 'express';
 /**
  * Error Tracking Service
  * Manages error logging, tracking, and analysis
@@ -61,12 +55,12 @@ async function logError(error, context = {}) {
   const endpoint = `${errorData.method} ${errorData.url}`;
 
   // Log to Winston (which now forwards to Sentry automatically)
-  logger.error(error.message || 'Error logged', { 
-    error, 
-    ...errorData, 
+  logger.error(error.message || 'Error logged', {
+    error,
+    ...errorData,
     userId: context.userId,
     requestPath: context.url,
-    tags: { status: errorData.status, endpoint } 
+    tags: { status: errorData.status, endpoint },
   });
 
   // Add breadcrumb

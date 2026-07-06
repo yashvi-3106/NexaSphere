@@ -1,5 +1,10 @@
 import crypto from 'crypto';
-import { supabaseRequest, HAS_SUPABASE, SUPABASE_URL, SUPABASE_SERVICE_KEY } from '../storage/supabaseClient.js';
+import {
+  supabaseRequest,
+  HAS_SUPABASE,
+  SUPABASE_URL,
+  SUPABASE_SERVICE_KEY,
+} from '../storage/supabaseClient.js';
 import { tracedFetch } from '../config/appContext.js';
 import { readContent, writeContent } from '../storage/contentFileStore.js';
 import { runWithFileLock } from '../storage/contentFileStore.js';
@@ -107,6 +112,7 @@ export function normalizePhone(value) {
   return String(value || '').replace(/[^\d]/g, '');
 }
 
+export async function assertCoreTeamMember(name, email, phone) {
   const n = String(name || '')
     .trim()
     .toLowerCase();

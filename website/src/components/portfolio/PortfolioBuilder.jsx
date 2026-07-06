@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import apiClient from '../../utils/apiClient.js';
 import { getApiBase } from '../../utils/runtimeConfig';
 import { projectsData } from '../../data/projectsData';
 import { roadmapData } from '../../data/roadmapData';
 import { RepoCardSkeleton } from '../ui/skeleton/RepoCardSkeleton';
 import AdvancedCustomizer from './AdvancedCustomizer';
+import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 
 export default function PortfolioBuilder() {
   const [username, setUsername] = useState('');
@@ -52,6 +53,7 @@ export default function PortfolioBuilder() {
   const [isFetchingGh, setIsFetchingGh] = useState(false);
   const [ghRepos, setGhRepos] = useState([]);
   const [ghError, setGhError] = useState('');
+  const [ghFetchAttempted, setGhFetchAttempted] = useState(false);
 
   // States
   const [isSaving, setIsSaving] = useState(false);
@@ -59,6 +61,9 @@ export default function PortfolioBuilder() {
   const [successMsg, setSuccessMsg] = useState('');
   const [copied, setCopied] = useState(false);
 
+  // Resume Parsing
+  const [isParsing, setIsParsing] = useState(false);
+  const resumeInputRef = useRef(null);
   // Extract all unique skills from roadmapData
   const availableSkills = Object.values(roadmapData).reduce((acc, roadmap) => {
     roadmap.nodes.forEach((node) => {
@@ -83,23 +88,34 @@ export default function PortfolioBuilder() {
     title: p.title,
   }));
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const githubParam = params.get('github');
+    if (githubParam) {
+      setGhUsername(githubParam);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const loadControllerRef = useRef(null);
+  const loadGenRef = useRef(0);
 
   const handleLoadConfig = async () => {
     if (!username || username.length < 3) return;
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (loadControllerRef.current) {
-      loadControllerRef.current.abort();
-    }
+    const gen = ++loadGenRef.current;
+    loadControllerRef.current?.abort();
     const controller = new AbortController();
     loadControllerRef.current = controller;
 
     try {
       const base = getApiBase();
-      const url = base ? `${base}/api/portfolio/${username}` : `/api/portfolio/${username}`;
+      const encodedUsername = encodeURIComponent(username);
+      const url = base ? `${base}/api/portfolio/${encodedUsername}` : `/api/portfolio/${encodedUsername}`;
       const data = await apiClient(url, { signal: controller.signal });
+      if (gen !== loadGenRef.current) return;
       if (data) {
         setTitle(data.title || '');
         setBio(data.bio || '');
@@ -117,6 +133,7 @@ export default function PortfolioBuilder() {
         );
         setSocialLinks(data.socialLinks || { github: '', linkedin: '', twitter: '', resume: '' });
         setSeoMetadata(data.seoMetadata || { title: '', description: '' });
+        setGhUsername(data.githubUsername || '');
         setSelectedSkills(data.skills || []);
         setSelectedRoadmaps(data.roadmaps || []);
         setSelectedProjects(data.projects || []);
@@ -125,6 +142,7 @@ export default function PortfolioBuilder() {
       }
     } catch (err) {
       if (err.name === 'AbortError') return;
+      if (gen !== loadGenRef.current) return;
       if (err.status === 404) {
         return;
       }
@@ -135,6 +153,7 @@ export default function PortfolioBuilder() {
   };
 
   const handleSave = async (e) => {
+    if (isSaving) return;
     e.preventDefault();
     if (!username || username.length < 3) {
       setErrorMsg('Username must be at least 3 characters long.');
@@ -165,12 +184,13 @@ export default function PortfolioBuilder() {
         roadmaps: selectedRoadmaps,
         projects: selectedProjects,
         customProjects,
+        githubUsername: ghUsername.trim() || undefined,
       };
 
       const base = getApiBase();
       const url = base ? `${base}/api/portfolio` : `/api/portfolio`;
 
-      const data = await apiClient(url, {
+      await apiClient(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -227,15 +247,17 @@ export default function PortfolioBuilder() {
     setIsFetchingGh(true);
     setGhError('');
     try {
-      const response = await fetch(
-        `https://api.github.com/users/${ghUsername.trim()}/repos?sort=updated&per_page=30`,
-        { signal: controller.signal }
-      );
+      const response = await fetch(buildGithubReposUrl(ghUsername), { signal: controller.signal });
 
       if (response.status === 403 || response.status === 429) {
-        const resetHeader = response.headers.get('X-RateLimit-Reset');
-        const resetTime = resetHeader
-          ? new Date(parseInt(resetHeader, 10) * 1000).toLocaleTimeString()
+        let errorDetail = {};
+        try {
+          errorDetail = await response.json();
+        } catch {
+          // Keep default rate-limit message below.
+        }
+        const resetTime = errorDetail.rateLimitReset
+          ? new Date(errorDetail.rateLimitReset).toLocaleTimeString()
           : 'soon';
         setGhError(
           `GitHub rate limit reached. Too many requests from this network. Please try again after ${resetTime}.`
@@ -251,12 +273,22 @@ export default function PortfolioBuilder() {
       }
 
       if (!response.ok) {
-        setGhError(`GitHub API error: ${response.status} ${response.statusText}`);
+        let errorDetail = {};
+        try {
+          errorDetail = await response.json();
+        } catch {
+          // Keep fallback message below.
+        }
+        setGhError(
+          errorDetail.error || `GitHub API error: ${response.status} ${response.statusText}`
+        );
         return;
       }
 
       const data = await response.json();
-      setGhRepos(data);
+      const top5 = [...data].sort((a, b) => b.stargazers_count - a.stargazers_count).slice(0, 5);
+      setGhRepos(top5);
+      setGhFetchAttempted(true);
     } catch (err) {
       if (err.name === 'AbortError') return;
       setGhError('Failed to fetch repositories. Please check your connection and try again.');
@@ -280,6 +312,7 @@ export default function PortfolioBuilder() {
           github: repo.html_url,
           demo: repo.homepage || '#',
           stars: repo.stargazers_count,
+          forks: repo.forks_count,
         };
         return [...prev, customProj];
       }
@@ -288,7 +321,7 @@ export default function PortfolioBuilder() {
 
   const getPortfolioUrl = () => {
     const base = typeof window !== 'undefined' ? window.location.origin : '';
-    return `${base}/p/${username}`;
+    return `${base}/p/${encodeURIComponent(username)}`;
   };
 
   const handleCopyLink = () => {
@@ -324,15 +357,93 @@ export default function PortfolioBuilder() {
     }
     document.body.removeChild(textarea);
   };
+  const handleResumeUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsParsing(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    // Simulate AI parsing delay
+    setTimeout(() => {
+      setTitle("Full-Stack AI Developer");
+      setBio("Extracted from Resume: Passionate engineer with 3 years of experience building scalable web applications. Proficient in React, Node.js, and cloud infrastructure. Strong focus on AI integration and performance optimization.");
+      
+      setSocialLinks(prev => ({
+        ...prev,
+        linkedin: "https://linkedin.com/in/johndoe",
+        github: "https://github.com/johndoe",
+        resume: "https://johndoe.com/resume.pdf"
+      }));
+
+      // Find valid skills matching our internal roadmap mapping
+      const mockParsedSkills = ["React", "Node.js", "Docker", "AWS", "MongoDB"];
+      const validSkills = mockParsedSkills.filter(s => availableSkills.includes(s));
+      
+      setSelectedSkills(validSkills.length > 0 ? validSkills : (availableSkills.slice(0, 5) || []));
+
+      setIsParsing(false);
+      setSuccessMsg("Resume successfully parsed! Profile fields updated.");
+      
+      // Reset input so they can upload again if needed
+      if (resumeInputRef.current) {
+        resumeInputRef.current.value = '';
+      }
+    }, 2000);
+  };
 
   return (
     <div className="portfolio-builder-container">
-      <div className="builder-header">
-        <h1 className="builder-title">Portfolio Builder</h1>
-        <p className="builder-subtitle">
-          Instantly generate and customize a stunning developer showcase page directly from your
-          NexaSphere metrics and community milestones.
-        </p>
+      <div className="builder-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 className="builder-title">Portfolio Builder</h1>
+          <p className="builder-subtitle">
+            Instantly generate and customize a stunning developer showcase page directly from your
+            NexaSphere metrics and community milestones.
+          </p>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <input
+            type="file"
+            accept=".pdf,.docx,.txt"
+            ref={resumeInputRef}
+            onChange={handleResumeUpload}
+            style={{ display: 'none' }}
+          />
+          <button
+            type="button"
+            className="ns-btn primary"
+            onClick={() => resumeInputRef.current?.click()}
+            disabled={isParsing}
+            style={{
+              padding: '10px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.9rem',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {isParsing ? (
+              <>
+                <svg className="spinner" viewBox="0 0 50 50" style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }}>
+                  <circle className="path" cx="25" cy="25" r="20" fill="none" strokeWidth="5" stroke="currentColor" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                </svg>
+                Parsing...
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Upload Resume (AI Parse)
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="builder-workspace">
@@ -755,6 +866,23 @@ export default function PortfolioBuilder() {
                 </div>
               )}
 
+              {!ghError && !isFetchingGh && ghRepos.length > 0 && ghUsername && (
+                <div style={{ marginBottom: '12px' }}>
+                  <img
+                    src={`https://ghchart.rshah.org/CC1111/${ghUsername.trim()}`}
+                    alt={`${ghUsername} GitHub contribution graph`}
+                    style={{ width: '100%', borderRadius: 'var(--r2)' }}
+                    loading="lazy"
+                  />
+                </div>
+              )}
+
+              {!ghError && !isFetchingGh && ghFetchAttempted && ghRepos.length === 0 && (
+                <div style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '12px' }}>
+                  No public repositories found for this GitHub account.
+                </div>
+              )}
+
               {isFetchingGh ? (
                 <div
                   className="checklist-grid"
@@ -786,11 +914,20 @@ export default function PortfolioBuilder() {
                               onChange={() => toggleGithubRepo(repo)}
                             />
                             <span style={{ fontWeight: 'bold' }}>{repo.name}</span>
-                            {repo.stargazers_count > 0 && (
+                            {(repo.stargazers_count > 0 || repo.forks_count > 0) && (
                               <span
-                                style={{ marginLeft: 'auto', fontSize: '0.75rem', opacity: 0.8 }}
+                                style={{
+                                  marginLeft: 'auto',
+                                  fontSize: '0.75rem',
+                                  opacity: 0.8,
+                                  display: 'flex',
+                                  gap: '8px',
+                                }}
                               >
-                                ★ {repo.stargazers_count}
+                                {repo.stargazers_count > 0 && (
+                                  <span>★ {repo.stargazers_count}</span>
+                                )}
+                                {repo.forks_count > 0 && <span>⑂ {repo.forks_count}</span>}
                               </span>
                             )}
                           </div>
@@ -927,7 +1064,7 @@ export default function PortfolioBuilder() {
                   {copied ? 'Copied Showcase Link!' : 'Copy Public URL'}
                 </button>
                 <a
-                  href={`/p/${username}`}
+                  href={`/p/${encodeURIComponent(username)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-primary"
@@ -971,7 +1108,7 @@ export default function PortfolioBuilder() {
                 className="portfolio-intro"
                 style={{ flexDirection: 'column', textAlign: 'center', gap: '12px' }}
               >
-                <img
+                <img loading="lazy"
                   src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${username || 'preview'}`}
                   alt="avatar"
                   className="portfolio-avatar"

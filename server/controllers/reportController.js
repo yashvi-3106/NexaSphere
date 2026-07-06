@@ -16,8 +16,7 @@ const prisma = new PrismaClient();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ARCHIVE_DIR = path.join(__dirname, '../../reports');
 
-// Ensure archive directory exists
-await fs.mkdir(ARCHIVE_DIR, { recursive: true }).catch(() => {});
+
 
 // ─── Email transport ──────────────────────────────────────────────────────────
 
@@ -142,6 +141,7 @@ export async function runReport(type) {
   }
 
   // Archive to disk
+  await fs.mkdir(ARCHIVE_DIR, { recursive: true });
   const filename = `${type}_${Date.now()}.${format}`;
   const filePath = path.join(ARCHIVE_DIR, filename);
   await fs.writeFile(filePath, csv, 'utf8');

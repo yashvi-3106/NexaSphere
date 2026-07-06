@@ -93,7 +93,7 @@ export const registrationsRepository = {
     if (!HAS_SUPABASE) return null;
     return withDb(async (client) => {
       const { rows } = await client.query(
-        `UPDATE event_registrations SET status = 'confirmed', waitlist = false
+        `UPDATE event_registrations SET status = 'pending_confirmation', waitlist = false, waitlist_status = 'pending'
          WHERE id = (
            SELECT id FROM event_registrations
            WHERE event_id = $1 AND waitlist = true AND status = 'waitlisted'
@@ -243,7 +243,33 @@ export const registrationsRepository = {
     return withDb(async (client) => {
       const { rows } = await client.query(
         `UPDATE event_registrations SET status = 'cancelled'
-         WHERE event_id = $1 AND email = $2 AND status = 'confirmed'
+         WHERE event_id = $1 AND email = $2 AND status IN ('confirmed', 'pending_confirmation')
+         RETURNING *`,
+        [eventId, email]
+      );
+      return rows[0] || null;
+    });
+  },
+
+  async confirmWaitlistSpot(eventId, email) {
+    if (!HAS_SUPABASE) return null;
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        `UPDATE event_registrations SET status = 'confirmed', waitlist = false, waitlist_status = 'confirmed'
+         WHERE event_id = $1 AND email = $2 AND waitlist_status = 'pending'
+         RETURNING *`,
+        [eventId, email]
+      );
+      return rows[0] || null;
+    });
+  },
+
+  async expireWaitlistSpot(eventId, email) {
+    if (!HAS_SUPABASE) return null;
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        `UPDATE event_registrations SET status = 'cancelled', waitlist_status = 'expired'
+         WHERE event_id = $1 AND email = $2 AND waitlist_status = 'pending'
          RETURNING *`,
         [eventId, email]
       );

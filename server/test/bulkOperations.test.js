@@ -197,3 +197,115 @@ test('Bulk Operations Service: Rollback fails after 24h', async () => {
     /only allowed within 24 hours/
   );
 });
+
+test('Bulk User Import: Transaction Rollback on Failure', async () => {
+  const csvText = 'Name,Email,Role,Major,Year\nBob Jones,bob@example.com,user,Math,2027\nAlice Smith,alice@example.com,user,Math,2027';
+
+  let beginExecuted = false;
+  let rollbackExecuted = false;
+  let commitExecuted = false;
+  let queries = [];
+
+  setWithDbOverride(async (fn) => {
+    const mockClient = {
+      query: async (sql, params) => {
+        queries.push(sql);
+        const sqlLower = sql.toLowerCase();
+        if (sqlLower.includes('begin')) {
+          beginExecuted = true;
+          return { rows: [] };
+        }
+        if (sqlLower.includes('rollback')) {
+          rollbackExecuted = true;
+          return { rows: [] };
+        }
+        if (sqlLower.includes('commit')) {
+          commitExecuted = true;
+          return { rows: [] };
+        }
+        if (sqlLower.includes('select * from users')) {
+          return { rows: [] }; // Simulate users not found
+        }
+        if (sqlLower.includes('insert into users')) {
+          // Succeed on first user, fail on second
+          if (queries.filter(q => q.toLowerCase().includes('insert into users')).length === 1) {
+            return { rows: [{ id: 'user-bob', email: 'bob@example.com', username: 'bob' }] };
+          } else {
+            throw new Error('Duplicate key constraint violates');
+          }
+        }
+        return { rows: [] };
+      },
+      release: () => {},
+    };
+    return await fn(mockClient);
+  });
+
+  const job = await bulkOperationsService.importUsers(csvText, 'test-admin');
+
+  // Poll for completion/failure
+  let completedJob = bulkOperationsService.getJob(job.id);
+  let attempts = 0;
+  while (completedJob.status !== 'completed' && completedJob.status !== 'failed' && attempts < 20) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    completedJob = bulkOperationsService.getJob(job.id);
+    attempts++;
+  }
+
+  assert.equal(completedJob.status, 'failed');
+  assert.ok(beginExecuted);
+  assert.ok(rollbackExecuted);
+  assert.ok(!commitExecuted);
+});
+
+test('Bulk User Import: Emails Only Sent After Successful Commit', async () => {
+  const originalLog = console.log;
+  const logs = [];
+  console.log = (...args) => {
+    logs.push(args.join(' '));
+  };
+
+  const csvText = 'Name,Email,Role,Major,Year\nBob Jones,bob@example.com,user,Math,2027';
+
+  try {
+    setWithDbOverride(async (fn) => {
+      const mockClient = {
+        query: async (sql, params) => {
+          const sqlLower = sql.toLowerCase();
+          if (sqlLower.includes('select * from users')) {
+            return { rows: [] };
+          }
+          if (sqlLower.includes('insert into users')) {
+            return { rows: [{ id: 'user-mock-123', email: 'bob@example.com', username: 'bob' }] };
+          }
+          return { rows: [] };
+        },
+        release: () => {},
+      };
+      return await fn(mockClient);
+    });
+
+    const job = await bulkOperationsService.importUsers(csvText, 'test-admin');
+
+    // Poll for completion
+    let completedJob = bulkOperationsService.getJob(job.id);
+    let attempts = 0;
+    while (completedJob.status !== 'completed' && completedJob.status !== 'failed' && attempts < 20) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      completedJob = bulkOperationsService.getJob(job.id);
+      attempts++;
+    }
+
+    assert.equal(completedJob.status, 'completed');
+    
+    // Give it a tiny bit of time for the fallback setTimeout welcome email to execute
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Verify welcome email was logged
+    const hasWelcomeEmail = logs.some(log => log.includes('Would send email to: bob@example.com'));
+    assert.ok(hasWelcomeEmail, 'Welcome email should have been sent on success');
+
+  } finally {
+    console.log = originalLog;
+  }
+});
