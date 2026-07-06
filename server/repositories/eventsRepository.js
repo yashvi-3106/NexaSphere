@@ -86,12 +86,10 @@ export const eventsRepository = {
           );
         } else {
           // Show public events OR events where restricted_groups overlaps with studentGroups
-          const groupArray = studentGroups.length
-            ? studentGroups.map((id) => `'${id}'`).join(',')
-            : "'-1'"; // -1 to match nothing
           conditions.push(
-            `(restricted_groups IS NULL OR jsonb_array_length(restricted_groups) = 0 OR restricted_groups = '[]'::jsonb OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(restricted_groups) AS g WHERE g IN (${groupArray})))`
+            `(restricted_groups IS NULL OR jsonb_array_length(restricted_groups) = 0 OR restricted_groups = '[]'::jsonb OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(restricted_groups) AS g WHERE g = ANY($${params.length + 1})))`
           );
+          params.push(studentGroups.length > 0 ? studentGroups : ['-1']);
         }
 
         if (conditions.length > 0) {
@@ -106,7 +104,7 @@ export const eventsRepository = {
         const countQuery =
           'select count(*)::int as total from events ' +
           (conditions.length > 0 ? ' where ' + conditions.join(' and ') : '');
-        const countResult = await client.query(countQuery);
+        const countResult = await client.query(countQuery, params.slice(0, params.length - 2));
 
         const total = countResult.rows[0]?.total ?? 0;
 
