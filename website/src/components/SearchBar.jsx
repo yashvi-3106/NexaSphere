@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,10 +18,15 @@ import { useSearch } from '../hooks/useSearch';
 
 function Highlight({ text, query }) {
   if (!text) return null;
-  
-  // If the text contains Typesense highlight <mark> tags, render it as HTML safely
+
+  // If the text contains Typesense highlight <mark> tags, sanitize before rendering as HTML.
+  // Only <mark> is allowed through — everything else (scripts, event handlers, other tags) is stripped.
   if (String(text).includes('<mark>')) {
-    return <span dangerouslySetInnerHTML={{ __html: text }} />;
+    const clean = DOMPurify.sanitize(text, {
+      ALLOWED_TAGS: ['mark'],
+      ALLOWED_ATTR: [],
+    });
+    return <span dangerouslySetInnerHTML={{ __html: clean }} />;
   }
 
   if (!query) return <>{text}</>;
@@ -29,22 +35,7 @@ function Highlight({ text, query }) {
   return (
     <>
       {parts.map((part, i) =>
-        part.toLowerCase() === query.toLowerCase() ? (
-          <mark
-            key={i}
-            style={{
-              background: 'rgba(204,17,17,0.85)',
-              color: '#fff',
-              borderRadius: '3px',
-              padding: '0 2px',
-              fontWeight: 700,
-            }}
-          >
-            {part}
-          </mark>
-        ) : (
-          part
-        )
+        part.toLowerCase() === query.toLowerCase() ? <mark key={i}>{part}</mark> : part
       )}
     </>
   );
