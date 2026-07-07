@@ -28,6 +28,106 @@ export const searchController = {
         return res.json({ results: [], total: 0, page, limit });
       }
 
+      const { isTypesenseEnabled, typesenseClient } = await import('../config/typesense.js');
+
+      if (isTypesenseEnabled) {
+        try {
+          const searches = [];
+          if (type === 'all' || type === 'events') {
+            searches.push({
+              collection: 'events',
+              q,
+              query_by: 'name,description,shortName,tags',
+              highlight_full_fields: 'name,description,shortName',
+            });
+          }
+          if (type === 'all' || type === 'members') {
+            searches.push({
+              collection: 'members',
+              q,
+              query_by: 'name,role,bio,skills',
+              highlight_full_fields: 'name,role,bio',
+            });
+          }
+          if (type === 'all' || type === 'activities') {
+            searches.push({
+              collection: 'activities',
+              q,
+              query_by: 'title,description,subtitle,tags',
+              highlight_full_fields: 'title,description,subtitle',
+            });
+          }
+
+          const response = await typesenseClient.multiSearch.perform({ searches });
+          let results = [];
+
+          response.results.forEach((colRes, idx) => {
+            const collectionName = searches[idx].collection;
+            const hits = colRes.hits || [];
+            hits.forEach((hit) => {
+              const doc = hit.document;
+              const highlights = hit.highlights || [];
+
+              // Extract highlighted terms if available, else use raw text
+              const getHighlight = (field, fallback) => {
+                const h = highlights.find((hl) => hl.field === field);
+                return h ? h.snippet : fallback;
+              };
+
+              if (collectionName === 'events') {
+                results.push({
+                  id: doc.id,
+                  type: 'event',
+                  title: getHighlight('name', doc.name || doc.shortName),
+                  description: getHighlight('description', doc.description),
+                  tags: doc.tags,
+                  category: doc.category,
+                  url: `/events/${doc.id}`,
+                  score: hit.text_match || 0,
+                });
+              } else if (collectionName === 'members') {
+                results.push({
+                  id: doc.id,
+                  type: 'member',
+                  title: getHighlight('name', doc.name),
+                  description: getHighlight('role', doc.role) || getHighlight('bio', doc.bio),
+                  tags: doc.skills,
+                  url: `/team`,
+                  score: hit.text_match || 0,
+                });
+              } else if (collectionName === 'activities') {
+                results.push({
+                  id: doc.id,
+                  type: 'activity',
+                  title: getHighlight('title', doc.title),
+                  description: getHighlight('description', doc.description) || getHighlight('subtitle', doc.subtitle),
+                  tags: doc.tags,
+                  url: `/activities/${encodeURIComponent(doc.id)}`,
+                  score: hit.text_match || 0,
+                });
+              }
+            });
+          });
+
+          // Sort by match score
+          results.sort((a, b) => b.score - a.score);
+
+          const trueTotal = results.length;
+          const paginated = results.slice(skip, skip + limit);
+
+          return res.json({
+            results: paginated,
+            total: trueTotal,
+            query: q,
+            page,
+            limit,
+          });
+        } catch (typesenseErr) {
+          console.error('Typesense search failed, falling back to local search:', typesenseErr);
+        }
+      }
+
+      // FALLBACK: Local search algorithm using local in-memory DB lists
       const query = q.toLowerCase();
       // 1. Log analytics
       await searchAnalyticsRepository.logSearch(q, 0, req.user?.id);

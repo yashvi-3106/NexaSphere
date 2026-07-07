@@ -16,7 +16,14 @@ import {
 import { useSearch } from '../hooks/useSearch';
 
 function Highlight({ text, query }) {
-  if (!query || !text) return <>{text}</>;
+  if (!text) return null;
+  
+  // If the text contains Typesense highlight <mark> tags, render it as HTML safely
+  if (String(text).includes('<mark>')) {
+    return <span dangerouslySetInnerHTML={{ __html: text }} />;
+  }
+
+  if (!query) return <>{text}</>;
   const safe = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const parts = String(text).split(new RegExp(`(${safe})`, 'gi'));
   return (

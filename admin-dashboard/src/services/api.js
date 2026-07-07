@@ -1779,6 +1779,86 @@ export const api = {
     delete: (key) =>
       fetchWithAuth(`/api/admin/backups/${encodeURIComponent(key)}`, { method: 'DELETE' }),
   },
+
+  moderation: {
+    getFlags: (filters = {}) => {
+      const query = new URLSearchParams(filters).toString();
+      return fetchWithAuth(`/api/moderation/flags${query ? `?${query}` : ''}`);
+    },
+    getFlagById: (id) => fetchWithAuth(`/api/moderation/flags/${id}`),
+    approveFlag: (id) =>
+      fetchWithAuth(`/api/moderation/flags/${id}/approve`, { method: 'PUT' }),
+    rejectFlag: (id, reason) =>
+      fetchWithAuth(`/api/moderation/flags/${id}/remove`, {
+        method: 'PUT',
+        body: JSON.stringify({ reason }),
+      }),
+    warnUser: (userId) =>
+      fetchWithAuth(`/api/moderation/users/${userId}/warn`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: 'Violating community guidelines' }),
+      }),
+    banUser: (userId) =>
+      fetchWithAuth(`/api/moderation/users/${userId}/warn`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: 'Permanent ban for repeated violations' }),
+      }),
+    getAppeals: (filters = {}) => {
+      const query = new URLSearchParams(filters).toString();
+      return fetchWithAuth(`/api/moderation/appeals${query ? `?${query}` : ''}`);
+    },
+    approveAppeal: (id, note) =>
+      fetchWithAuth(`/api/moderation/appeals/${id}/review`, {
+        method: 'PUT',
+        body: JSON.stringify({ decision: 'overturned', decisionNote: note }),
+      }),
+    rejectAppeal: (id, note) =>
+      fetchWithAuth(`/api/moderation/appeals/${id}/review`, {
+        method: 'PUT',
+        body: JSON.stringify({ decision: 'upheld', decisionNote: note }),
+      }),
+    getStats: () => fetchWithAuth('/api/moderation/stats'),
+  },
+
+  rbac: {
+    getRoles: () => fetchWithAuth('/api/admin/rbac/roles'),
+    getPermissions: () => fetchWithAuth('/api/admin/rbac/permissions'),
+    getPermissionMatrix: () => fetchWithAuth('/api/admin/rbac/matrix'),
+    createRole: (roleData) =>
+      fetchWithAuth('/api/admin/rbac/roles', {
+        method: 'POST',
+        body: JSON.stringify(roleData),
+      }),
+    updateRole: (roleName, roleData) =>
+      fetchWithAuth(`/api/admin/rbac/roles/${roleName}`, {
+        method: 'PUT',
+        body: JSON.stringify(roleData),
+      }),
+    deleteRole: (roleName) =>
+      fetchWithAuth(`/api/admin/rbac/roles/${roleName}`, {
+        method: 'DELETE',
+      }),
+    getUsersWithRoles: () => fetchWithAuth('/api/admin/rbac/users'),
+    assignRole: (assignment) =>
+      fetchWithAuth('/api/admin/rbac/assign', {
+        method: 'POST',
+        body: JSON.stringify(assignment),
+      }),
+    revokeRole: (userId, roleName) =>
+      fetchWithAuth(`/api/admin/rbac/assign/${userId}/${roleName}`, {
+        method: 'DELETE',
+      }),
+    bulkAssignRoles: (assignments) =>
+      fetchWithAuth('/api/admin/rbac/bulk-assign', {
+        method: 'POST',
+        body: JSON.stringify({ assignments }),
+      }),
+    getAuditLogs: (filters = {}) => {
+      const query = new URLSearchParams(filters).toString();
+      return fetchWithAuth(`/api/admin/rbac/audit${query ? `?${query}` : ''}`);
+    },
+  },
 };
+
 
 export { auth, eventEmitter, EVENTS };

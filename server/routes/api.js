@@ -33,7 +33,6 @@ import waitlistRoutes from "./waitlist.js";
 import * as localAuthController from '../controllers/localAuthController.js';
 import * as whiteboardController from '../controllers/whiteboardController.js';
 import * as followsController from '../controllers/followsController.js';
-
 import bookmarkRoutes from "./bookmark.js";
 import recommendationEngine from "./recommendationEngine.js";
 import operationalInsightsRoutes from "./operationalInsights.js";

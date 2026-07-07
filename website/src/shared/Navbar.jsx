@@ -20,6 +20,9 @@ const TABS = [
   'Contact',
 ];
 
+// Bookmark toggle button for quick access to saved content.
+// Used in both mobile and desktop navigation to provide users with
+// convenient access to their bookmarked pages for a better navigation experience.
 function BookmarkToggle({ onToggle }) {
   return (
     <button

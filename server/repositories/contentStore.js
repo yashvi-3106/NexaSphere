@@ -112,7 +112,7 @@ export function normalizePhone(value) {
   return String(value || '').replace(/[^\d]/g, '');
 }
 
-export async function isDuplicateCoreTeamMember(name, email, phone) {
+export async function assertCoreTeamMember(name, email, phone) {
   const n = String(name || '')
     .trim()
     .toLowerCase();
