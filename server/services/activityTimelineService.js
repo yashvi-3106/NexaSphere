@@ -1,3 +1,6 @@
+import { withDb } from '../repositories/db.js';
+import { HAS_SUPABASE } from '../storage/supabaseClient.js';
+
 const timelines = new Map();
 
 export const activityTimelineService = {
@@ -40,12 +43,8 @@ export const activityTimelineService = {
       portfolioUpdates: list.filter(a => a.type === "portfolio").length,
       achievements: list.filter(a => a.type === "achievement").length,
     };
-  }
-};
-import { withDb } from '../repositories/db.js';
-import { HAS_SUPABASE } from '../storage/supabaseClient.js';
+  },
 
-export const activityTimelineService = {
   /**
    * Fetches the complete activity timeline for an individual user.
    * Due to system design, some activities are tied to email (events, forms)

@@ -31,13 +31,13 @@ import announcementPriorityRouter from "./announcementPriority.js";
 import eventConflictRouter from "./eventConflict.js";
 import waitlistRoutes from "./waitlist.js";
 import * as localAuthController from '../controllers/localAuthController.js';
+import * as whiteboardController from '../controllers/whiteboardController.js';
+import * as followsController from '../controllers/followsController.js';
 
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-const bookmarkRoutes = require("./bookmark");
-const recommendationEngine = require("./recommendationEngine");
-const operationalInsightsRoutes = require("./operationalInsights");
+import bookmarkRoutes from "./bookmark.js";
+import recommendationEngine from "./recommendationEngine.js";
+import operationalInsightsRoutes from "./operationalInsights.js";
+import platformAnalyticsRoutes from "./platformAnalytics.js";
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';

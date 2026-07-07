@@ -1,9 +1,9 @@
-﻿/**
+/**
  * coreTeamApplicationsRepository.js
  * Database operations for core team applications.
  * Uses the same Supabase/pg pattern as other repositories.
  */
-import { withDb } from '../utils/db.js';
+import { withDb } from './db.js';
 
 const HAS_SUPABASE = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_KEY);
 

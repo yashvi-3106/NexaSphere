@@ -1,78 +1,78 @@
-const operationalInsightsService = require("../services/operationalInsightsService");
+import operationalInsightsService from "../services/operationalInsightsService.js";
 
-exports.getDashboardOverview = (req, res) => {
+export const getDashboardOverview = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getDashboardOverview()
   );
 };
 
-exports.getSystemHealth = (req, res) => {
+export const getSystemHealth = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getSystemHealth()
   );
 };
 
-exports.getActiveUsers = (req, res) => {
+export const getActiveUsers = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getActiveUsers()
   );
 };
 
-exports.getApiTraffic = (req, res) => {
+export const getApiTraffic = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getApiTraffic()
   );
 };
 
-exports.getDatabasePerformance = (req, res) => {
+export const getDatabasePerformance = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getDatabasePerformance()
   );
 };
 
-exports.getBackgroundJobs = (req, res) => {
+export const getBackgroundJobs = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getBackgroundJobs()
   );
 };
 
-exports.getStorageUsage = (req, res) => {
+export const getStorageUsage = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getStorageUsage()
   );
 };
 
-exports.getNotificationStats = (req, res) => {
+export const getNotificationStats = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getNotificationStats()
   );
 };
 
-exports.getErrorLogs = (req, res) => {
+export const getErrorLogs = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getErrorLogs()
   );
 };
 
-exports.getMaintenanceSchedule = (req, res) => {
+export const getMaintenanceSchedule = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getMaintenanceSchedule()
   );
 };
 
-exports.getDependencies = (req, res) => {
+export const getDependencies = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getDependencies()
   );
 };
 
-exports.getResourceUsage = (req, res) => {
+export const getResourceUsage = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getResourceUsage()
   );
 };
 
-exports.getOperationalReports = (req, res) => {
+export const getOperationalReports = (req, res) => {
   res.status(200).json(
     operationalInsightsService.getOperationalReports()
   );

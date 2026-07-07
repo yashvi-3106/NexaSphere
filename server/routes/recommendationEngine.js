@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const recommendationController = require("../controllers/recommendationEngineController");
+import * as recommendationController from "../controllers/recommendationEngineController.js";
 
 // ===============================
 // Recommendation APIs
@@ -65,4 +65,4 @@ router.get(
   recommendationController.getRecommendationExplanation
 );
 
-module.exports = router;
+export default router;

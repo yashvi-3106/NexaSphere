@@ -30,7 +30,6 @@ import { slackIntegrationService } from './services/slackIntegrationService.js';
 import { initializeSocketIO } from './config/socket.js';
 import adminStreamRouter from './routes/adminStream.js';
 import faqRouter from './routes/faqRoutes.js';
-import { setupAuditContext } from './middleware/adminAuditMiddleware.js';
 import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
 import healthRouter from './routes/health.js';
@@ -113,7 +112,9 @@ import { schedulerService } from './services/schedulerService.js';
 import feedbackRouter from './routes/feedbackRoutes.js';
 import * as slackController from './controllers/slackController.js';
 import activityTimelineRoutes from "./routes/activityTimeline.js";
-app.use("/api/activity-timeline", activityTimelineRoutes);
+import notificationPreferenceRoutes from "./routes/notificationPreference.js";
+import { readOnlyGuard } from './services/readOnlyService.js';
+import emailTemplateRouter from './routes/emailTemplateRoutes.js';
 
 validateLimiters();
 
@@ -158,6 +159,8 @@ app.use(
   "/api/notification-preferences",
   notificationPreferenceRoutes
 );
+
+app.use("/api/activity-timeline", activityTimelineRoutes);
 
 // Use compression with fallback (Brotli supported by default in compression v1.8 if zlib supports it)
 // Skip compression for responses smaller than 1KB (1024 bytes)

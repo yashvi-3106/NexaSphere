@@ -97,4 +97,4 @@ const recommendationEngineService = {
   }
 };
 
-module.exports = recommendationEngineService;
+export default recommendationEngineService;

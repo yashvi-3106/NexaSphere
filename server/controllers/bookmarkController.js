@@ -1,48 +1,48 @@
-const bookmarkService = require("../services/bookmarkService");
+import bookmarkService from "../services/bookmarkService.js";
 
-exports.createBookmark = (req, res) => {
+export const createBookmark = (req, res) => {
   res.status(201).json(
     bookmarkService.createBookmark(req.body)
   );
 };
 
-exports.getBookmarks = (req, res) => {
+export const getBookmarks = (req, res) => {
   res.json(
     bookmarkService.getBookmarks()
   );
 };
 
-exports.deleteBookmark = (req, res) => {
+export const deleteBookmark = (req, res) => {
   res.json(
     bookmarkService.deleteBookmark(req.params.id)
   );
 };
 
-exports.searchBookmarks = (req, res) => {
+export const searchBookmarks = (req, res) => {
   res.json(
     bookmarkService.searchBookmarks(req.query.q || "")
   );
 };
 
-exports.getRecentBookmarks = (req, res) => {
+export const getRecentBookmarks = (req, res) => {
   res.json(
     bookmarkService.getRecentBookmarks()
   );
 };
 
-exports.createFolder = (req, res) => {
+export const createFolder = (req, res) => {
   res.status(201).json(
     bookmarkService.createFolder(req.body.name)
   );
 };
 
-exports.getFolders = (req, res) => {
+export const getFolders = (req, res) => {
   res.json(
     bookmarkService.getFolders()
   );
 };
 
-exports.updateFolder = (req, res) => {
+export const updateFolder = (req, res) => {
   res.json(
     bookmarkService.updateFolder(
       req.params.id,
@@ -51,31 +51,31 @@ exports.updateFolder = (req, res) => {
   );
 };
 
-exports.deleteFolder = (req, res) => {
+export const deleteFolder = (req, res) => {
   res.json(
     bookmarkService.deleteFolder(req.params.id)
   );
 };
 
-exports.shareCollection = (req, res) => {
+export const shareCollection = (req, res) => {
   res.json(
     bookmarkService.shareCollection(req.params.id)
   );
 };
 
-exports.syncBookmarks = (req, res) => {
+export const syncBookmarks = (req, res) => {
   res.json(
     bookmarkService.syncBookmarks()
   );
 };
 
-exports.exportBookmarks = (req, res) => {
+export const exportBookmarks = (req, res) => {
   res.json(
     bookmarkService.exportBookmarks()
   );
 };
 
-exports.getBookmarkAnalytics = (req, res) => {
+export const getBookmarkAnalytics = (req, res) => {
   res.json(
     bookmarkService.getBookmarkAnalytics()
   );

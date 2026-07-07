@@ -287,7 +287,7 @@ export const searchController = {
         }
       }
 
-      const trueTotal = results.length;
+      trueTotal = results.length;
       results = results.slice(0, limit);
 
       return res.json({ results, total: trueTotal, query: q });

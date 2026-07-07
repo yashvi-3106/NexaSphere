@@ -1,6 +1,6 @@
-const recommendationEngineService = require("../services/recommendationEngineService");
+import recommendationEngineService from "../services/recommendationEngineService.js";
 
-exports.getRecommendations = (req, res) => {
+export const getRecommendations = (req, res) => {
   try {
     const { userId } = req.params;
     const { category, limit } = req.query;
@@ -35,7 +35,7 @@ exports.getRecommendations = (req, res) => {
   }
 };
 
-exports.getTrendingRecommendations = (req, res) => {
+export const getTrendingRecommendations = (req, res) => {
   try {
     const data =
       recommendationEngineService.getTrendingRecommendations();
@@ -54,7 +54,7 @@ exports.getTrendingRecommendations = (req, res) => {
   }
 };
 
-exports.submitFeedback = (req, res) => {
+export const submitFeedback = (req, res) => {
   try {
     const { userId } = req.params;
     const { recommendationId, feedback } = req.body;
@@ -88,7 +88,7 @@ exports.submitFeedback = (req, res) => {
   }
 };
 
-exports.updateInterests = (req, res) => {
+export const updateInterests = (req, res) => {
   try {
     const { userId } = req.params;
     const { interests } = req.body;
@@ -120,7 +120,7 @@ exports.updateInterests = (req, res) => {
   }
 };
 
-exports.getRecommendationExplanation = (req, res) => {
+export const getRecommendationExplanation = (req, res) => {
   try {
     const { recommendationId } = req.params;
 
@@ -143,7 +143,7 @@ exports.getRecommendationExplanation = (req, res) => {
   }
 };
 
-exports.markNotInterested = (req, res) => {
+export const markNotInterested = (req, res) => {
   try {
     const { userId, recommendationId } = req.params;
 
@@ -167,7 +167,7 @@ exports.markNotInterested = (req, res) => {
   }
 };
 
-exports.refreshRecommendations = (req, res) => {
+export const refreshRecommendations = (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -190,7 +190,7 @@ exports.refreshRecommendations = (req, res) => {
   }
 };
 
-exports.getRecommendationStats = (req, res) => {
+export const getRecommendationStats = (req, res) => {
   try {
     const stats =
       recommendationEngineService.getRecommendationStats();
@@ -209,7 +209,7 @@ exports.getRecommendationStats = (req, res) => {
   }
 };
 
-exports.getRecommendationHealth = (req, res) => {
+export const getRecommendationHealth = (req, res) => {
   res.status(200).json({
     success: true,
     service: "Recommendation Engine",

@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const controller = require("../controllers/operationalInsightsController");
+import * as controller from "../controllers/operationalInsightsController.js";
 
 router.get(
   "/overview",
@@ -68,4 +68,4 @@ router.get(
   controller.getOperationalReports
 );
 
-module.exports = router;
+export default router;

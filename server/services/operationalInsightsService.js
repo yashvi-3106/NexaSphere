@@ -133,7 +133,7 @@ const errorLogs = [
   },
 ];
 
-module.exports = {
+const operationalInsightsService = {
 
   getDashboardOverview() {
     return {
@@ -318,3 +318,5 @@ module.exports = {
   },
 
 };
+
+export default operationalInsightsService;

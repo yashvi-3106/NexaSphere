@@ -159,4 +159,4 @@ class BookmarkService {
   }
 }
 
-module.exports = new BookmarkService();
+export default new BookmarkService();

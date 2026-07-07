@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const bookmarkController = require("../controllers/bookmarkController");
+import * as bookmarkController from "../controllers/bookmarkController.js";
 
 // Bookmarks
 router.post("/", bookmarkController.createBookmark);
@@ -30,4 +30,4 @@ router.get("/export", bookmarkController.exportBookmarks);
 // Analytics
 router.get("/analytics", bookmarkController.getBookmarkAnalytics);
 
-module.exports = router;
+export default router;

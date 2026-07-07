@@ -302,3 +302,11 @@ export const getRegistrations = async (req, res) => {
     return res.status(500).json({ error: 'Server error', detail: err.message });
   }
 };
+
+export const deleteAccount = async (req, res) => {
+  return res.json({ success: true, message: "Account deleted successfully (mock)" });
+};
+
+export const exportData = async (req, res) => {
+  return res.json({ success: true, data: {} });
+};
