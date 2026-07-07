@@ -301,6 +301,19 @@ export default function GamificationDashboard() {
         >
           Earn XP
         </button>
+        <button
+          onClick={() => setActiveTab('quests')}
+          style={{
+            padding: '8px 20px',
+            borderRadius: '100px',
+            background: activeTab === 'quests' ? '#CC1111' : 'transparent',
+            border: 'none',
+            color: activeTab === 'quests' ? 'white' : '#9CA3AF',
+            cursor: 'pointer',
+          }}
+        >
+          Quests
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -550,6 +563,85 @@ export default function GamificationDashboard() {
               </span>
               <span style={{ color: '#10B981', fontWeight: 'bold' }}>+10 XP</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'quests' && (
+        <div>
+          <h3 style={{ color: '#FFFFFF', marginBottom: '16px' }}>Skill Verification Quests</h3>
+          <p style={{ color: '#9CA3AF', marginBottom: '24px' }}>
+            Prove your expertise by completing interactive quests. Earn a "Verified" badge for your
+            profile and boost your visibility in the Skill Exchange!
+          </p>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '16px',
+            }}
+          >
+            {['React', 'Node.js', 'Python', 'UI/UX Design', 'Cloud Computing'].map((skill) => {
+              const isVerified = userStats.stats.verified_skills?.includes(skill);
+              return (
+                <div
+                  key={skill}
+                  style={{
+                    background: '#1A1A1A',
+                    border: isVerified ? '1px solid #10B981' : '1px solid #2A2A2A',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#FFFFFF' }}>
+                      {skill}
+                    </div>
+                    {isVerified ? (
+                      <span style={{ color: '#10B981', fontSize: '20px' }}>✅</span>
+                    ) : (
+                      <span style={{ color: '#6B7280', fontSize: '20px' }}>🎯</span>
+                    )}
+                  </div>
+                  <p style={{ color: '#9CA3AF', fontSize: '13px', margin: 0, flex: 1 }}>
+                    {isVerified
+                      ? 'You are a verified expert in this skill.'
+                      : `Take the ${skill} quest to prove your skills and earn a badge.`}
+                  </p>
+                  <button
+                    disabled={isVerified}
+                    onClick={() => {
+                      const res = gamificationService.verifySkill(skill);
+                      if (res.success) {
+                        loadData(); // refresh stats and badges
+                      }
+                    }}
+                    style={{
+                      background: isVerified ? '#064E3B' : '#CC1111',
+                      color: isVerified ? '#10B981' : 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      fontWeight: 'bold',
+                      cursor: isVerified ? 'default' : 'pointer',
+                      marginTop: '8px',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    {isVerified ? 'Verified Expert' : 'Take Verification Quest'}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
