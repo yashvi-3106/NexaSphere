@@ -12,7 +12,7 @@ export default function PersonalizedFeed({ events = [], loading = false, onEvent
       </div>
     );
   }
-  if (!events.length) {
+  if (!Array.isArray(events) || events.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--t2, #94a3b8)' }}>
         <div style={{ fontSize: 36, marginBottom: 12 }}>✨</div>
