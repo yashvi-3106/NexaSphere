@@ -45,6 +45,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
 const resourceDiscoveryRoutes = require("./resourceDiscovery");
+const notificationCampaignRoutes = require("./notificationCampaign");
 const router = Router();
 
 // Public
@@ -494,5 +495,6 @@ router.get(
 
 // Platform Analytics APIs
 router.use("/api/analytics", platformAnalyticsRoutes);
+router.use("/notification-campaigns", notificationCampaignRoutes);
 
 export default router;

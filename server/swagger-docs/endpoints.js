@@ -1233,22 +1233,6 @@
  *         description: Resource analytics retrieved successfully
  */
 
- * /api/activity-timeline/{userId}/summary:
- *   get:
- *     summary: Monthly activity summary
- *     tags:
- *       - Activity Timeline
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Monthly summary
- */
-
 /**
  * @swagger
  * /api/activity-timeline/{userId}/stats:
@@ -1266,4 +1250,220 @@
  *       200:
  *         description: Activity statistics
  */
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Notification Campaigns
+ *     description: Intelligent Notification Scheduling & Campaign Management
+ */
+
+/**
+ * @swagger
+ * /api/notification-campaigns:
+ *   get:
+ *     summary: Get all notification campaigns
+ *     tags: [Notification Campaigns]
+ *     responses:
+ *       200:
+ *         description: Campaigns retrieved successfully
+ *
+ *   post:
+ *     summary: Create a notification campaign
+ *     tags: [Notification Campaigns]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Campaign created successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-campaigns/{id}:
+ *   get:
+ *     summary: Get campaign by ID
+ *     tags: [Notification Campaigns]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Campaign retrieved successfully
+ *
+ *   put:
+ *     summary: Update campaign
+ *     tags: [Notification Campaigns]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Campaign updated successfully
+ *
+ *   delete:
+ *     summary: Delete campaign
+ *     tags: [Notification Campaigns]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Campaign deleted successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-campaigns/{id}/schedule:
+ *   post:
+ *     summary: Schedule a notification campaign
+ *     tags: [Notification Campaigns]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Campaign scheduled successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-campaigns/{id}/send:
+ *   post:
+ *     summary: Send campaign immediately
+ *     tags: [Notification Campaigns]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Campaign sent successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-campaigns/{id}/pause:
+ *   post:
+ *     summary: Pause a campaign
+ *     tags: [Notification Campaigns]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Campaign paused successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-campaigns/{id}/resume:
+ *   post:
+ *     summary: Resume a campaign
+ *     tags: [Notification Campaigns]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Campaign resumed successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-campaigns/history:
+ *   get:
+ *     summary: Get campaign history
+ *     tags: [Notification Campaigns]
+ *     responses:
+ *       200:
+ *         description: Campaign history retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-campaigns/templates:
+ *   get:
+ *     summary: Get notification templates
+ *     tags: [Notification Campaigns]
+ *     responses:
+ *       200:
+ *         description: Templates retrieved successfully
+ *
+ *   post:
+ *     summary: Create a notification template
+ *     tags: [Notification Campaigns]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Template created successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-campaigns/segments:
+ *   get:
+ *     summary: Get audience segments
+ *     tags: [Notification Campaigns]
+ *     responses:
+ *       200:
+ *         description: Audience segments retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-campaigns/analytics/{id}:
+ *   get:
+ *     summary: Get campaign analytics
+ *     tags: [Notification Campaigns]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Campaign analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-campaigns/ab-test:
+ *   post:
+ *     summary: Create an A/B test
+ *     tags: [Notification Campaigns]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: A/B test created successfully
+ */
+
+
 export default {};
