@@ -34,6 +34,7 @@ import * as localAuthController from '../controllers/localAuthController.js';
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
+import * as whiteboardController from '../controllers/whiteboardController.js';
 import multer from 'multer';
 
 const router = Router();
@@ -44,22 +45,14 @@ router.use(throttleMiddleware);
 const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
-const reportingCenterRoutes = require("./reportingCenter");
-const router = Router();
+import reportingCenterRoutes from "./reportingCenter.js";
+
 
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
 router.post('/api/dashboard/xp', gamificationController.awardXP);
 router.use("/reporting-center", reportingCenterRoutes);
 
-// Public
-router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
-router.post(
-  '/api/dashboard/xp',
-  protectedActionRateLimiter,
-  adminAuthMiddleware.requireAdmin,
-  gamificationController.awardXP
-);
 router.post(
   '/api/assistant/recommend',
   upload.single('file'),
@@ -326,7 +319,6 @@ router.post(
   '/api/portfolio/:username/visit',
   portfolioAnalyticsController.recordPortfolioVisit
 );
-router.post('/api/portfolio/:username/visit', portfolioAnalyticsController.recordPortfolioVisit);
 
 router.get(
   '/api/portfolio/:username/monthly-report',
@@ -430,8 +422,7 @@ router.use("/api/events", eventConflictRouter);
 router.use(
   "/api/admin/waitlist",
   waitlistRoutes
-}); // Audit Log Viewer APIs
-router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
+); // Audit Log Viewer APIs
 
 router.get(
   '/api/admin/audit-logs/stats',
