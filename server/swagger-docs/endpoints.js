@@ -548,6 +548,166 @@
  *     responses:
  *       201:
  *         description: Template saved successfully
+ * /api/notification-preferences/{userId}:
+ *   get:
+ *     summary: Get notification preferences
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ * /api/portfolio/{username}/analytics:
+ *   get:
+ *     summary: Get portfolio analytics
+ *     description: Retrieve portfolio performance analytics including profile visits, engagement, downloads, and project popularity.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Portfolio username
+ *     responses:
+ *       200:
+ *         description: Portfolio analytics retrieved successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/visit:
+ *   post:
+ *     summary: Record portfolio visit
+ *     description: Records a visit to a user's portfolio for analytics purposes.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification preferences returned successfully
+ *         description: Visit recorded successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/monthly-report:
+ *   get:
+ *     summary: Get monthly analytics report
+ *     description: Returns the monthly portfolio performance report.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Matching files returned
+ *         description: Monthly report retrieved successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/monthly-report:
+ *   get:
+ *     ...
+ */
+
+/**
+ * @swagger
+ * /api/notification-preferences/{userId}:
+ *   put:
+ *     summary: Update notification preferences
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Preferences updated successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-preferences/{userId}/history:
+ *   get:
+ *     summary: Get notification history
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification history returned successfully
+ */
+ * ...
+ */
+
+/**
+ * @swagger
+ * /api/announcements:
+ *   get:
+ *     summary: Get all announcements
+ *     description: Returns all announcements sorted by priority and pinned status.
+ *     tags:
+ *       - Announcements
+ *     responses:
+ *       200:
+ *         description: List of announcements retrieved successfully.
+ *
+ *   post:
+ *     summary: Create a new announcement
+ *     description: Creates a new announcement with priority, audience, and expiration.
+ *     tags:
+ *       - Announcements
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - message
+ *             properties:
+ *               title:
+ *                 type: string
+ *               message:
+ *                 type: string
+ *               priority:
+ *                 type: string
+ *                 enum: [Critical, High, Medium, Low]
+ *               pinned:
+ *                 type: boolean
+ *               expiresAt:
+ *                 type: string
+ *                 format: date-time
+ *               audience:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Announcement created successfully.
  */
 
 /**
@@ -561,6 +721,30 @@
  *     responses:
  *       200:
  *         description: Report emailed successfully
+ * /api/announcements/{id}/priority:
+ *   patch:
+ *     summary: Update announcement priority
+ *     tags:
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               priority:
+ *                 type: string
+ *                 enum: [Critical, High, Medium, Low]
+ *     responses:
+ *       200:
+ *         description: Priority updated successfully.
  */
 
 /**
@@ -603,6 +787,289 @@
  *     summary: Filter reports
  *     tags: [Reporting Center]
  *     parameters:
+ * /api/announcements/{id}/pin:
+ *   patch:
+ *     summary: Pin or unpin an announcement
+ *     tags:
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pinned:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Announcement updated successfully.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/{id}/read:
+ *   post:
+ *     summary: Mark announcement as read
+ *     tags:
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Announcement marked as read.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/analytics:
+ *   get:
+ *     summary: Get announcement analytics
+ *     description: Returns announcement statistics including views, reads, and priority distribution.
+ *     tags:
+ *       - Announcements
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/conflicts:
+ *   get:
+ *     summary: Detect event scheduling conflicts
+ *     description: Returns events that overlap in time or venue.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Conflict list returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/venue:
+ *   get:
+ *     summary: Check venue availability
+ *     description: Verify whether a venue is available for a selected date.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: venue
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Venue availability returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/attendance-impact:
+ *   get:
+ *     summary: Attendance impact analysis
+ *     description: Analyze attendance impact caused by conflicting events.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Attendance analysis generated.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/recommendations:
+ *   get:
+ *     summary: Smart scheduling recommendations
+ *     description: Returns recommended schedules for events.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Scheduling recommendations returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/calendar:
+ *   get:
+ *     summary: Calendar integration
+ *     description: Returns event data formatted for calendar integration.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Calendar events returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/alerts:
+ *   get:
+ *     summary: Organizer alerts
+ *     description: Returns scheduling alerts for organizers.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Organizer alerts returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/join:
+ *   post:
+ *     summary: Join an event waitlist
+ *     description: Adds a user to the waitlist when an event is full.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully added to waitlist.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/position:
+ *   get:
+ *     summary: Get waitlist position
+ *     description: Returns the user's current position in the event waitlist.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Waitlist position returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/auto-enroll:
+ *   post:
+ *     summary: Auto-enroll next waitlisted user
+ *     description: Automatically enrolls the first user from the waitlist when a seat becomes available.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User enrolled successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/notifications:
+ *   get:
+ *     summary: Get waitlist notifications
+ *     description: Returns notification history for waitlisted users.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Notifications retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/analytics:
+ *   get:
+ *     summary: Waitlist analytics
+ *     description: Returns statistics about waitlists and enrollments.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/deadline:
+ *   post:
+ *     summary: Set registration deadline
+ *     description: Configure the registration deadline for an event.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Registration deadline updated successfully.
+ */
+
+/**
+ * @swagger
+ * /api/search:
+ *   get:
+ *     summary: Global Search
+ *     description: Search across events, team members, portfolios, and resources.
+ *     tags:
+ *       - Global Search
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Search keyword
  *       - in: query
  *         name: type
  *         schema:
@@ -614,6 +1081,22 @@
  *     responses:
  *       200:
  *         description: Filtered reports returned successfully
+ *           enum:
+ *             - all
+ *             - events
+ *             - members
+ *             - portfolios
+ *             - resources
+ *         description: Filter search by category
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Maximum results
+ *     responses:
+ *       200:
+ *         description: Search results returned successfully.
  */
 
 /**
@@ -627,4 +1110,137 @@
  *         description: Export permissions retrieved successfully
  */
 
+ * /api/search/trending:
+ *   get:
+ *     summary: Trending Searches
+ *     description: Returns the most popular search queries.
+ *     tags:
+ *       - Global Search
+ *     responses:
+ *       200:
+ *         description: Trending searches retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/search/recent:
+ *   get:
+ *     summary: Recent Searches
+ *     description: Returns the user's recent search history.
+ *     tags:
+ *       - Global Search
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Recent searches returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/search/suggestions:
+ *   get:
+ *     summary: Instant Search Suggestions
+ *     description: Returns autocomplete suggestions while typing.
+ *     tags:
+ *       - Global Search
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Suggestions returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/search/analytics:
+ *   get:
+ *     summary: Search Analytics Dashboard
+ *     description: Returns analytics about search usage, popular keywords and categories.
+ *     tags:
+ *       - Global Search
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}:
+ *   get:
+ *     summary: Get user activity timeline
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User activity timeline
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}:
+ *   post:
+ *     summary: Add activity to timeline
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Activity added successfully
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}/summary:
+ *   get:
+ *     summary: Monthly activity summary
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Monthly summary
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}/stats:
+ *   get:
+ *     summary: Activity statistics
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Activity statistics
+ */
 export default {};

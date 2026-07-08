@@ -788,6 +788,10 @@ input:checked + .slider:before {
   border: 1px solid var(--border-portfolio, var(--bdr2));
   background: rgba(255, 255, 255, 0.01);
 }
+[data-theme='light'] .portfolio-roadmap-card {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
 
 .roadmap-card-info {
   display: flex;
@@ -820,6 +824,10 @@ input:checked + .slider:before {
   flex-direction: column;
   background: rgba(255, 255, 255, 0.01);
   transition: transform 0.25s ease;
+}
+[data-theme='light'] .portfolio-project-card {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .portfolio-project-card:hover {

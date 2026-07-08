@@ -57,7 +57,7 @@ export const coreTeamService = {
         ],
       });
 
-      return sanitizeCoreTeamMemberRecord({
+      const res = sanitizeCoreTeamMemberRecord({
         id: row.id,
         name: row.name,
         role: row.role,
@@ -71,6 +71,10 @@ export const coreTeamService = {
         photoUrl: row.photo_url,
         createdAt: row.created_at,
       });
+      import('../services/searchIndexer.js')
+        .then(({ searchIndexer }) => searchIndexer.indexMember(res))
+        .catch(() => {});
+      return res;
     }
 
     const content = await readContent();
@@ -79,7 +83,11 @@ export const coreTeamService = {
     const newMember = { ...member, id: crypto.randomUUID(), createdAt };
     content.coreTeam.push(newMember);
     await writeContent(content);
-    return sanitizeCoreTeamMemberRecord(newMember);
+    const res = sanitizeCoreTeamMemberRecord(newMember);
+    import('../services/searchIndexer.js')
+      .then(({ searchIndexer }) => searchIndexer.indexMember(res))
+      .catch(() => {});
+    return res;
   },
 
   async updateMember(id, input) {
@@ -102,7 +110,7 @@ export const coreTeamService = {
         },
       });
 
-      return sanitizeCoreTeamMemberRecord({
+      const res = sanitizeCoreTeamMemberRecord({
         id: row.id,
         name: row.name,
         role: row.role,
@@ -116,6 +124,10 @@ export const coreTeamService = {
         photoUrl: row.photo_url,
         createdAt: row.created_at,
       });
+      import('../services/searchIndexer.js')
+        .then(({ searchIndexer }) => searchIndexer.indexMember(res))
+        .catch(() => {});
+      return res;
     }
 
     const content = await readContent();
@@ -126,7 +138,11 @@ export const coreTeamService = {
     const updated = { ...content.coreTeam[index], ...member, id: content.coreTeam[index].id };
     content.coreTeam[index] = updated;
     await writeContent(content);
-    return sanitizeCoreTeamMemberRecord(updated);
+    const res = sanitizeCoreTeamMemberRecord(updated);
+    import('../services/searchIndexer.js')
+      .then(({ searchIndexer }) => searchIndexer.indexMember(res))
+      .catch(() => {});
+    return res;
   },
 
   async deleteMember(id) {
@@ -134,7 +150,13 @@ export const coreTeamService = {
       const rows = await supabaseRequest(`core_team_members?id=eq.${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
-      return Array.isArray(rows) && rows.length > 0;
+      const success = Array.isArray(rows) && rows.length > 0;
+      if (success) {
+        import('../services/searchIndexer.js')
+          .then(({ searchIndexer }) => searchIndexer.deleteDocument('members', id))
+          .catch(() => {});
+      }
+      return success;
     }
 
     const content = await readContent();
@@ -143,6 +165,9 @@ export const coreTeamService = {
     content.coreTeam = content.coreTeam.filter((member) => String(member.id) !== String(id));
     if (content.coreTeam.length === before) return false;
     await writeContent(content);
+    import('../services/searchIndexer.js')
+      .then(({ searchIndexer }) => searchIndexer.deleteDocument('members', id))
+      .catch(() => {});
     return true;
   },
 

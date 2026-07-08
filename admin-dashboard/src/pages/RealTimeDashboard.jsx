@@ -13,7 +13,19 @@ import {
   Bar,
 } from 'recharts';
 
-const socket = io('http://localhost:3001');
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001';
+
+function getSocket() {
+  if (!getSocket.instance || !getSocket.instance.connected) {
+    getSocket.instance = io(SOCKET_URL, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity,
+    });
+  }
+  return getSocket.instance;
+}
 
 const StatCard = ({ title, value, color, icon }) => (
   <div
@@ -53,16 +65,45 @@ export default function RealTimeDashboard() {
   const [trendData, setTrendData] = useState([]);
   const [eventData, setEventData] = useState({});
   const [connected, setConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState('');
+  const [reconnecting, setReconnecting] = useState(false);
 
   useEffect(() => {
-    socket.on('connect', () => {
+    const socket = getSocket();
+
+    const handleConnect = () => {
       setConnected(true);
+      setConnectionError('');
+      setReconnecting(false);
       socket.emit('analytics:subscribe', 'all');
       socket.emit('analytics:request:metrics', 'all');
       socket.emit('analytics:request:trends', { eventId: 'all', timeWindow: '7 days' });
-    });
+    };
 
-    socket.on('disconnect', () => setConnected(false));
+    const handleDisconnect = () => {
+      setConnected(false);
+      setReconnecting(true);
+    };
+
+    const handleConnectError = (err) => {
+      setConnected(false);
+      setReconnecting(true);
+      setConnectionError(err?.message || 'Connection failed');
+    };
+
+    const handleReconnectAttempt = () => {
+      setReconnecting(true);
+      setConnectionError('Reconnecting...');
+    };
+
+    if (socket.connected) {
+      handleConnect();
+    }
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectError);
+    socket.on('reconnect_attempt', handleReconnectAttempt);
 
     socket.on('analytics:metrics:current', (data) => {
       if (data?.metrics) {
@@ -89,10 +130,32 @@ export default function RealTimeDashboard() {
       }
     });
 
-    return () => socket.off();
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('connect_error', handleConnectError);
+      socket.off('reconnect_attempt', handleReconnectAttempt);
+      socket.off('analytics:metrics:current');
+      socket.off('analytics:trends:current');
+      socket.off('analytics:metrics:update');
+    };
+  }, []);
+
+  const retryConnection = useCallback(() => {
+    setReconnecting(true);
+    setConnectionError('Reconnecting...');
+    const socket = getSocket();
+    socket.connect();
   }, []);
 
   const exportCSV = useCallback(() => {
+    const escapeCSV = (val) => {
+      if (typeof val === 'string') {
+        return `"${val.replace(/"/g, '""')}"`;
+      }
+      return val;
+    };
+
     const rows = [
       ['Event', 'Registrations', 'Attendees', 'Check-ins'],
       ...Object.entries(eventData).map(([name, d]) => [
@@ -103,7 +166,7 @@ export default function RealTimeDashboard() {
       ]),
       ['LIVE TOTAL', stats.registrations, stats.attendees, stats.checkIns],
     ];
-    const csv = rows.map((r) => r.join(',')).join('\n');
+    const csv = rows.map((r) => r.map(escapeCSV).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -148,7 +211,7 @@ export default function RealTimeDashboard() {
             NexaSphere Event Dashboard
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <div
             style={{
               padding: '6px 14px',
@@ -161,6 +224,23 @@ export default function RealTimeDashboard() {
           >
             {connected ? '🟢 Connected' : '🔴 Disconnected'}
           </div>
+          {reconnecting && !connected && (
+            <button
+              onClick={retryConnection}
+              style={{
+                padding: '8px 14px',
+                background: '#1d3557',
+                color: '#fff',
+                border: '1px solid #457b9d',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '14px',
+              }}
+            >
+              Retry Connection
+            </button>
+          )}
           <button
             onClick={exportCSV}
             style={{

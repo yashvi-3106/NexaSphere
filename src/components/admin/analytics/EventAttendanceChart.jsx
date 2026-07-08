@@ -9,7 +9,7 @@ import {
   YAxis,
 } from 'recharts';
 
-export default function EventAttendanceChart({ data = [] }) {
+export default function EventAttendanceChart({ data = [], loading }) {
   return (
     <section className="chart-container">
       <div className="chart-header">
@@ -17,7 +17,11 @@ export default function EventAttendanceChart({ data = [] }) {
         <p>Capacity, attendance, and waitlist comparison.</p>
       </div>
 
-      {data.length > 0 ? (
+      {loading ? (
+        <div className="chart-shell">
+          <div className="ns-skeleton" style={{ width: '100%', height: '280px', borderRadius: '12px' }} />
+        </div>
+      ) : data.length > 0 ? (
         <div className="chart-shell">
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={data} margin={{ left: -10, right: 8 }}>

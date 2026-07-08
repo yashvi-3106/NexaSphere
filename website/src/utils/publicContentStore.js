@@ -71,19 +71,28 @@ export function getLocalEvents(fallbackEvents = []) {
 }
 
 export function mergeEvents(fallbackEvents = [], liveEvents = []) {
-  // Filter out tombstoned events from both fallback and live data
+  // Tombstones are IDs of events deleted while offline. We must filter them out
+  // to prevent deleted events from reappearing after sync.
   let tombstones = [];
   try {
     tombstones = safeJsonParse(window.localStorage.getItem('ns_tombstone_events'), []);
   } catch (e) {
     console.warn('Failed to parse tombstone events', e);
   }
+
+  // Remove tombstoned events from both the cached fallback data and live server data.
+  // This ensures deleted events stay deleted regardless of the data source.
   const filteredFallback = fallbackEvents.filter((event) => !tombstones.includes(String(event.id)));
   const filteredLive = liveEvents.filter((event) => !tombstones.includes(String(event.id)));
+
+  // Merge events by ID, with live data taking priority over fallback data.
+  // The spread operator order (...previous, ...event) gives live values precedence.
   return mergeById(filteredFallback, toArray(filteredLive), (previous, event, key) => ({
     ...previous,
     ...event,
+    // Use live ID if available, otherwise fallback ID, or the merge key as last resort
     id: event.id ?? previous.id ?? key,
+    // Name field has multiple aliases across data sources; prioritize live values
     name:
       event.name ??
       event.title ??
@@ -91,8 +100,11 @@ export function mergeEvents(fallbackEvents = [], liveEvents = []) {
       previous.name ??
       previous.title ??
       'Untitled Event',
+    // Date may be stored as either dateText or date; normalize to dateText
     dateText: event.dateText ?? event.date ?? previous.dateText ?? previous.date,
+    // Ensure status is always lowercase for consistent comparison
     status: String(event.status ?? previous.status ?? 'upcoming').toLowerCase(),
+    // Tags may be a string or array; normalize to array format
     tags: normalizeTags(event.tags ?? previous.tags),
   }));
 }
@@ -125,7 +137,7 @@ export function mergeTeamMembers(fallbackMembers = [], liveMembers = []) {
   });
 }
 
-export function subscribePublicContent(callback, intervalMs = 2000) {
+export function subscribePublicContent(callback, intervalMs = 30000) {
   if (typeof window === 'undefined') return () => {};
 
   const onStorage = (event) => {
@@ -152,6 +164,8 @@ export function subscribePublicContent(callback, intervalMs = 2000) {
  * Only active in offline/local development mode.
  */
 let bridgeInitialized = false;
+let bridgeIframe = null;
+let bridgeMessageHandler = null;
 export function initStorageSyncBridge() {
   if (bridgeInitialized || typeof window === 'undefined') return;
   bridgeInitialized = true;
@@ -189,9 +203,10 @@ export function initStorageSyncBridge() {
   };
 
   document.documentElement.appendChild(iframe);
+  bridgeIframe = iframe;
 
   // Listen for messages relayed through the bridge
-  window.addEventListener('message', (event) => {
+  bridgeMessageHandler = (event) => {
     if (event.origin !== adminOrigin || event.source !== iframe.contentWindow) return;
 
     if (
@@ -208,5 +223,22 @@ export function initStorageSyncBridge() {
       // Fire the custom event so subscribers pick it up
       window.dispatchEvent(new Event('ns-content-updated'));
     }
-  });
+  };
+  window.addEventListener('message', bridgeMessageHandler);
+}
+
+/**
+ * Tear down the storage sync bridge, removing the iframe and message listener.
+ * Call this from a useEffect cleanup to prevent orphaned iframes.
+ */
+export function destroyStorageSyncBridge() {
+  if (bridgeMessageHandler) {
+    window.removeEventListener('message', bridgeMessageHandler);
+    bridgeMessageHandler = null;
+  }
+  if (bridgeIframe) {
+    bridgeIframe.remove();
+    bridgeIframe = null;
+  }
+  bridgeInitialized = false;
 }

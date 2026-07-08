@@ -13,7 +13,7 @@ pg.Pool = class MockPool {
   on() {}
   async connect() {
     return {
-      query: async () => ({ rows: [], rowCount: 1 }),
+      query: async () => ({ rows: [{ id: 'evt-1', name: 'Mock Event', date: '2026-01-01', description: 'Desc' }], rowCount: 1 }),
       release: () => {},
     };
   }

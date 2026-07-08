@@ -1,4 +1,13 @@
 import React, { useState, useEffect } from 'react';
+
+// Validates a date value before formatting — avoids rendering literal
+// "Invalid Date" text when the API returns a null or malformed timestamp.
+function formatCampaignDate(value) {
+  if (!value) return 'Unknown';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'Unknown';
+  return d.toLocaleDateString();
+}
 import { buildUrl, getApiBase } from '../../utils/runtimeConfig';
 
 const pageStyle = {
@@ -448,7 +457,7 @@ export default function EmailCampaignsPage() {
                     <td style={tdStyle}>
                       <span style={statusBadgeStyle(campaign.status)}>{campaign.status}</span>
                     </td>
-                    <td style={tdStyle}>{new Date(campaign.createdAt).toLocaleDateString()}</td>
+                    <td style={tdStyle}>{formatCampaignDate(campaign.createdAt)}</td>
                     <td style={tdStyle}>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         {campaign.status === 'draft' && (

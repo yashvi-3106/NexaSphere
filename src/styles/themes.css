@@ -139,6 +139,57 @@
   --overlay-bg: rgba(255, 255, 255, 0.7);
 }
 
+[data-theme='high-contrast'] {
+  color-scheme: dark;
+
+  --bg: #000000;
+  --bg2: #000000;
+  --card: #000000;
+  --card2: #000000;
+  --card-hover: #000000;
+
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
+  --bg-tertiary: #000000;
+  --card-bg: #000000;
+
+  --c1: #ffff00; /* Yellow highlight */
+  --c2: #00ffff; /* Cyan highlight */
+  --c3: #00ff00; /* Green highlight */
+  --c4: #ff00ff; /* Magenta highlight */
+  --c5: #ffff00;
+
+  --c1a: transparent;
+  --c1b: transparent;
+  --c1g: transparent;
+  --c2a: transparent;
+  --c2b: transparent;
+
+  --t1: #ffffff;
+  --t2: #ffffff;
+  --t3: #ffffff;
+
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+  --text-muted: #ffffff;
+
+  --bdr: #ffffff;
+  --bdr2: #ffffff;
+  --border-color: #ffffff;
+  --border-hover: #ffff00;
+  --border: #ffffff;
+
+  --hero-bg: #000000;
+  --page-banner-bg: #000000;
+
+  --sh1: none;
+  --sh2: none;
+  --shcard: none;
+  --shadow-card: none;
+  --shadow-hover: none;
+  --overlay-bg: #000000;
+}
+
 *,
 *::before,
 *::after {

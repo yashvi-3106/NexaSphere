@@ -7,6 +7,7 @@ import { emitToRole } from '../config/socket.js';
 import { broadcastSSEEvent } from '../services/sseService.js';
 import { recordEventRegistration } from '../observability/metrics.js';
 import { supabaseRequest } from '../storage/supabaseClient.js';
+import { scheduleWaitlistExpiryJob } from '../services/queueService.js';
 
 function wrapAsync(fn) {
   return (req, res) =>
@@ -219,6 +220,12 @@ export const cancelRegistration = wrapAsync(async (req, res) => {
     return res.status(400).json({ error: 'Valid email address is required' });
   }
 
+  // Ownership check — authenticated user can only cancel their own registration
+  const authenticatedEmail = (req.studentUser?.email || '').toLowerCase();
+  if (authenticatedEmail !== sanitizedEmail) {
+    return res.status(403).json({ error: 'Forbidden: you can only cancel your own registration' });
+  }
+
   const event = await eventsRepository.getById(eventId);
   if (!event) {
     return res.status(404).json({ error: 'Event not found' });
@@ -236,6 +243,7 @@ export const cancelRegistration = wrapAsync(async (req, res) => {
 
   if (promoted) {
     try {
+      await scheduleWaitlistExpiryJob({ eventId, email: promoted.email, delayMs: 24 * 60 * 60 * 1000 });
       emitToRole('events_admin', 'admin:waitlist-promoted', {
         eventId,
         userName: promoted.full_name,
@@ -248,7 +256,7 @@ export const cancelRegistration = wrapAsync(async (req, res) => {
         timestamp: new Date().toISOString(),
       });
     } catch (realtimeErr) {
-      console.error('[EventRegistration] Failed to broadcast promotion:', realtimeErr);
+      console.error('[EventRegistration] Failed to broadcast or schedule promotion:', realtimeErr);
     }
   }
 
@@ -303,5 +311,27 @@ export const leaveWaitlist = wrapAsync(async (req, res) => {
     return res.status(404).json({ error: 'No waitlist entry found for this email' });
   }
 
-  return res.status(200).json({ removed: true });
+  return res.status(200).json({ success: true, message: 'Removed from waitlist' });
+});
+
+export const confirmWaitlistSpot = wrapAsync(async (req, res) => {
+  const eventId = String(req.params.eventId || '').trim();
+  const sanitizedEmail = String(req.body.email || '')
+    .trim()
+    .toLowerCase()
+    .slice(0, 140);
+
+  if (!eventId || !EVENT_ID_REGEX.test(eventId)) {
+    return res.status(400).json({ error: 'Invalid event ID' });
+  }
+  if (!sanitizedEmail || !EMAIL_REGEX.test(sanitizedEmail)) {
+    return res.status(400).json({ error: 'Valid email address is required' });
+  }
+
+  const confirmed = await registrationsRepository.confirmWaitlistSpot(eventId, sanitizedEmail);
+  if (!confirmed) {
+    return res.status(404).json({ error: 'No pending waitlist promotion found for this email' });
+  }
+
+  return res.status(200).json({ success: true, message: 'Spot confirmed successfully' });
 });

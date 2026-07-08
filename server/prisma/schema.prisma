@@ -1,0 +1,17 @@
+model EventTemplate {
+  id               String   @id @default(uuid())
+  title            String   // e.g., "Workshop", "Hackathon"
+  description      String?  @db.Text
+  defaultDuration  Int?     // In minutes
+  defaultCapacity  Int?
+  category         String?
+  tags             String[] // Array of suggested tags
+  checklist        Json?    // Array of pre-event tasks
+  emailTemplates   Json?    // Pre-configured confirmation/reminder emails
+  feedbackQuestions Json?   // Default feedback forms
+  isSystem         Boolean  @default(false)
+  createdBy        String?  // User ID if created by an organizer
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  usageCount       Int      @default(0) // For analytics tracking
+}

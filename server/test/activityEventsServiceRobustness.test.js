@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import fs from 'fs';
 import { activityEventsService } from '../services/activityEventsService.js';
 import { activityEventsRepository } from '../repositories/activityEventsRepository.js';
+import { coreTeamService } from '../services/coreTeamService.js';
 
 /**
  * Service Robustness and Error Handling Tests
@@ -13,12 +15,31 @@ import { activityEventsRepository } from '../repositories/activityEventsReposito
  * Solution: Implemented all required methods with proper error handling
  */
 
+let mockContent = {
+  activityEvents: {
+    'activity-1': [
+      { id: 'event-1', name: 'Event 1' },
+      { id: 'event-2', name: 'Event 2' },
+    ],
+    'activity-2': [{ id: 'event-3', name: 'Event 3' }],
+  }
+};
+
 const originalListByActivityKey = activityEventsRepository.listByActivityKey;
 const originalListAll = activityEventsRepository.listAll;
 const originalCreate = activityEventsRepository.create;
 const originalDelete = activityEventsRepository.delete;
+const originalAssertCanManage = coreTeamService.assertCanManageActivityEvent;
+const originalReadFile = fs.promises.readFile;
 
 test.before(() => {
+  fs.promises.readFile = async (filePath, encoding) => {
+    if (typeof filePath === 'string' && filePath.endsWith('content.json')) {
+      return JSON.stringify(mockContent);
+    }
+    return originalReadFile(filePath, encoding);
+  };
+  coreTeamService.assertCanManageActivityEvent = async () => true;
   // Mock implementations with realistic behavior
   activityEventsRepository.listByActivityKey = async (key, options = {}) => {
     if (!key) throw new Error('Activity key is required');
@@ -28,7 +49,7 @@ test.before(() => {
           id: 'event-1',
           activityKey: key,
           name: 'Test Event',
-          created_at: new Date().toISOString(),
+          created_at: '2026-07-04T12:00:00.000Z',
         },
       ],
       total: 1,
@@ -59,6 +80,8 @@ test.after(() => {
   activityEventsRepository.listAll = originalListAll;
   activityEventsRepository.create = originalCreate;
   activityEventsRepository.delete = originalDelete;
+  coreTeamService.assertCanManageActivityEvent = originalAssertCanManage;
+  fs.promises.readFile = originalReadFile;
 });
 
 // Test 1: listActivityEvents with valid parameters
@@ -144,6 +167,8 @@ test('listAllActivities returns all activities with their events', async () => {
 test('listAllActivities handles case with no activities', async () => {
   const originalListAll2 = activityEventsRepository.listAll;
   activityEventsRepository.listAll = async () => ({});
+  const originalMockContent = mockContent;
+  mockContent = { activityEvents: {} };
 
   const result = await activityEventsService.listAllActivities();
 
@@ -151,6 +176,7 @@ test('listAllActivities handles case with no activities', async () => {
   assert.equal(Object.keys(result).length, 0, 'Should be empty');
 
   activityEventsRepository.listAll = originalListAll2;
+  mockContent = originalMockContent;
 });
 
 // Test 10: addActivityEvent with valid input
@@ -176,9 +202,12 @@ test('addActivityEvent validates required fields', async () => {
     password: 'TestPassword123',
   };
 
-  const result = await activityEventsService.addActivityEvent('events', invalidInput);
-
-  assert(result.error || result.id, 'Should either create or return error');
+  await assert.rejects(
+    async () => {
+      await activityEventsService.addActivityEvent('events', invalidInput);
+    },
+    /Invalid input/
+  );
 });
 
 // Test 12: deleteActivityEvent with valid ID

@@ -159,7 +159,7 @@ export default function Lightbox({ photos, initialIndex, onClose }) {
           ‹
         </button>
 
-        <img
+        <img loading="lazy"
           key={photo.id}
           src={photo.largeUrl}
           alt={photo.caption || 'Event photo'}

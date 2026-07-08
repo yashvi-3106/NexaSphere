@@ -1,4 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
+
+// Validates a date value before formatting — avoids rendering literal
+// "Invalid Date" text when the API returns a null or malformed timestamp.
+function formatSessionDate(value) {
+  if (!value) return 'Unknown date';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'Unknown date';
+  return d.toLocaleDateString();
+}
 import {
   Users,
   BookOpen,
@@ -298,7 +307,7 @@ function MentorshipDashboard() {
                         </div>
                         {s.notes && <p className="text-xs text-gray-400 line-clamp-2">{s.notes}</p>}
                         <p className="text-xs text-gray-500 mt-1">
-                          {new Date(s.sessionDate || s.createdAt).toLocaleDateString()}
+                          {formatSessionDate(s.sessionDate || s.createdAt)}
                         </p>
                       </div>
                     ))
