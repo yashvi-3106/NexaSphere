@@ -19,7 +19,7 @@ export const elasticsearchService = {
         document,
       });
       // Optionally refresh for real-time visibility in small datasets/tests
-      await client.indices.refresh({ index }).catch(() => {});
+      await client.indices.refresh({ index }).catch((err) => console.error('Elasticsearch refresh error:', err.message));
     } catch (e) {
       console.error(`Elasticsearch index error on [${index}]:`, e.message);
     }

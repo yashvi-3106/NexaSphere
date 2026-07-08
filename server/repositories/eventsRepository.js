@@ -1,4 +1,5 @@
 import { withDb } from './db.js';
+import logger from '../utils/logger.js';
 
 function mapRow(row) {
   return {
@@ -170,7 +171,7 @@ export const eventsRepository = {
       const mapped = mapRow(rows[0]);
       import('../services/searchIndexer.js')
         .then(({ searchIndexer }) => searchIndexer.indexEvent(mapped))
-        .catch(() => {});
+        .catch((err) => logger.error('Failed to index event in search', { err, eventId: mapped?.id }));
       return mapped;
     });
   },
@@ -214,7 +215,7 @@ export const eventsRepository = {
       const mapped = mapRow(rows[0]);
       import('../services/searchIndexer.js')
         .then(({ searchIndexer }) => searchIndexer.indexEvent(mapped))
-        .catch(() => {});
+        .catch((err) => logger.error('Failed to index event in search', { err, eventId: mapped?.id }));
       return mapped;
     });
   },
@@ -225,7 +226,7 @@ export const eventsRepository = {
       if (rowCount > 0) {
         import('../services/searchIndexer.js')
           .then(({ searchIndexer }) => searchIndexer.deleteDocument('events', id))
-          .catch(() => {});
+          .catch((err) => logger.error('Failed to remove event from search index', { err, eventId: id }));
       }
       return rowCount > 0;
     });
