@@ -39,30 +39,37 @@ class UserInterestTracker {
 
   loadInterests() {
     const stored = localStorage.getItem(STORAGE_KEYS.USER_INTERESTS);
-    return stored
-      ? JSON.parse(stored)
-      : {
-          categories: {},
-          tags: {},
-          events: {},
-        };
+    const defaults = {
+      categories: {},
+      tags: {},
+      events: {},
+    };
+    if (stored) {
+      try { return JSON.parse(stored); } catch (e) {}
+    }
+    return defaults;
   }
 
   loadHistory() {
     const stored = localStorage.getItem(STORAGE_KEYS.USER_HISTORY);
-    return stored ? JSON.parse(stored) : [];
+    if (stored) {
+      try { return JSON.parse(stored); } catch (e) {}
+    }
+    return [];
   }
 
   loadPreferences() {
     const stored = localStorage.getItem(STORAGE_KEYS.USER_PREFERENCES);
-    return stored
-      ? JSON.parse(stored)
-      : {
-          preferredCategories: [],
-          preferredTags: [],
-          preferredTimeSlots: [],
-          preferredLocations: [],
-        };
+    const defaults = {
+      preferredCategories: [],
+      preferredTags: [],
+      preferredTimeSlots: [],
+      preferredLocations: [],
+    };
+    if (stored) {
+      try { return JSON.parse(stored); } catch (e) {}
+    }
+    return defaults;
   }
 
   trackEventInteraction(eventId, action, metadata = {}) {
