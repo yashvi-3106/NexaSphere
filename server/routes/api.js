@@ -28,12 +28,13 @@ import multer from 'multer';
 const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
-
+const reportingCenterRoutes = require("./reportingCenter");
 const router = Router();
 
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
 router.post('/api/dashboard/xp', gamificationController.awardXP);
+router.use("/reporting-center", reportingCenterRoutes);
 router.post(
   '/api/assistant/recommend',
   upload.single('file'),

@@ -473,4 +473,158 @@
  *                       format: float
  */
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Reporting Center
+ *     description: Platform-Wide Data Export & Reporting Center
+ */
+
+/**
+ * @swagger
+ * /api/reporting-center/reports:
+ *   get:
+ *     summary: Get all reports
+ *     tags: [Reporting Center]
+ *     responses:
+ *       200:
+ *         description: Reports retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/reporting-center/export:
+ *   post:
+ *     summary: Export data (CSV, Excel, PDF)
+ *     tags: [Reporting Center]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Data exported successfully
+ */
+
+/**
+ * @swagger
+ * /api/reporting-center/schedule:
+ *   post:
+ *     summary: Schedule report generation
+ *     tags: [Reporting Center]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Report scheduled successfully
+ */
+
+/**
+ * @swagger
+ * /api/reporting-center/custom:
+ *   post:
+ *     summary: Generate custom report
+ *     tags: [Reporting Center]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Custom report generated successfully
+ */
+
+/**
+ * @swagger
+ * /api/reporting-center/templates:
+ *   get:
+ *     summary: Get saved report templates
+ *     tags: [Reporting Center]
+ *     responses:
+ *       200:
+ *         description: Templates retrieved successfully
+ *
+ *   post:
+ *     summary: Save report template
+ *     tags: [Reporting Center]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Template saved successfully
+ */
+
+/**
+ * @swagger
+ * /api/reporting-center/email:
+ *   post:
+ *     summary: Email report
+ *     tags: [Reporting Center]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Report emailed successfully
+ */
+
+/**
+ * @swagger
+ * /api/reporting-center/dashboard:
+ *   get:
+ *     summary: Get dashboard summary
+ *     tags: [Reporting Center]
+ *     responses:
+ *       200:
+ *         description: Dashboard summary retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/reporting-center/history:
+ *   get:
+ *     summary: Get report history
+ *     tags: [Reporting Center]
+ *     responses:
+ *       200:
+ *         description: Report history retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/reporting-center/audit:
+ *   get:
+ *     summary: Get export audit logs
+ *     tags: [Reporting Center]
+ *     responses:
+ *       200:
+ *         description: Audit logs retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/reporting-center/filter:
+ *   get:
+ *     summary: Filter reports
+ *     tags: [Reporting Center]
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Filtered reports returned successfully
+ */
+
+/**
+ * @swagger
+ * /api/reporting-center/permissions:
+ *   get:
+ *     summary: Get export permissions
+ *     tags: [Reporting Center]
+ *     responses:
+ *       200:
+ *         description: Export permissions retrieved successfully
+ */
+
 export default {};
