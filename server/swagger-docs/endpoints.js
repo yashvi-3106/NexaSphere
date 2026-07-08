@@ -755,4 +755,194 @@
  *         description: Operational reports retrieved successfully
  */
 
+/**
+ * @swagger
+ * tags:
+ *   name: Workflow Automation
+ *   description: APIs for managing approval workflows, requests, analytics, and audit logs.
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/workflows:
+ *   get:
+ *     summary: Get all workflows
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: List of workflows retrieved successfully
+ *
+ *   post:
+ *     summary: Create a new workflow
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       201:
+ *         description: Workflow created successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/workflows/{id}:
+ *   get:
+ *     summary: Get workflow by ID
+ *     tags: [Workflow Automation]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Workflow retrieved successfully
+ *
+ *   put:
+ *     summary: Update workflow
+ *     tags: [Workflow Automation]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Workflow updated successfully
+ *
+ *   delete:
+ *     summary: Delete workflow
+ *     tags: [Workflow Automation]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Workflow deleted successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/requests:
+ *   post:
+ *     summary: Submit a workflow request
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       201:
+ *         description: Request submitted successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/requests/{id}/approve:
+ *   put:
+ *     summary: Approve a workflow request
+ *     tags: [Workflow Automation]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Request approved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/requests/{id}/reject:
+ *   put:
+ *     summary: Reject a workflow request
+ *     tags: [Workflow Automation]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Request rejected successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/requests/bulk-approve:
+ *   post:
+ *     summary: Bulk approve workflow requests
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Requests approved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/requests/pending:
+ *   get:
+ *     summary: Get pending workflow requests
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Pending requests retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/history:
+ *   get:
+ *     summary: Get approval history
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Approval history retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/templates:
+ *   get:
+ *     summary: Get workflow templates
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Workflow templates retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/analytics:
+ *   get:
+ *     summary: Get workflow analytics
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Workflow analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/escalate:
+ *   post:
+ *     summary: Escalate pending workflow requests
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Pending requests escalated successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/audit-logs:
+ *   get:
+ *     summary: Get workflow audit logs
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Audit logs retrieved successfully
+ */
+
 export default {};

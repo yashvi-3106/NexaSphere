@@ -31,6 +31,7 @@ import * as recommendationsController from '../controllers/recommendationsContro
 import * as gamificationController from '../controllers/gamificationController.js';
 import * as subscriptionsController from '../controllers/subscriptionsController.js';
 import multer from 'multer';
+const workflowAutomationRoutes = require("./workflowAutomation"); 
 
 router.use(rateLimitAdminRoutes);
 router.use(throttleMiddleware);
@@ -434,6 +435,11 @@ router.use(
 router.use(
     "/operational-insights",
     operationalInsightsRoutes
+);
+
+router.use(
+  "/workflow-automation",
+  workflowAutomationRoutes
 );
 
 export default router;
