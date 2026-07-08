@@ -14,6 +14,7 @@
 - [✨ Stack](#-stack)
 - [📁 Project Structure](#-project-structure)
 - [🚀 Quick Start](#-quick-start)
+- [🔧 Troubleshooting](#-troubleshooting)
 - [🧪 Testing](#-testing)
 - [🚢 Deployment](#-deployment)
 - [🤝 Contributing](#-contributing)
@@ -329,6 +330,183 @@ Or start services individually:
 
 > **Tip:** The website works in **offline mode** when `VITE_API_BASE` is empty.
 > All data comes from localStorage / static JSON files — no backend needed.
+
+---
+
+## 🔧 Troubleshooting
+
+This section covers common issues you may encounter during setup and development.
+
+### Port Already in Use
+
+**Error:** `Error: listen EADDRINUSE: address already in use :::8787`
+
+**Solution:** The port is already being used by another process. You can either:
+
+1. **Kill the process using the port:**
+
+   ```bash
+   # Find the process ID
+   npx lsof -i :8787  # macOS/Linux
+   # or
+   netstat -ano | findstr :8787  # Windows
+
+   # Kill the process (replace PID with actual process ID)
+   kill -9 PID  # macOS/Linux
+   # or
+   taskkill /PID PID /F  # Windows
+   ```
+
+2. **Change the port in your `.env` file:**
+   ```env
+   PORT=8788  # Change to a different port
+   ```
+
+### Environment Variables Not Loading
+
+**Error:** `VITE_API_BASE is not defined` or similar environment variable errors.
+
+**Solution:**
+
+1. Ensure you've copied the `.env.example` files:
+
+   ```bash
+   cp website/.env.example website/.env.local
+   cp admin-dashboard/.env.example admin-dashboard/.env.local
+   cp server/.env.example server/.env
+   ```
+
+2. Verify the file names are correct:
+   - Website: `website/.env.local` (not `.env`)
+   - Admin: `admin-dashboard/.env.local` (not `.env`)
+   - Server: `server/.env`
+
+3. Restart your development server after adding environment variables.
+
+### CORS Errors During Development
+
+**Error:** `Access to fetch at 'http://localhost:8787' from origin 'http://localhost:5175' has been blocked by CORS policy`
+
+**Solution:** Ensure your `server/.env` file includes the correct `CORS_ORIGIN`:
+
+```env
+CORS_ORIGIN=http://localhost:5175,http://localhost:5001
+```
+
+Make sure the ports match your running frontend services.
+
+### Backend API Unavailable
+
+**Error:** `Failed to fetch` or `Network Error` when calling API endpoints.
+
+**Solution:**
+
+1. **Check if the server is running:**
+
+   ```bash
+   curl http://localhost:8787/health
+   # or visit http://localhost:8787/health in your browser
+   ```
+
+2. **Start the server if not running:**
+
+   ```bash
+   npm run dev:server
+   ```
+
+3. **Verify the port matches your frontend configuration:**
+   - Check `VITE_API_BASE` in `website/.env.local`
+   - Check `PORT` in `server/.env`
+
+### Dependencies Fail to Install
+
+**Error:** `npm ERR! code ERESOLVE` or peer dependency conflicts.
+
+**Solution:**
+
+1. **Verify Node.js version:**
+
+   ```bash
+   node -v  # Should be v20.x or v22.x
+   ```
+
+2. **Clear npm cache and reinstall:**
+
+   ```bash
+   npm cache clean --force
+   rm -rf node_modules package-lock.json  # macOS/Linux
+   # or
+   Remove-Item -Recurse -Force node_modules, package-lock.json  # Windows
+   npm install
+   ```
+
+3. **Use legacy peer resolver (if needed):**
+   ```bash
+   npm install --legacy-peer-deps
+   ```
+
+### Permission Denied Errors
+
+**Error:** `EACCES: permission denied` when running npm commands.
+
+**Solution:** Never use `sudo` with npm. Instead:
+
+1. **Ensure you're using NVM-managed Node:**
+
+   ```bash
+   nvm use
+   ```
+
+2. **Fix npm permissions (if using system Node):**
+   ```bash
+   mkdir ~/.npm-global
+   npm config set prefix '~/.npm-global'
+   echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+   source ~/.bashrc
+   ```
+
+### Build Fails with Module Not Found
+
+**Error:** `Module not found: Can't resolve './component'`
+
+**Solution:**
+
+1. **Check file paths are correct** (case-sensitive on Linux/macOS)
+2. **Ensure all dependencies are installed:**
+   ```bash
+   npm install
+   ```
+3. **Clear build cache:**
+   ```bash
+   rm -rf dist build .vite  # macOS/Linux
+   # or
+   Remove-Item -Recurse -Force dist, build, .vite  # Windows
+   ```
+
+### Tests Failing Locally
+
+**Error:** Tests pass on CI but fail locally.
+
+**Solution:**
+
+1. **Ensure you're on the correct Node version:**
+
+   ```bash
+   nvm use
+   ```
+
+2. **Clear test cache:**
+
+   ```bash
+   rm -rf node_modules/.vitest  # macOS/Linux
+   # or
+   Remove-Item -Recurse -Force node_modules\.vitest  # Windows
+   ```
+
+3. **Run tests with coverage disabled (if needed):**
+   ```bash
+   npm test -- --no-coverage
+   ```
 
 ---
 
