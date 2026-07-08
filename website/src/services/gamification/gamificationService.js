@@ -635,11 +635,11 @@ class GamificationService {
 
   async getLeaderboard() {
     const MOCK_LEADERBOARD = [
-      { rank: 1, name: 'Alex Johnson', xp: 2850, level: 8, avatar: '👨‍💻' },
-      { rank: 2, name: 'Sarah Chen', xp: 2420, level: 7, avatar: '👩‍💻' },
-      { rank: 3, name: 'Mike Ross', xp: 2100, level: 7, avatar: '👨‍💼' },
-      { rank: 4, name: 'Emma Watson', xp: 1850, level: 6, avatar: '👩‍🎓' },
-      { rank: 5, name: 'David Kim', xp: 1520, level: 6, avatar: '👨‍🔬' },
+      { rank: 1, name: 'Alex Johnson', xp: 2850, level: 8, avatar: '👨‍💻', streak: 12 },
+      { rank: 2, name: 'Sarah Chen', xp: 2420, level: 7, avatar: '👩‍💻', streak: 7 },
+      { rank: 3, name: 'Mike Ross', xp: 2100, level: 7, avatar: '👨‍💼', streak: 4 },
+      { rank: 4, name: 'Emma Watson', xp: 1850, level: 6, avatar: '👩‍🎓', streak: 2 },
+      { rank: 5, name: 'David Kim', xp: 1520, level: 6, avatar: '👨‍🔬', streak: 0 },
     ];
 
     const base = getApiBase();
@@ -657,6 +657,7 @@ class GamificationService {
         xp: user.xp ?? 0,
         level: user.level ?? 1,
         avatar: '👤',
+        streak: user.current_streak ?? user.streak ?? 0,
       }));
     } catch {
       return MOCK_LEADERBOARD;

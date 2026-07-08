@@ -17,6 +17,7 @@ function formatDateTime(value) {
 import apiClient from '../../utils/apiClient';
 import { getApiBase, buildUrl } from '../../utils/runtimeConfig';
 import { initializeSocket, getSocket, joinRoom, leaveRoom } from '../../utils/socketClient';
+import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 
 const STATUSES = ['not_started', 'in_progress', 'done', 'blocked'];
 const PRIORITIES = { low: '#6b7280', medium: '#f59e0b', high: '#ef4444', critical: '#dc2626' };
@@ -43,6 +44,9 @@ export default function EventPlanningPage({ event, onBack }) {
 
   const eventId = event?.id || event?.eventId;
 
+  // Warn if they try to leave while having typed into the task form or comment box
+  const isDirty = (showForm && taskForm.title.trim() !== '') || commentText.trim() !== '';
+  useUnsavedChangesWarning(isDirty);
   const fetchPlan = useCallback(async () => {
     const base = getApiBase();
     const url = buildUrl(base, `/api/content/events/${eventId}/planning`);

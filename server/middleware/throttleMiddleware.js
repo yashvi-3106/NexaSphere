@@ -12,7 +12,7 @@
  *   – Auto-block abusive IPs for AUTOBLOCK_TTL_SEC
  */
 
-import { createClient } from 'redis';
+import Redis from 'ioredis';
 import logger from '../utils/logger.js';
 
 // ── config ──────────────────────────────────────────────────────────────────
@@ -28,10 +28,13 @@ let redisClient = null;
 async function getRedis() {
   if (redisClient) return redisClient;
   try {
-    redisClient = createClient({ url: process.env.REDIS_URL });
+    if (process.env.REDIS_URL) {
+      redisClient = new Redis(process.env.REDIS_URL);
+    } else {
+      redisClient = new Redis();
+    }
     redisClient.on('error', (err) => logger.warn('ThrottleMiddleware Redis error', { err: err.message }));
-    await redisClient.connect();
-  } catch {
+  } catch (err) {
     logger.warn('ThrottleMiddleware: Redis unavailable, falling back to in-memory');
     redisClient = null;
   }
@@ -61,13 +64,13 @@ function clientIp(req) {
 async function isWhitelisted(ip, redis) {
   if (memWhitelist.has(ip)) return true;
   if (!redis) return false;
-  return !!(await redis.sIsMember('ratelimit:whitelist', ip));
+  return !!(await redis.sismember('ratelimit:whitelist', ip));
 }
 
 async function isBlacklisted(ip, redis) {
   if (memBlacklist.has(ip)) return true;
   if (!redis) return false;
-  return !!(await redis.sIsMember('ratelimit:blacklist', ip));
+  return !!(await redis.sismember('ratelimit:blacklist', ip));
 }
 
 async function isAutoblocked(ip, redis) {
@@ -86,7 +89,7 @@ async function recordAndCheckAbuse(ip, redis) {
     const count = await redis.incr(key);
     if (count === 1) await redis.expire(key, ABUSE_WINDOW_SEC);
     if (count > ABUSE_THRESHOLD) {
-      await redis.set(`ratelimit:autoblock:${ip}`, '1', { EX: AUTOBLOCK_TTL_SEC });
+      await redis.set(`ratelimit:autoblock:${ip}`, '1', 'EX', AUTOBLOCK_TTL_SEC);
       logger.warn('ThrottleMiddleware: auto-blocked abusive IP', { ip, count });
       return true;
     }
@@ -180,25 +183,25 @@ export async function throttleMiddleware(req, res, next) {
 export async function addToWhitelist(ip) {
   memWhitelist.add(ip);
   const redis = await getRedis();
-  if (redis) await redis.sAdd('ratelimit:whitelist', ip);
+  if (redis) await redis.sadd('ratelimit:whitelist', ip);
 }
 
 export async function removeFromWhitelist(ip) {
   memWhitelist.delete(ip);
   const redis = await getRedis();
-  if (redis) await redis.sRem('ratelimit:whitelist', ip);
+  if (redis) await redis.srem('ratelimit:whitelist', ip);
 }
 
 export async function addToBlacklist(ip) {
   memBlacklist.add(ip);
   const redis = await getRedis();
-  if (redis) await redis.sAdd('ratelimit:blacklist', ip);
+  if (redis) await redis.sadd('ratelimit:blacklist', ip);
 }
 
 export async function removeFromBlacklist(ip) {
   memBlacklist.delete(ip);
   const redis = await getRedis();
-  if (redis) await redis.sRem('ratelimit:blacklist', ip);
+  if (redis) await redis.srem('ratelimit:blacklist', ip);
 }
 
 export async function unblockIp(ip) {
@@ -209,12 +212,12 @@ export async function unblockIp(ip) {
 
 export async function getWhitelist() {
   const redis = await getRedis();
-  if (redis) return redis.sMembers('ratelimit:whitelist');
+  if (redis) return redis.smembers('ratelimit:whitelist');
   return [...memWhitelist];
 }
 
 export async function getBlacklist() {
   const redis = await getRedis();
-  if (redis) return redis.sMembers('ratelimit:blacklist');
+  if (redis) return redis.smembers('ratelimit:blacklist');
   return [...memBlacklist];
 }

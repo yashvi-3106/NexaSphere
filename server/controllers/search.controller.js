@@ -31,8 +31,8 @@ export const handleAdvancedSearch = async (req, res) => {
         id: u.id,
         type: 'User',
         title: u.name,
-        snippet: `${u.major} - ${u.skills.join(', ')}`,
-        tags: u.skills,
+        snippet: `${u.major} - ${(u.skills || []).join(', ')}`,
+        tags: u.skills || [],
       })),
       ...projects.map((p) => ({
         id: p.id,

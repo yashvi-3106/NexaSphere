@@ -78,7 +78,7 @@ function ModalContent({ member, onClose }) {
         </button>
 
         {/* Photo */}
-        <img
+        <img loading="lazy"
           src={
             !member.photo || imgError
               ? 'https://api.dicebear.com/7.x/initials/svg?seed=' +

@@ -43,6 +43,18 @@ export function StudentAuthProvider({ children }) {
     }
   }, [fetchMe]);
 
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('ns_user');
+      setUser(null);
+      alert('Your session has expired. Please log in again.');
+      window.location.href = '/login';
+    };
+    window.addEventListener('session-expired', handleSessionExpired);
+    return () => window.removeEventListener('session-expired', handleSessionExpired);
+  }, []);
+
   const login = useCallback((provider) => {
     window.location.href = `/api/auth/${provider}`;
   }, []);

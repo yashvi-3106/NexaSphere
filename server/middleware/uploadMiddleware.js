@@ -10,11 +10,29 @@ try {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 } catch (_) {}
 
+const EXT_BY_MIME = {
+  'application/pdf': '.pdf',
+  'image/png': '.png',
+  'image/jpeg': '.jpg',
+  'image/gif': '.gif',
+  'image/webp': '.webp',
+  'application/zip': '.zip',
+  'application/x-zip-compressed': '.zip',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+  'text/plain': '.txt',
+  'text/markdown': '.md',
+  'application/json': '.json',
+};
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname) || '';
+    // Derive the extension from the validated mimetype, never the untrusted
+    // filename, so an attacker can't store executable content as .html/.js/.svg.
+    const ext = EXT_BY_MIME[file.mimetype] || '.bin';
     cb(null, `${uniqueSuffix}${ext}`);
   },
 });

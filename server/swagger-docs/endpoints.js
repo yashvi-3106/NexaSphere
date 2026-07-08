@@ -475,284 +475,501 @@
 
 /**
  * @swagger
- * tags:
- *   - name: Duplicate Detection
- *     description: Intelligent Duplicate Detection APIs
- */
-
-/**
- * @swagger
- * /api/duplicates/overview:
+ * /api/notification-preferences/{userId}:
  *   get:
- *     summary: Get duplicate detection overview
- *     tags: [Duplicate Detection]
+ *     summary: Get notification preferences
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ * /api/portfolio/{username}/analytics:
+ *   get:
+ *     summary: Get portfolio analytics
+ *     description: Retrieve portfolio performance analytics including profile visits, engagement, downloads, and project popularity.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Portfolio username
  *     responses:
  *       200:
- *         description: Duplicate overview retrieved successfully.
+ *         description: Portfolio analytics retrieved successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/visit:
+ *   post:
+ *     summary: Record portfolio visit
+ *     description: Records a visit to a user's portfolio for analytics purposes.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification preferences returned successfully
+ *         description: Visit recorded successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/monthly-report:
+ *   get:
+ *     summary: Get monthly analytics report
+ *     description: Returns the monthly portfolio performance report.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Matching files returned
+ *         description: Monthly report retrieved successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/monthly-report:
+ *   get:
+ *     ...
  */
 
 /**
  * @swagger
- * /api/duplicates/check:
+ * /api/notification-preferences/{userId}:
+ *   put:
+ *     summary: Update notification preferences
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Preferences updated successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-preferences/{userId}/history:
+ *   get:
+ *     summary: Get notification history
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification history returned successfully
+ */
+ * ...
+ */
+
+/**
+ * @swagger
+ * /api/announcements:
+ *   get:
+ *     summary: Get all announcements
+ *     description: Returns all announcements sorted by priority and pinned status.
+ *     tags:
+ *       - Announcements
+ *     responses:
+ *       200:
+ *         description: List of announcements retrieved successfully.
+ *
  *   post:
- *     summary: Check a record for possible duplicates
- *     tags: [Duplicate Detection]
+ *     summary: Create a new announcement
+ *     description: Creates a new announcement with priority, audience, and expiration.
+ *     tags:
+ *       - Announcements
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - title
+ *               - message
  *             properties:
  *               title:
  *                 type: string
- *     responses:
- *       200:
- *         description: Duplicate check completed.
- */
-
-/**
- * @swagger
- * /api/duplicates/events:
- *   get:
- *     summary: Detect duplicate events
- *     tags: [Duplicate Detection]
- *     responses:
- *       200:
- *         description: Duplicate events retrieved.
- */
-
-/**
- * @swagger
- * /api/duplicates/media:
- *   get:
- *     summary: Detect duplicate media
- *     tags: [Duplicate Detection]
- *     responses:
- *       200:
- *         description: Duplicate media retrieved.
- */
-
-/**
- * @swagger
- * /api/duplicates/portfolios:
- *   get:
- *     summary: Detect duplicate portfolios
- *     tags: [Duplicate Detection]
- *     responses:
- *       200:
- *         description: Duplicate portfolios retrieved.
- */
-
-/**
- * @swagger
- * /api/duplicates/clubs:
- *   get:
- *     summary: Detect duplicate club registrations
- *     tags: [Duplicate Detection]
- *     responses:
- *       200:
- *         description: Duplicate club registrations retrieved.
- */
-
-/**
- * @swagger
- * /api/duplicates/merge:
- *   post:
- *     summary: Merge duplicate records
- *     tags: [Duplicate Detection]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               id1:
+ *               message:
  *                 type: string
- *               id2:
+ *               priority:
+ *                 type: string
+ *                 enum: [Critical, High, Medium, Low]
+ *               pinned:
+ *                 type: boolean
+ *               expiresAt:
+ *                 type: string
+ *                 format: date-time
+ *               audience:
  *                 type: string
  *     responses:
- *       200:
- *         description: Records merged successfully.
+ *       201:
+ *         description: Announcement created successfully.
  */
 
 /**
  * @swagger
- * /api/duplicates/{id}:
- *   delete:
- *     summary: Delete duplicate record
- *     tags: [Duplicate Detection]
+ * /api/announcements/{id}/priority:
+ *   patch:
+ *     summary: Update announcement priority
+ *     tags:
+ *       - Announcements
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               priority:
+ *                 type: string
+ *                 enum: [Critical, High, Medium, Low]
  *     responses:
  *       200:
- *         description: Duplicate record deleted successfully.
+ *         description: Priority updated successfully.
  */
 
 /**
  * @swagger
- * /api/duplicates/stats:
+ * /api/announcements/{id}/pin:
+ *   patch:
+ *     summary: Pin or unpin an announcement
+ *     tags:
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pinned:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Announcement updated successfully.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/{id}/read:
+ *   post:
+ *     summary: Mark announcement as read
+ *     tags:
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Announcement marked as read.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/analytics:
  *   get:
- *     summary: Get duplicate detection statistics
- *     tags: [Duplicate Detection]
+ *     summary: Get announcement analytics
+ *     description: Returns announcement statistics including views, reads, and priority distribution.
+ *     tags:
+ *       - Announcements
  *     responses:
  *       200:
- *         description: Duplicate statistics retrieved successfully.
+ *         description: Analytics retrieved successfully.
  */
 
 /**
  * @swagger
- * tags:
- *   name: Operational Insights
- *   description: Platform Operational Insights & Health Command Center APIs
- */
-
-/**
- * @swagger
- * /api/operational-insights/overview:
+ * /api/admin/event-scheduling/conflicts:
  *   get:
- *     summary: Get dashboard overview
- *     tags: [Operational Insights]
+ *     summary: Detect event scheduling conflicts
+ *     description: Returns events that overlap in time or venue.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Dashboard overview retrieved successfully
+ *         description: Conflict list returned successfully.
  */
 
 /**
  * @swagger
- * /api/operational-insights/health:
+ * /api/admin/event-scheduling/venue:
  *   get:
- *     summary: Get system health
- *     tags: [Operational Insights]
+ *     summary: Check venue availability
+ *     description: Verify whether a venue is available for a selected date.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: venue
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
  *     responses:
  *       200:
- *         description: System health retrieved successfully
+ *         description: Venue availability returned.
  */
 
 /**
  * @swagger
- * /api/operational-insights/users:
+ * /api/admin/event-scheduling/attendance-impact:
  *   get:
- *     summary: Get active user statistics
- *     tags: [Operational Insights]
+ *     summary: Attendance impact analysis
+ *     description: Analyze attendance impact caused by conflicting events.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: User statistics retrieved successfully
+ *         description: Attendance analysis generated.
  */
 
 /**
  * @swagger
- * /api/operational-insights/traffic:
+ * /api/admin/event-scheduling/recommendations:
  *   get:
- *     summary: Get API traffic analytics
- *     tags: [Operational Insights]
+ *     summary: Smart scheduling recommendations
+ *     description: Returns recommended schedules for events.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: API traffic retrieved successfully
+ *         description: Scheduling recommendations returned.
  */
 
 /**
  * @swagger
- * /api/operational-insights/database:
+ * /api/admin/event-scheduling/calendar:
  *   get:
- *     summary: Get database performance
- *     tags: [Operational Insights]
+ *     summary: Calendar integration
+ *     description: Returns event data formatted for calendar integration.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Database performance retrieved successfully
+ *         description: Calendar events returned.
  */
 
 /**
  * @swagger
- * /api/operational-insights/jobs:
+ * /api/admin/event-scheduling/alerts:
  *   get:
- *     summary: Get background job status
- *     tags: [Operational Insights]
+ *     summary: Organizer alerts
+ *     description: Returns scheduling alerts for organizers.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Background jobs retrieved successfully
+ *         description: Organizer alerts returned successfully.
  */
 
 /**
  * @swagger
- * /api/operational-insights/storage:
- *   get:
- *     summary: Get storage utilization
- *     tags: [Operational Insights]
+ * /api/admin/waitlist/join:
+ *   post:
+ *     summary: Join an event waitlist
+ *     description: Adds a user to the waitlist when an event is full.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Storage usage retrieved successfully
+ *         description: Successfully added to waitlist.
  */
 
 /**
  * @swagger
- * /api/operational-insights/notifications:
+ * /api/admin/waitlist/position:
  *   get:
- *     summary: Get notification delivery statistics
- *     tags: [Operational Insights]
+ *     summary: Get waitlist position
+ *     description: Returns the user's current position in the event waitlist.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
- *         description: Notification statistics retrieved successfully
+ *         description: Waitlist position returned.
  */
 
 /**
  * @swagger
- * /api/operational-insights/errors:
- *   get:
- *     summary: Get error monitoring logs
- *     tags: [Operational Insights]
+ * /api/admin/waitlist/auto-enroll:
+ *   post:
+ *     summary: Auto-enroll next waitlisted user
+ *     description: Automatically enrolls the first user from the waitlist when a seat becomes available.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Error logs retrieved successfully
+ *         description: User enrolled successfully.
  */
 
 /**
  * @swagger
- * /api/operational-insights/maintenance:
+ * /api/admin/waitlist/notifications:
  *   get:
- *     summary: Get scheduled maintenance
- *     tags: [Operational Insights]
+ *     summary: Get waitlist notifications
+ *     description: Returns notification history for waitlisted users.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Maintenance schedule retrieved successfully
+ *         description: Notifications retrieved successfully.
  */
 
 /**
  * @swagger
- * /api/operational-insights/dependencies:
+ * /api/admin/waitlist/analytics:
  *   get:
- *     summary: Get service dependency status
- *     tags: [Operational Insights]
+ *     summary: Waitlist analytics
+ *     description: Returns statistics about waitlists and enrollments.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Dependencies retrieved successfully
+ *         description: Analytics retrieved successfully.
  */
 
 /**
  * @swagger
- * /api/operational-insights/resources:
- *   get:
- *     summary: Get resource consumption
- *     tags: [Operational Insights]
+ * /api/admin/waitlist/deadline:
+ *   post:
+ *     summary: Set registration deadline
+ *     description: Configure the registration deadline for an event.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Resource utilization retrieved successfully
+ *         description: Registration deadline updated successfully.
  */
 
 /**
  * @swagger
- * /api/operational-insights/reports:
+ * /api/search:
  *   get:
- *     summary: Get operational reports
- *     tags: [Operational Insights]
+ *     summary: Global Search
+ *     description: Search across events, team members, portfolios, and resources.
+ *     tags:
+ *       - Global Search
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Search keyword
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum:
+ *             - all
+ *             - events
+ *             - members
+ *             - portfolios
+ *             - resources
+ *         description: Filter search by category
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Maximum results
  *     responses:
  *       200:
- *         description: Operational reports retrieved successfully
+ *         description: Search results returned successfully.
  */
 
 /**

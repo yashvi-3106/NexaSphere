@@ -1,4 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
+
+// Validates a date value before formatting — avoids rendering literal
+// "Invalid Date" text when the API returns a null or malformed timestamp.
+function formatThreadDate(value) {
+  if (!value) return 'Unknown date';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'Unknown date';
+  return d.toLocaleDateString();
+}
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../utils/apiClient';
 import { getApiBase } from '../../utils/runtimeConfig';
@@ -329,7 +338,7 @@ export default function ForumPage({ onBack }) {
                     <div
                       style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 8 }}
                     >
-                      by {thread.authorName} · {new Date(thread.createdAt).toLocaleDateString()}
+                      by {thread.authorName} · {formatThreadDate(thread.createdAt)}
                     </div>
                   </div>
                 </div>

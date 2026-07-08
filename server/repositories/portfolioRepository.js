@@ -62,9 +62,14 @@ async function ensureSchema(client) {
       avatar_url VARCHAR(2048) DEFAULT '',
       education JSONB DEFAULT '[]'::jsonb,
       work_experience JSONB DEFAULT '[]'::jsonb,
+      github_username VARCHAR(39),
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
+  `);
+
+  await client.query(`
+    ALTER TABLE portfolios ADD COLUMN IF NOT EXISTS github_username VARCHAR(39)
   `);
 
   await client.query(`
@@ -220,6 +225,7 @@ function mapRow(row) {
       typeof row.work_experience === 'string'
         ? JSON.parse(row.work_experience)
         : row.work_experience || [],
+    githubUsername: row.github_username || '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -291,6 +297,7 @@ export const portfolioRepository = {
       avatarUrl: portfolio.avatarUrl || '',
       education: portfolio.education || [],
       workExperience: portfolio.workExperience || [],
+      githubUsername: portfolio.githubUsername || '',
       createdAt: portfolio.createdAt,
       updatedAt: portfolio.updatedAt,
     });
@@ -391,6 +398,7 @@ export const portfolioRepository = {
     const avatarUrl = clean.avatarUrl || '';
     const education = clean.education || [];
     const workExperience = clean.workExperience || [];
+    const githubUsername = clean.githubUsername || null;
 
     if (isDbAvailable) {
       try {
@@ -398,8 +406,8 @@ export const portfolioRepository = {
           const { rows } = await client.query(
             `INSERT INTO portfolios (
               username, passkey_hash, theme, customization, visible_sections, social_links,
-              custom_domain, seo_metadata, skills, badges, projects, roadmaps, bio, title, avatar_url, education, work_experience, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+              custom_domain, seo_metadata, skills, badges, projects, roadmaps, bio, title, avatar_url, education, work_experience, github_username, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
             ON CONFLICT (username) DO UPDATE SET
               passkey_hash = EXCLUDED.passkey_hash,
               theme = EXCLUDED.theme,
@@ -417,6 +425,7 @@ export const portfolioRepository = {
               avatar_url = EXCLUDED.avatar_url,
               education = EXCLUDED.education,
               work_experience = EXCLUDED.work_experience,
+              github_username = EXCLUDED.github_username,
               updated_at = NOW()
             RETURNING *`,
             [
@@ -437,6 +446,7 @@ export const portfolioRepository = {
               avatarUrl,
               JSON.stringify(education),
               JSON.stringify(workExperience),
+              githubUsername,
             ]
           );
           return mapRow(rows[0]);
@@ -473,6 +483,7 @@ export const portfolioRepository = {
         avatarUrl,
         education,
         workExperience,
+        githubUsername,
         createdAt: existing.createdAt,
         updatedAt: now,
       };

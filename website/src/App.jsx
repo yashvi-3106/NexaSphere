@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, useLocation, useNavigate } from 'react-router-dom';
 
-import ResourcesPage from './pages/resources/ResourcesPage.jsx';
 import './styles/themes.css';
 import './styles/globals.css';
 import './styles/animations.css';
@@ -15,8 +14,7 @@ import './i18n';
 
 // Core structural elements
 import AppProviders from './providers/AppProviders';
-import AppRoutes, { Wipe } from './router/routes';
-import Cursor from './components/Cursor';
+import AppRoutes from './router/routes';
 import useAppBootstrap from './hooks/useAppBootstrap';
 import { useTheme } from './hooks/useTheme';
 import { useDeveloperMode } from './hooks/useDeveloperMode';
@@ -46,28 +44,16 @@ import {
 } from './shared/MotionLayer';
 import { activityPages } from './data/activities/index';
 
-const MNH = 88;
-const DNH = 64;
 const isPlaywright =
   typeof window !== 'undefined' && window.navigator.userAgent.includes('Playwright');
 
 import { BookmarkProvider } from './context/BookmarkContext';
 import { StudentAuthProvider, useStudentAuth } from './context/StudentAuthContext';
-import BookmarksDrawer from './components/bookmarks/BookmarksDrawer';
-import { useTheme } from './hooks/useTheme';
-import { useInteractionEffects } from './hooks/useInteractionEffects';
-import { useBackToTop } from './hooks/useScrollLogic';
-
-import MoveToTop from './shared/MoveToTop';
-import OfflineBanner from './components/pwa/OfflineBanner.jsx';
-import InstallPrompt from './components/pwa/InstallPrompt.jsx';
-import UpdatePrompt from './components/pwa/UpdatePrompt.jsx';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy-loaded heavy pages
 const RecruitmentPage = lazy(() => import('./pages/recruitment/RecruitmentPage'));
 const MembershipPage = lazy(() => import('./pages/membership/MembershipPage'));
-const AdminPage = lazy(() => import('./pages/admin/AdminPage'));
 const ActivitiesPage = lazy(() => import('./pages/activities/ActivitiesPage'));
 const ActivityDetailPage = lazy(() => import('./pages/activities/ActivityDetailPage'));
 const EventsPage = lazy(() => import('./pages/events/EventsPage'));
@@ -78,10 +64,7 @@ const TeamPage = lazy(() => import('./pages/team/TeamPage'));
 const ContactPage = lazy(() => import('./pages/contact/ContactPage'));
 const RoadmapsPage = lazy(() => import('./pages/roadmaps/RoadmapsPage'));
 const ProjectsPage = lazy(() => import('./pages/projects/ProjectsPage'));
-const ResourcesPage = lazy(() => import('./pages/resources/ResourcesPage'));
-
 const CertificateVerifyPage = lazy(() => import('./pages/certificates/CertificateVerifyPage'));
-const CollabPage = lazy(() => import('./pages/collab/CollabPage'));
 const PortfolioBuilder = lazy(() => import('./components/portfolio/PortfolioBuilder'));
 const PortfolioAnalytics = lazy(() => import('./pages/portfolio/PortfolioAnalytics'));
 const PublicPortfolio = lazy(() => import('./pages/portfolio/PublicPortfolio'));
@@ -98,9 +81,7 @@ const StatusPage = lazy(() => import('./pages/StatusPage'));
 const LiveStreamPage = lazy(() => import('./pages/streaming/LiveStreamPage'));
 const NotificationHistoryPage = lazy(() => import('./pages/notifications/NotificationHistoryPage'));
 const SponsorsPage = lazy(() => import('./pages/sponsors/SponsorsPage'));
-
-const MNH = 88,
-  DNH = 64;
+const SearchPage = lazy(() => import('./pages/search/SearchPage'));
 
 /* â”€â”€ Page wipe transition â”€â”€ */
 const Wipe = memo(function Wipe({ on: wipeOn, ph }) {
@@ -189,179 +170,14 @@ const PageIn = memo(function PageIn({ children, k }) {
   );
 });
 
-/* â”€â”€ Anti-gravity orb cursor â”€â”€ */
-function Cursor() {
-  const orbRef = useRef(null);
-  const trailRef = useRef(null);
-  const glowRef = useRef(null);
-  const stateRef = useRef({
-    mx: 0,
-    my: 0,
-    ox: 0,
-    oy: 0,
-    floatY: 0,
-    floatPhase: 0,
-    hovering: false,
-    clicking: false,
-    visible: true,
-    raf: null,
-  });
-
-  useEffect(() => {
-    if (window.matchMedia('(hover:none)').matches) return;
-    document.body.style.cursor = 'none';
-    const s = stateRef.current;
-    const onMove = (e) => {
-      s.mx = e.clientX;
-      s.my = e.clientY;
-    };
-    const onDown = () => {
-      s.clicking = true;
-    };
-    const onUp = () => {
-      s.clicking = false;
-    };
-    const onOver = (e) => {
-      s.hovering = !!e.target.closest('button,a,[role="button"],[tabindex]');
-    };
-    const onMouseLeave = () => {
-      s.visible = false;
-      if (orbRef.current) orbRef.current.style.display = 'none';
-      if (trailRef.current) trailRef.current.style.display = 'none';
-      if (glowRef.current) glowRef.current.style.display = 'none';
-    };
-    const onMouseEnter = () => {
-      s.visible = true;
-      if (orbRef.current) orbRef.current.style.display = 'block';
-      if (trailRef.current) trailRef.current.style.display = 'block';
-      if (glowRef.current) glowRef.current.style.display = 'block';
-    };
-    const tick = () => {
-      s.ox += (s.mx - s.ox) * 1.0;
-      s.oy += (s.my - s.oy) * 1.0;
-      s.floatPhase += 0.022;
-      s.floatY =
-        Math.sin(s.floatPhase) * 2 +
-        Math.sin(s.floatPhase * 1.7) * 1 +
-        Math.sin(s.floatPhase * 0.5) * 1;
-      const fy = s.oy + s.floatY;
-      const scale = s.clicking ? 0.7 : s.hovering ? 1.55 : 1;
-      const opacity = s.visible ? (s.hovering ? 0.95 : 0.82) : 0;
-      if (orbRef.current) {
-        orbRef.current.style.left = s.ox + 'px';
-        orbRef.current.style.top = fy + 'px';
-        orbRef.current.style.transform = `translate(-50%,-50%) scale(${scale})`;
-        orbRef.current.style.opacity = opacity;
-      }
-      if (trailRef.current) {
-        trailRef.current.style.left = s.ox + 'px';
-        trailRef.current.style.top = s.oy + s.floatY * 0.4 + 'px';
-        trailRef.current.style.opacity = s.visible ? (s.hovering ? 0 : 0.35) : 0;
-      }
-      if (glowRef.current) {
-        glowRef.current.style.left = s.mx + 'px';
-        glowRef.current.style.top = s.my + 'px';
-        glowRef.current.style.opacity = s.visible ? 1 : 0;
-      }
-      s.raf = requestAnimationFrame(tick);
-    };
-    window.addEventListener('mousemove', onMove, { passive: true });
-    window.addEventListener('mousedown', onDown);
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('mouseover', onOver, { passive: true });
-    document.documentElement.addEventListener('mouseleave', onMouseLeave);
-    document.documentElement.addEventListener('mouseenter', onMouseEnter);
-    s.raf = requestAnimationFrame(tick);
-    return () => {
-      document.body.style.cursor = '';
-      cancelAnimationFrame(s.raf);
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mousedown', onDown);
-      window.removeEventListener('mouseup', onUp);
-      window.removeEventListener('mouseover', onOver);
-      document.documentElement.removeEventListener('mouseleave', onMouseLeave);
-      document.documentElement.removeEventListener('mouseenter', onMouseEnter);
-    };
-  }, []);
-
-  return (
-    <>
-      <div
-        ref={glowRef}
-        style={{
-          position: 'fixed',
-          pointerEvents: 'none',
-          zIndex: 10000,
-          width: '320px',
-          height: '320px',
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(204,17,17,.055) 0%, rgba(136,0,0,.03) 40%, transparent 70%)',
-          transform: 'translate(-50%,-50%)',
-          transition: 'opacity .3s',
-          willChange: 'transform, opacity',
-        }}
-      />
-      <div
-        ref={trailRef}
-        style={{
-          position: 'fixed',
-          pointerEvents: 'none',
-          zIndex: 10002,
-          width: '28px',
-          height: '28px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(204,17,17,0.7) 0%, transparent 70%)',
-          transform: 'translate(-50%,-50%)',
-          filter: 'blur(6px)',
-          transition: 'opacity .25s',
-          willChange: 'transform, opacity',
-        }}
-      />
-      <div
-        ref={orbRef}
-        style={{
-          position: 'fixed',
-          pointerEvents: 'none',
-          zIndex: 100000,
-          width: '18px',
-          height: '18px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle at 35% 35%, #fff 0%, #CC1111 40%, #880000 100%)',
-          boxShadow:
-            '0 0 10px rgba(204,17,17,.9), 0 0 24px rgba(204,17,17,.5), 0 0 50px rgba(136,0,0,.3)',
-          transition: 'transform .08s cubic-bezier(.34,1.56,.64,1), opacity .2s',
-          willChange: 'transform, opacity',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: '20%',
-            left: '22%',
-            width: '5px',
-            height: '5px',
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,.9)',
-            filter: 'blur(1px)',
-          }}
-        />
-      </div>
-    </>
-  );
-}
-
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   Root App â€” wraps everything in BrowserRouter
+/* --   Root App â€” wraps everything in BrowserRouter
 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+const router = createBrowserRouter([
+  { path: '*', element: <AppProviders><AppShell /></AppProviders> }
+]);
+
 export default function App() {
-  return (
-    <BrowserRouter>
-      <AppProviders>
-        <AppShell />
-      </AppProviders>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 }
 
 function AppShell() {
@@ -371,6 +187,18 @@ function AppShell() {
   const { isOpen: isTerminalOpen, closeTerminal } = useDeveloperMode();
 
   const { eventsData, swUpdateFn } = useAppBootstrap(cinDone);
+  const { isAuthenticated, loading: authLoading } = useStudentAuth();
+  const hasCompletedWalkthrough = useWalkthroughStore((state) => state.hasCompleted);
+  const startWalkthrough = useWalkthroughStore((state) => state.startWalkthrough);
+
+  useEffect(() => {
+    if (cinDone && !authLoading && isAuthenticated && !hasCompletedWalkthrough) {
+      const t = setTimeout(() => {
+        startWalkthrough();
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [cinDone, authLoading, isAuthenticated, hasCompletedWalkthrough, startWalkthrough]);
 
   // Skip cinematic opening for deep links (anything except "/")
   useEffect(() => {
@@ -401,6 +229,7 @@ function AppShell() {
       {swUpdateFn && <UpdatePrompt updateSW={swUpdateFn} />}
 
       <Chatbot />
+      <WalkthroughOverlay />
 
       {/* Loading cover to prevent flash during intro sequence */}
       <div
@@ -450,6 +279,7 @@ function MainRouter({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { sessionId } = useAnalytics();
 
   const [mobile, setMobile] = useState(window.innerWidth <= 768);
   const [wipeOn, setWipeOn] = useState(false);
@@ -606,7 +436,7 @@ function MainRouter({
   const nh = mobile ? MNH : DNH;
 
   return (
-    <>
+    <SessionRecordingProvider sessionId={sessionId}>
       {cinDone && <AmbientOrbs theme={theme} />}
       {cinDone && (
         <Navbar
@@ -616,6 +446,7 @@ function MainRouter({
           onApply={openApply}
           onJoin={openJoin}
           onToggleBookmarks={() => setBookmarksOpen((prev) => !prev)}
+          onSearchToggle={() => setSearchOpen(true)}
         />
       )}
 
@@ -826,18 +657,6 @@ function MainRouter({
               }
             />
 
-            {/* â”€â”€ Collab â”€â”€ */}
-            <Route
-              path="/collab"
-              element={
-                <ErrorBoundary>
-                  <PageIn k="collab">
-                    <CollabPage onBack={onBackHome} />
-                  </PageIn>
-                </ErrorBoundary>
-              }
-            />
-
             {/* â”€â”€ About â”€â”€ */}
             <Route
               path="/about"
@@ -982,18 +801,6 @@ function MainRouter({
               }
             />
 
-            {/* â”€â”€ Admin (embedded, for quick access) â”€â”€ */}
-            <Route
-              path="/admin"
-              element={
-                <ErrorBoundary>
-                  <PageIn k="admin">
-                    <AdminPage onBack={onBackHome} />
-                  </PageIn>
-                </ErrorBoundary>
-              }
-            />
-
             {/* â”€â”€ Resources / Library â”€â”€ */}
             <Route
               path="/resources"
@@ -1037,21 +844,15 @@ function MainRouter({
               }
             />
 
-            {/* ── Live Q&A / Polling ── */}
+            {/* ── Search Page ── */}
             <Route
-              path="/qa-poll"
+              path="/search"
               element={
-                <PageIn k="qa-poll">
-                  <LiveQa onBack={onBackHome} />
-                </PageIn>
-              }
-            />
-            <Route
-              path="/qa-poll/:eventId"
-              element={
-                <PageIn k="qa-poll-event">
-                  <LiveQa onBack={() => nav('/qa-poll')} />
-                </PageIn>
+                <ErrorBoundary>
+                  <PageIn k="search">
+                    <SearchPage />
+                  </PageIn>
+                </ErrorBoundary>
               }
             />
 
@@ -1160,7 +961,8 @@ function MainRouter({
           else if (type === 'Roadmap') onTab('Roadmaps');
         }}
       />
-    </>
+      {cinDone && <FloatingDock />}
+    </SessionRecordingProvider>
   );
 }
 

@@ -3,6 +3,7 @@ import logger from './logger.js';
 import { recordCacheHit, recordCacheMiss } from '../observability/metrics.js';
 
 let redisClient = null;
+const inFlightQueries = new Map();
 
 export function getRedisClient() {
   if (!redisClient) {
@@ -10,7 +11,18 @@ export function getRedisClient() {
       return null;
     }
     const redisUrl = process.env.REDIS_URL;
-    redisClient = new Redis(redisUrl);
+    redisClient = new Redis(redisUrl, {
+      retryStrategy(times) {
+        if (times > 10) {
+          logger.error('Redis max retry attempts reached, giving up');
+          return null;
+        }
+        return Math.min(times * 200, 3000);
+      },
+      maxRetriesPerRequest: 3,
+      enableReadyCheck: true,
+      lazyConnect: false,
+    });
 
     redisClient.on('error', (err) => {
       logger.error('Redis connection error:', err);
@@ -18,6 +30,19 @@ export function getRedisClient() {
 
     redisClient.on('connect', () => {
       logger.info('Connected to Redis');
+    });
+
+    redisClient.on('ready', () => {
+      logger.info('Redis client ready');
+      lastHealthCheck = Date.now();
+    });
+
+    redisClient.on('reconnecting', () => {
+      logger.warn('Redis reconnecting...');
+    });
+
+    redisClient.on('end', () => {
+      logger.warn('Redis connection ended');
     });
   }
   return redisClient;
@@ -30,7 +55,14 @@ export async function getCachedQuery(key, queryFn, ttlSeconds = 300) {
     return queryFn();
   }
 
-  // Try to read from cache first
+  if (!isRedisHealthy()) {
+    const healthy = await performHealthCheck();
+    if (!healthy) {
+      logger.warn('Redis unhealthy, falling back to query function');
+      return queryFn();
+    }
+  }
+
   let cached = null;
   try {
     cached = await client.get(key);
@@ -43,19 +75,35 @@ export async function getCachedQuery(key, queryFn, ttlSeconds = 300) {
     logger.warn('Redis cache read error, falling back to database query:', err);
   }
 
-  // Cache miss or Redis error — run queryFn exactly once
-  const result = await queryFn();
-
-  // Best-effort cache write
-  try {
-    client.set(key, JSON.stringify(result), 'EX', ttlSeconds).catch((err) => {
-      logger.error('Error setting Redis cache:', err);
-    });
-  } catch (err) {
-    logger.warn('Redis cache write error:', err);
+  const existingQuery = inFlightQueries.get(key);
+  if (existingQuery) {
+    return existingQuery;
   }
 
-  return result;
+  const queryPromise = (async () => {
+    const result = await queryFn();
+
+    // Best-effort cache write
+    try {
+      client.set(key, JSON.stringify(result), 'EX', ttlSeconds).catch((err) => {
+        logger.error('Error setting Redis cache:', err);
+      });
+    } catch (err) {
+      logger.warn('Redis cache write error:', err);
+    }
+
+    return result;
+  })();
+
+  inFlightQueries.set(key, queryPromise);
+
+  try {
+    return await queryPromise;
+  } finally {
+    if (inFlightQueries.get(key) === queryPromise) {
+      inFlightQueries.delete(key);
+    }
+  }
 }
 
 export function clearCache(keyPattern) {
@@ -76,7 +124,6 @@ export function clearCache(keyPattern) {
 
     stream.on('data', (resultKeys) => {
       if (resultKeys.length > 0) {
-        // Delete in batches as they arrive to avoid unbounded memory usage
         const promise = client
           .del(...resultKeys)
           .then((count) => {

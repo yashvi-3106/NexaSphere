@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const analyticsController = require('../controllers/analytics.controller');
+import { trackEvents } from '../controllers/analytics.controller.js';
 
 // POST route to handle batch event tracking
-router.post('/event', analyticsController.trackEvents);
+router.post('/event', trackEvents);
 
-module.exports = router;
+export default router;
