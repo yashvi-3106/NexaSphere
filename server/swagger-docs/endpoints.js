@@ -473,4 +473,212 @@
  *                       format: float
  */
 
+/**
+ * @swagger
+ * tags:
+ *   name: Resource Discovery
+ *   description: APIs for the Intelligent Campus Resource Discovery Platform
+ */
+
+/**
+ * @swagger
+ * /api/resource-discovery:
+ *   get:
+ *     summary: Get all campus resources
+ *     tags: [Resource Discovery]
+ *     responses:
+ *       200:
+ *         description: List of resources retrieved successfully
+ *
+ *   post:
+ *     summary: Create a new resource
+ *     tags: [Resource Discovery]
+ *     responses:
+ *       201:
+ *         description: Resource created successfully
+ */
+
+/**
+ * @swagger
+ * /api/resource-discovery/{id}:
+ *   get:
+ *     summary: Get resource by ID
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Resource retrieved successfully
+ *
+ *   put:
+ *     summary: Update a resource
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Resource updated successfully
+ *
+ *   delete:
+ *     summary: Delete a resource
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Resource deleted successfully
+ */
+
+/**
+ * @swagger
+ * /api/resource-discovery/search:
+ *   get:
+ *     summary: Search campus resources
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Search results returned successfully
+ */
+
+/**
+ * @swagger
+ * /api/resource-discovery/category/{category}:
+ *   get:
+ *     summary: Get resources by category
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: path
+ *         name: category
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Resources filtered by category
+ */
+
+/**
+ * @swagger
+ * /api/resource-discovery/popular:
+ *   get:
+ *     summary: Get popular resources
+ *     tags: [Resource Discovery]
+ *     responses:
+ *       200:
+ *         description: Popular resources retrieved
+ */
+
+/**
+ * @swagger
+ * /api/resource-discovery/recent:
+ *   get:
+ *     summary: Get recently added resources
+ *     tags: [Resource Discovery]
+ *     responses:
+ *       200:
+ *         description: Recent resources retrieved
+ */
+
+/**
+ * @swagger
+ * /api/resource-discovery/recommended/{userId}:
+ *   get:
+ *     summary: Get recommended resources
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Personalized recommendations retrieved
+ */
+
+/**
+ * @swagger
+ * /api/resource-discovery/bookmarks/{userId}:
+ *   get:
+ *     summary: Get bookmarked resources
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: User bookmarks retrieved
+ */
+
+/**
+ * @swagger
+ * /api/resource-discovery/{id}/bookmark/{userId}:
+ *   post:
+ *     summary: Bookmark a resource
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Resource bookmarked successfully
+ *
+ *   delete:
+ *     summary: Remove bookmarked resource
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Bookmark removed successfully
+ */
+
+/**
+ * @swagger
+ * /api/resource-discovery/analytics:
+ *   get:
+ *     summary: Get resource analytics
+ *     tags: [Resource Discovery]
+ *     responses:
+ *       200:
+ *         description: Resource analytics retrieved successfully
+ */
+
 export default {};
