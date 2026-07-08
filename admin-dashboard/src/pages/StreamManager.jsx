@@ -19,8 +19,10 @@ async function fetchWithAuth(url, options = {}) {
   });
   if (res.status === 401) throw new Error('Session expired');
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Request failed (${res.status})`);
+    const text = await res.text();
+    let err = {};
+    try { err = JSON.parse(text); } catch { err = { error: text }; }
+    throw new Error(err.error || err.message || `Request failed (${res.status})`);
   }
   return res.json();
 }

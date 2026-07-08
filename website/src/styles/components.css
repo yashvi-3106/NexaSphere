@@ -2539,12 +2539,23 @@
   }
 }
 
-.page-container {
-  max-width: 1440px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: clamp(16px, 5vw, 64px);
-  padding-right: clamp(16px, 5vw, 64px);
-  width: 100%;
-  box-sizing: border-box;
+/* ===== Global Search & Search Page ===== */
+mark {
+  background: rgba(204, 17, 17, 0.85) !important;
+  color: #fff !important;
+  border-radius: 3px !important;
+  padding: 0 3px !important;
+  font-weight: 700 !important;
 }
+
+kbd {
+  font-family: monospace;
+  font-size: 0.75em;
+  padding: 0.1em 0.4em;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: var(--t2);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+

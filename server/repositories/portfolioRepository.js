@@ -62,9 +62,14 @@ async function ensureSchema(client) {
       avatar_url VARCHAR(2048) DEFAULT '',
       education JSONB DEFAULT '[]'::jsonb,
       work_experience JSONB DEFAULT '[]'::jsonb,
+      github_username VARCHAR(39),
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
+  `);
+
+  await client.query(`
+    ALTER TABLE portfolios ADD COLUMN IF NOT EXISTS github_username VARCHAR(39)
   `);
 
   await client.query(`
@@ -116,6 +121,17 @@ async function ensureSchema(client) {
   await client.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_portfolios_username_lower_unique
     ON portfolios (LOWER(username))
+  `);
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS portfolio_skill_endorsements (
+      id SERIAL PRIMARY KEY,
+      portfolio_username VARCHAR(100) REFERENCES portfolios(username) ON DELETE CASCADE,
+      skill_name VARCHAR(100) NOT NULL,
+      endorser_id VARCHAR(100) NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(portfolio_username, skill_name, endorser_id)
+    )
   `);
 }
 
@@ -209,6 +225,7 @@ function mapRow(row) {
       typeof row.work_experience === 'string'
         ? JSON.parse(row.work_experience)
         : row.work_experience || [],
+    githubUsername: row.github_username || '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -218,18 +235,41 @@ function mapRow(row) {
 }
 
 export const portfolioRepository = {
-  async getByUsername(username) {
+  async getByUsername(username, { includeDeleted = false } = {}) {
     const isDbAvailable = await ensureReady();
     const sanitizedUsername = canonicalizeUsername(username);
 
     if (isDbAvailable) {
       try {
         return await withDb(async (client) => {
-          const { rows } = await client.query('SELECT * FROM portfolios WHERE username = $1', [
-            sanitizedUsername,
-          ]);
+          let query = 'SELECT * FROM portfolios WHERE username = $1';
+          if (!includeDeleted) {
+            query += ' AND deleted_at IS NULL';
+          }
+          const { rows } = await client.query(query, [sanitizedUsername]);
           if (!rows.length) return null;
-          return mapRow(rows[0]);
+          const portfolio = mapRow(rows[0]);
+
+          // Fetch endorsements
+          const { rows: endorsementRows } = await client.query(
+            'SELECT skill_name, COUNT(*) as count FROM portfolio_skill_endorsements WHERE portfolio_username = $1 GROUP BY skill_name',
+            [sanitizedUsername]
+          );
+          const endorsementsMap = {};
+          endorsementRows.forEach((r) => {
+            endorsementsMap[r.skill_name] = parseInt(r.count, 10);
+          });
+
+          if (Array.isArray(portfolio.skills)) {
+            portfolio.skills = portfolio.skills.map((skill) => {
+              if (typeof skill === 'string') {
+                return { name: skill, endorsements: endorsementsMap[skill] || 0 };
+              }
+              return { ...skill, endorsements: endorsementsMap[skill.name] || 0 };
+            });
+          }
+
+          return portfolio;
         });
       } catch (err) {
         console.error('Database query failed. Falling back to local file.', err);
@@ -239,7 +279,7 @@ export const portfolioRepository = {
     // Local file fallback
     const portfolios = await readLocalPortfolios();
     const portfolio = portfolios[sanitizedUsername];
-    if (!portfolio) return null;
+    if (!portfolio || (!includeDeleted && portfolio.deletedAt)) return null;
     return sanitizePortfolioOutput({
       username: portfolio.username,
       theme: portfolio.theme,
@@ -257,6 +297,7 @@ export const portfolioRepository = {
       avatarUrl: portfolio.avatarUrl || '',
       education: portfolio.education || [],
       workExperience: portfolio.workExperience || [],
+      githubUsername: portfolio.githubUsername || '',
       createdAt: portfolio.createdAt,
       updatedAt: portfolio.updatedAt,
     });
@@ -357,6 +398,7 @@ export const portfolioRepository = {
     const avatarUrl = clean.avatarUrl || '';
     const education = clean.education || [];
     const workExperience = clean.workExperience || [];
+    const githubUsername = clean.githubUsername || null;
 
     if (isDbAvailable) {
       try {
@@ -364,8 +406,8 @@ export const portfolioRepository = {
           const { rows } = await client.query(
             `INSERT INTO portfolios (
               username, passkey_hash, theme, customization, visible_sections, social_links,
-              custom_domain, seo_metadata, skills, badges, projects, roadmaps, bio, title, avatar_url, education, work_experience, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+              custom_domain, seo_metadata, skills, badges, projects, roadmaps, bio, title, avatar_url, education, work_experience, github_username, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
             ON CONFLICT (username) DO UPDATE SET
               passkey_hash = EXCLUDED.passkey_hash,
               theme = EXCLUDED.theme,
@@ -383,6 +425,7 @@ export const portfolioRepository = {
               avatar_url = EXCLUDED.avatar_url,
               education = EXCLUDED.education,
               work_experience = EXCLUDED.work_experience,
+              github_username = EXCLUDED.github_username,
               updated_at = NOW()
             RETURNING *`,
             [
@@ -403,6 +446,7 @@ export const portfolioRepository = {
               avatarUrl,
               JSON.stringify(education),
               JSON.stringify(workExperience),
+              githubUsername,
             ]
           );
           return mapRow(rows[0]);
@@ -439,6 +483,7 @@ export const portfolioRepository = {
         avatarUrl,
         education,
         workExperience,
+        githubUsername,
         createdAt: existing.createdAt,
         updatedAt: now,
       };
@@ -449,12 +494,17 @@ export const portfolioRepository = {
     });
   },
 
-  async listAll() {
+  async listAll({ includeDeleted = false } = {}) {
     const isDbAvailable = await ensureReady();
     if (isDbAvailable) {
       try {
         return await withDb(async (client) => {
-          const { rows } = await client.query('SELECT * FROM portfolios ORDER BY updated_at DESC');
+          let query = 'SELECT * FROM portfolios';
+          if (!includeDeleted) {
+            query += ' WHERE deleted_at IS NULL';
+          }
+          query += ' ORDER BY updated_at DESC';
+          const { rows } = await client.query(query);
           return rows.map(mapRow);
         });
       } catch (err) {
@@ -468,10 +518,34 @@ export const portfolioRepository = {
     const isDbAvailable = await ensureReady();
     if (isDbAvailable) {
       return withDb(async (client) => {
-        await client.query('DELETE FROM portfolios WHERE username = $1', [username]);
+        await client.query('UPDATE portfolios SET deleted_at = NOW() WHERE username = $1', [
+          username,
+        ]);
       });
     }
-    throw new Error('Portfolio storage is unavailable');
+
+    const portfolios = await readLocalPortfolios();
+    if (portfolios[username]) {
+      portfolios[username].deletedAt = new Date().toISOString();
+      await writeLocalPortfolios(portfolios);
+    }
+  },
+
+  async recover(username) {
+    const isDbAvailable = await ensureReady();
+    if (isDbAvailable) {
+      return withDb(async (client) => {
+        await client.query('UPDATE portfolios SET deleted_at = NULL WHERE username = $1', [
+          username,
+        ]);
+      });
+    }
+
+    const portfolios = await readLocalPortfolios();
+    if (portfolios[username]) {
+      delete portfolios[username].deletedAt;
+      await writeLocalPortfolios(portfolios);
+    }
   },
 };
 

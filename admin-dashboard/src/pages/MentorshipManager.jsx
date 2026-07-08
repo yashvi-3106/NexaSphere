@@ -44,7 +44,7 @@ export function MentorshipManager() {
     setUpdating(id);
     try {
       await api.mentorship.updateStatus(id, status);
-      await load();
+      setMentorships((prev) => prev.map((m) => (m.id === id ? { ...m, status } : m)));
     } catch (e) {
       setError(e.message);
     } finally {

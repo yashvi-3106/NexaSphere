@@ -1,3 +1,9 @@
+/**
+ * Formats a timestamp as a relative time string (e.g., "5m ago", "2h ago").
+ *
+ * @param {string|number|Date} timestamp - The timestamp to format.
+ * @returns {string} A human-readable relative time string.
+ */
 export function formatRelativeTime(timestamp) {
   if (!timestamp) return 'Unknown time';
 

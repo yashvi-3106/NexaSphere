@@ -66,14 +66,19 @@ function ModalContent({ member, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="modal-box">
+      <div
+        className="modal-box"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${member.name} details`}
+      >
         {/* Close */}
         <button className="modal-close" onClick={onClose} aria-label="Close">
           ✕
         </button>
 
         {/* Photo */}
-        <img
+        <img loading="lazy"
           src={
             !member.photo || imgError
               ? 'https://api.dicebear.com/7.x/initials/svg?seed=' +

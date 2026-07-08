@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { activities } from '../../data/activities';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { activities, difficultyLevels } from '../../data/activities';
 import { BannerOrbs } from '../../shared/MotionLayer';
 import Footer from '../../shared/Footer';
 import { DynamicIcon } from '../../shared/Icons';
@@ -98,6 +98,23 @@ const activityDetails = {
   },
 };
 
+const difficultyColors = {
+  beginner: '#4CAF50',
+  intermediate: '#FF9800',
+  advanced: '#F44336',
+};
+
+const difficultyBadgeStyles = Object.fromEntries(
+  Object.entries(difficultyColors).map(([level, color]) => [
+    level,
+    { background: `${color}18`, color, border: `1px solid ${color}35` },
+  ])
+);
+
+function difficultyLabel(level) {
+  return difficultyLevels.find((d) => d.value === level)?.label || level;
+}
+
 function ActivityCard({ a, idx, onNavigate }) {
   const ref = useRef(null);
   const details = activityDetails[a.title] || {};
@@ -179,6 +196,25 @@ function ActivityCard({ a, idx, onNavigate }) {
       >
         {a.title}
       </div>
+      {a.difficultyLevel && (
+        <span
+          className={`ns-difficulty-badge ns-difficulty-${a.difficultyLevel}`}
+          style={{
+            display: 'inline-block',
+            fontSize: '.62rem',
+            fontWeight: 700,
+            padding: '3px 10px',
+            borderRadius: '20px',
+            marginBottom: '12px',
+            textTransform: 'uppercase',
+            letterSpacing: '.05em',
+            fontFamily: "'Space Mono', monospace",
+            ...difficultyBadgeStyles[a.difficultyLevel],
+          }}
+        >
+          {difficultyLabel(a.difficultyLevel)}
+        </span>
+      )}
       <p
         style={{
           fontSize: '.88rem',
@@ -303,6 +339,35 @@ function ActivityCard({ a, idx, onNavigate }) {
 }
 
 export default function ActivitiesPage({ onNavigate, onBack }) {
+  const [selectedDifficulties, setSelectedDifficulties] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('difficulty');
+    return raw ? raw.split(',').filter(Boolean) : [];
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (selectedDifficulties.length > 0) {
+      params.set('difficulty', selectedDifficulties.join(','));
+    } else {
+      params.delete('difficulty');
+    }
+    const query = params.toString();
+    const newUrl = window.location.pathname + (query ? `?${query}` : '') + window.location.hash;
+    window.history.replaceState({}, '', newUrl);
+  }, [selectedDifficulties]);
+
+  const toggleDifficulty = (value) => {
+    setSelectedDifficulties((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  };
+
+  const filteredActivities = useMemo(() => {
+    if (selectedDifficulties.length === 0) return activities;
+    return activities.filter((a) => selectedDifficulties.includes(a.difficultyLevel));
+  }, [selectedDifficulties]);
+
   useEffect(() => {
     window.scrollTo({ top: 0 });
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -414,12 +479,88 @@ export default function ActivitiesPage({ onNavigate, onBack }) {
       <div className="container">
         <div
           style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '10px',
+            marginBottom: '28px',
+            alignItems: 'center',
+          }}
+        >
+          <span
+            style={{
+              fontSize: '.78rem',
+              color: 'var(--t2)',
+              fontWeight: 600,
+              marginRight: '4px',
+            }}
+          >
+            Filter by difficulty:
+          </span>
+          {difficultyLevels.map((d) => {
+            const active = selectedDifficulties.includes(d.value);
+            const color = difficultyColors[d.value] || 'var(--c1)';
+            return (
+              <button
+                key={d.value}
+                onClick={() => toggleDifficulty(d.value)}
+                aria-pressed={active}
+                style={{
+                  padding: '7px 16px',
+                  borderRadius: '50px',
+                  fontSize: '.8rem',
+                  fontWeight: 600,
+                  border: `1px solid ${active ? color : 'var(--bdr)'}`,
+                  background: active ? `${color}20` : 'var(--card)',
+                  color: active ? color : 'var(--t2)',
+                  cursor: 'pointer',
+                  transition: 'all .15s',
+                  fontFamily: "'Rajdhani', sans-serif",
+                }}
+              >
+                {d.label}
+              </button>
+            );
+          })}
+          {selectedDifficulties.length > 0 && (
+            <button
+              onClick={() => setSelectedDifficulties([])}
+              style={{
+                padding: '7px 14px',
+                borderRadius: '50px',
+                fontSize: '.78rem',
+                border: '1px solid var(--bdr)',
+                background: 'transparent',
+                color: 'var(--t2)',
+                cursor: 'pointer',
+                fontFamily: "'Rajdhani', sans-serif",
+              }}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+
+        {filteredActivities.length === 0 && (
+          <p
+            style={{
+              textAlign: 'center',
+              color: 'var(--t2)',
+              padding: '40px 0',
+              fontSize: '.95rem',
+            }}
+          >
+            No activities match the selected difficulty filters.
+          </p>
+        )}
+
+        <div
+          style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
             gap: '24px',
           }}
         >
-          {activities.map((a, i) => (
+          {filteredActivities.map((a, i) => (
             <ActivityCard key={a.id} a={a} idx={i} onNavigate={onNavigate} />
           ))}
         </div>

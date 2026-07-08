@@ -34,7 +34,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: nexasphere
-          POSTGRES_PASSWORD: nexasphere
+          POSTGRES_PASSWORD: ${{ secrets.E2E_DB_PASSWORD || 'nexasphere' }}
           POSTGRES_DB: nexasphere_test
         ports:
           - 5432:5432
@@ -54,9 +54,9 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -100,7 +100,7 @@ jobs:
           FRONTEND_URL: http://localhost:5175,http://127.0.0.1:5175
           CORS_ORIGIN: http://localhost:5175,http://127.0.0.1:5175
           ADMIN_USERS_JSON: '[{"username":"admin","password":"admin123","role":"SuperAdmin"}]'
-          ADMIN_EVENT_PASSWORD: StrongEventPassword123!
+          ADMIN_EVENT_PASSWORD: ${{ secrets.E2E_ADMIN_EVENT_PASSWORD || 'ChangeMe123!Event' }}
         timeout-minutes: 5
 
       - name: Wait for server

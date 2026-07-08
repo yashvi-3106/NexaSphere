@@ -4,6 +4,7 @@
  */
 
 import * as Sentry from '@sentry/node';
+import { getLogContext } from './logContext.js';
 
 let nodeProfilingIntegration = null;
 
@@ -15,7 +16,7 @@ async function initializeSentry(app) {
   const isDevelopment = process.env.NODE_ENV === 'development';
   const dsn = process.env.SENTRY_DSN;
 
-  if (!dsn && !isDevelopment) {
+  if ((!dsn || dsn.trim() === '') && !isDevelopment) {
     console.warn('Sentry DSN not configured. Error tracking disabled.');
     return;
   }
@@ -40,7 +41,6 @@ async function initializeSentry(app) {
     beforeSend(event, hint) {
       const error = hint.originalException;
       if (error) {
-        // Group by error name and first line of error message
         event.fingerprint = [
           '{{ default }}',
           error.name || 'Error',
@@ -62,6 +62,15 @@ async function initializeSentry(app) {
     // Graceful fallback if os import fails
   }
 
+  Sentry.addEventProcessor((event) => {
+    const ctx = getLogContext();
+    event.tags = event.tags || {};
+    if (ctx.reqId) event.tags.reqId = ctx.reqId;
+    if (ctx.traceId) event.tags.traceId = ctx.traceId;
+    if (ctx.service) event.tags.service = ctx.service;
+    return event;
+  });
+
   return Sentry;
 }
 
@@ -70,7 +79,6 @@ async function initializeSentry(app) {
  * @param {Object} app - Express app instance
  */
 function addSentryErrorHandler(app) {
-  // The error handler must be the last middleware on the app
   if (typeof Sentry.setupExpressErrorHandler === 'function') {
     Sentry.setupExpressErrorHandler(app);
   } else if (Sentry.Handlers && typeof Sentry.Handlers.errorHandler === 'function') {
@@ -137,7 +145,6 @@ function registerSentryShutdown(timeout = 2000) {
       console.log(`[Sentry] Received ${signal}. Flushing pending events...`);
 
       try {
-        // close() flushes queued events and disables the SDK from accepting new events
         const cleanClose = await Sentry.close(timeout);
         if (cleanClose) {
           console.log('[Sentry] Successfully flushed buffered telemetry and closed.');

@@ -175,7 +175,7 @@ export function CoreTeamManager() {
             {filteredMembers.map((member) => (
               <div key={member.id} className="team-card animate-fade-in">
                 {member.photo ? (
-                  <img src={member.photo} alt={member.name} className="team-avatar" />
+                  <img loading="lazy" src={member.photo} alt={member.name} className="team-avatar" />
                 ) : (
                   <div className="team-avatar-placeholder">{member.name?.[0]}</div>
                 )}

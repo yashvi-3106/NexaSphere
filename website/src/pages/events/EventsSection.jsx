@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { DynamicIcon } from '../../shared/Icons';
 import EventCountdown from '../../components/events/EventCountdown.jsx';
 import { getEventCountdownStatus, parseDate } from '../../hooks/useCountdown.js';
+import { WalkthroughWrapper } from '../../components/walkthrough/WalkthroughWrapper.jsx';
 import './EventsSection.css';
 
 export default function EventsSection({ onEventClick, events = [] }) {
@@ -15,21 +16,24 @@ export default function EventsSection({ onEventClick, events = [] }) {
     return null;
   };
 
+  const pendingAnimationListenersRef = useRef([]);
   useEffect(() => {
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
           if (e.isIntersecting && !e.target.classList.contains('fired')) {
             e.target.classList.add('fired');
-            e.target.addEventListener(
-              'animationend',
-              () => {
-                e.target.style.opacity = '1';
-                e.target.style.transform = 'none';
-              },
-              { once: true }
-            );
-            obs.unobserve(e.target);
+            const target = e.target;
+            const handler = () => {
+              target.style.opacity = '1';
+              target.style.transform = 'none';
+              pendingAnimationListenersRef.current = pendingAnimationListenersRef.current.filter(
+                (entry) => entry.target !== target
+              );
+            };
+            target.addEventListener('animationend', handler, { once: true });
+            pendingAnimationListenersRef.current.push({ target, handler });
+            obs.unobserve(target);
           }
         });
       },
@@ -40,7 +44,13 @@ export default function EventsSection({ onEventClick, events = [] }) {
         '#section-events .pop-in,#section-events .pop-left,#section-events .pop-right,#section-events .pop-word'
       )
       .forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
+    return () => {
+      obs.disconnect();
+      pendingAnimationListenersRef.current.forEach(({ target, handler }) => {
+        target.removeEventListener('animationend', handler);
+      });
+      pendingAnimationListenersRef.current = [];
+    };
   }, []);
 
   const getEffectiveStatus = (ev) => {
@@ -73,7 +83,7 @@ export default function EventsSection({ onEventClick, events = [] }) {
         </div>
         <div className="events-timeline">
           {sortedEvents.map((ev, i) => {
-            const hasDetailPage = !!ev.hasDetailPage;
+            const hasDetailPage = ev.hasDetailPage !== false;
             const dynamicGradient = buildGradient(ev);
             const glowColor = ev.gradientColors?.[0] || null;
             return (
@@ -81,7 +91,8 @@ export default function EventsSection({ onEventClick, events = [] }) {
                 <div
                   className={`timeline-dot${ev._effectiveStatus !== 'completed' ? ' upcoming' : ''}`}
                 />
-                <div
+                <WalkthroughWrapper
+                  stepId={i === 0 ? 'register_event' : null}
                   className={`timeline-card shimmer ${i % 2 === 0 ? 'pop-left' : 'pop-right'}`}
                   style={{
                     animationDelay: `${i * 0.11}s`,
@@ -258,7 +269,7 @@ export default function EventsSection({ onEventClick, events = [] }) {
                       </span>
                     ))}
                   </div>
-                </div>
+                </WalkthroughWrapper>
               </div>
             );
           })}

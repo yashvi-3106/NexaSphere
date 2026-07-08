@@ -1,8 +1,58 @@
 import { Router } from 'express';
 import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
 import * as moderationController from '../controllers/moderationController.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const router = Router();
+
+/**
+ * POST /moderation/ai-check — Server-side AI content moderation proxy.
+ * Calls Gemini API using the server-side GEMINI_API_KEY (never exposed to client).
+ */
+router.post('/ai-check', requireStudentAuth, async (req, res) => {
+  try {
+    const { content } = req.body || {};
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ error: 'content string is required' });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.json({ flags: [], confidence: 0, explanation: 'AI moderation not configured' });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+    const prompt = `
+      Analyze the following content for toxicity, hate speech, harassment, and inappropriate material.
+      Content: "${content}"
+      
+      Return a JSON object with:
+      - isAppropriate: boolean
+      - categories: array of detected issues (spam, hate_speech, harassment, toxic, violence, self_harm, sexual)
+      - severity: low/medium/high/critical
+      - confidence: number between 0-1
+      - explanation: brief reason
+      
+      Only return valid JSON, no other text.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    const parsed = JSON.parse(text);
+
+    return res.json({
+      flags: parsed.categories?.map((cat) => ({ type: cat, confidence: parsed.confidence })) || [],
+      confidence: parsed.confidence || 0.7,
+      explanation: parsed.explanation,
+    });
+  } catch (error) {
+    console.error('[AI Moderation] Error:', error.message);
+    return res.json({ flags: [], confidence: 0, explanation: 'AI moderation unavailable' });
+  }
+});
 
 // Public endpoint for submitting reports
 router.post('/reports', moderationController.createFlag);

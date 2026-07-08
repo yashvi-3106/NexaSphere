@@ -14,35 +14,52 @@ function redactPath(path) {
   for (const pattern of SENSITIVE_PATH_PATTERNS) {
     redacted = redacted.replace(pattern.regex, pattern.replacement);
   }
-  // Optional: Mask query parameters if they contain sensitive tokens
+  // Mask query parameters if they contain sensitive tokens
   redacted = redacted.replace(/(token|password|secret)=([^&]+)/gi, '$1=[REDACTED]');
   return redacted;
 }
 
 /**
- * Express middleware to log API requests via Winston.
- * Replaces both standard Morgan and the custom requestLogger.
- * Logs method, redacted path, status code, and response time.
+ * Express middleware to log API requests.
+ * Writes structured JSON to api-requests.log and logs via Winston.
  */
 export function apiLogger(req, res, next) {
   const start = process.hrtime.bigint();
+  const startMs = Date.now();
   const { method, originalUrl, reqId } = req;
 
   res.on('finish', () => {
     const durationMs = Number(process.hrtime.bigint() - start) / 1e6;
+    const duration = Date.now() - startMs;
     const status = res.statusCode;
 
     const safePath = redactPath(originalUrl || req.path);
 
-    // Prepare JSON payload for Winston (and subsequently ELK)
+    // 1. Write structured JSON to logs/api-requests.log
+    const fileEntry = {
+      timestamp: new Date().toISOString(),
+      method,
+      path: safePath,
+      status,
+      responseTimeMs: Math.round(durationMs),
+      ip: req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress,
+      userAgent: req.headers['user-agent'],
+      query: Object.keys(req.query || {}).length ? sanitize(req.query) : undefined,
+    };
+    try {
+      logStream.write(JSON.stringify(fileEntry) + '\n');
+    } catch (err) {
+      console.error('Failed to write to api-requests.log:', err);
+    }
+
+    // 2. Log via Winston
     const logPayload = {
       reqId,
       method,
       path: safePath,
       status,
       durationMs: Math.round(durationMs),
-      ip: req.ip,
-      // Note: We omit req.body, passwords, and headers to explicitly exclude sensitive data
+      ip: req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress,
     };
 
     const message = `${method} ${safePath} -> ${status} (${Math.round(durationMs)}ms)`;

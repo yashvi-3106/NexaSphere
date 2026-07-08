@@ -62,7 +62,9 @@ export function initializeSocket(serverUrl = getSocketServerUrl()) {
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
 
-      identifyUser();
+      if (typeof identifyUser === 'function') {
+        identifyUser();
+      }
     });
 
     socket.on('disconnect', (reason) => {

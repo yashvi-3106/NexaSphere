@@ -45,7 +45,14 @@ export default function ShareHub({ isOpen, onClose, data }) {
 
   function handleNativeShare() {
     if (navigator.share) {
-      navigator.share({ title: shareTitle, url: shareUrl }).catch(() => {});
+      navigator.share({ title: shareTitle, url: shareUrl }).catch((err) => {
+        // User cancelled (AbortError) — no feedback needed.
+        // Any other failure (e.g. share target unavailable) falls back to
+        // copying the URL to clipboard so the user can still share manually.
+        if (err?.name !== 'AbortError' && navigator.clipboard) {
+          navigator.clipboard.writeText(shareUrl).catch(() => {});
+        }
+      });
     }
   }
 
@@ -66,7 +73,13 @@ export default function ShareHub({ isOpen, onClose, data }) {
         </div>
 
         <div className="sharehub-preview">
-          {data.image && <img src={data.image} alt="" className="sharehub-preview-img" />}
+          {data.image && (
+            <img loading="lazy"
+              src={data.image}
+              alt={`Preview image for ${data.title}`}
+              className="sharehub-preview-img"
+            />
+          )}
           <div>
             <p className="sharehub-preview-title">{data.title}</p>
             {data.subtitle && <p className="sharehub-preview-sub">{data.subtitle}</p>}
@@ -118,7 +131,7 @@ export default function ShareHub({ isOpen, onClose, data }) {
 
         {showQR && (
           <div className="sharehub-qr">
-            <img src={getQRUrl(shareUrl)} alt="QR code for this link" width={200} height={200} />
+            <img loading="lazy" src={getQRUrl(shareUrl)} alt="QR code for this link" width={200} height={200} />
             <p className="sharehub-qr-hint">Scan to open on any device</p>
           </div>
         )}

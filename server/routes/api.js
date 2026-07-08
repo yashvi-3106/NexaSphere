@@ -1,30 +1,45 @@
 import { Router } from 'express';
+import { throttleMiddleware } from '../middleware/throttleMiddleware.js';
+import settingsRouter from './settingsRoutes.js';
+import rateLimitAdminRoutes from './rateLimitAdminRoutes.js';
+import { auditLogController } from '../controllers/auditLogController.js';
 import * as eventsController from '../controllers/eventsController.js';
 import * as activityEventsController from '../controllers/activityEventsController.js';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
-import * as coreTeamController from '../controllers/coreTeamController.js';
 import * as eventRegistrationController from '../controllers/eventRegistrationController.js';
 import * as usersController from '../controllers/usersController.js';
+import { usersRepository } from '../repositories/usersRepository.js';
 import * as attendanceController from '../controllers/attendanceController.js';
 import * as eventAnalyticsController from '../controllers/eventAnalyticsController.js';
+import * as bannersController from '../controllers/bannersController.js';
 import { adminAuditMiddleware, attachOldState } from '../middleware/adminAuditMiddleware.js';
 import { eventsRepository } from '../repositories/eventsRepository.js';
-import { coreTeamService } from '../services/coreTeamService.js';
 import { authRateLimiter, protectedActionRateLimiter } from '../middleware/authRateLimiter.js';
 import { eventRegistrationLimiter } from '../middleware/rateLimiter.js';
 import { portfolioRepository } from '../repositories/portfolioRepository.js';
 import { achievementsRepository } from '../repositories/achievementsRepository.js';
 import { portfolioService } from '../services/portfolioService.js';
 import { waitingRoomService } from '../services/waitingRoomService.js';
+import { studentAuthService } from '../services/studentAuthService.js';
+import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
 import * as sponsorshipsController from '../controllers/sponsorshipsController.js';
 import * as subscriptionsController from '../controllers/subscriptionsController.js';
+import * as portfolioAnalyticsController from '../controllers/portfolioAnalyticsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
+import announcementPriorityRouter from "./announcementPriority.js";
+import eventConflictRouter from "./eventConflict.js";
+import waitlistRoutes from "./waitlist.js";
+import * as localAuthController from '../controllers/localAuthController.js';
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
 import multer from 'multer';
 
+const router = Router();
+
+router.use(rateLimitAdminRoutes);
+router.use(throttleMiddleware);
 
 const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
@@ -34,14 +49,21 @@ const router = Router();
 
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
-router.post('/api/dashboard/xp', gamificationController.awardXP);
+router.post(
+  '/api/dashboard/xp',
+  protectedActionRateLimiter,
+  adminAuthMiddleware.requireAdmin,
+  gamificationController.awardXP
+);
 router.post(
   '/api/assistant/recommend',
   upload.single('file'),
   recommendationsController.getProjectRecommendations
 );
 router.get('/api/users', usersController.getPublicUsers);
+router.post('/api/whiteboard/export-pdf', whiteboardController.exportPDF);
 router.get('/api/content/events', eventsController.listEvents);
+router.get('/api/content/banners', bannersController.listActiveBanners);
 router.post(
   '/api/content/events/:eventId/register',
   eventRegistrationLimiter,
@@ -51,11 +73,16 @@ router.get('/api/content/events/:eventId/calendar', eventRegistrationController.
 router.post(
   '/api/content/events/:eventId/cancel',
   eventRegistrationLimiter,
+  requireStudentAuth,
   eventRegistrationController.cancelRegistration
 );
 router.get(
   '/api/content/events/:eventId/waitlist-position',
   eventRegistrationController.getWaitlistPosition
+);
+router.post(
+  '/api/content/events/:eventId/waitlist/confirm',
+  eventRegistrationController.confirmWaitlistSpot
 );
 router.delete(
   '/api/content/events/:eventId/waitlist',
@@ -78,7 +105,7 @@ router.delete(
   adminAuthMiddleware.requireScope('events:write'),
   activityEventsController.deleteActivityEvent
 );
-router.post('/account-recovery/request', async (req, res) => {
+router.post('/account-recovery/request', authRateLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) {
     return res.status(400).json({ error: 'Email is required' });
@@ -91,7 +118,7 @@ router.post('/account-recovery/request', async (req, res) => {
     message: 'If an account with that email exists, a recovery code has been sent.',
   });
 });
-router.post('/account-recovery/verify', async (req, res) => {
+router.post('/account-recovery/verify', authRateLimiter, async (req, res) => {
   const { email, enteredCode } = req.body;
   if (!email || !enteredCode) {
     return res.status(400).json({ error: 'Email and code are required' });
@@ -125,6 +152,7 @@ router.post(
 router.put(
   '/api/admin/users/:id',
   adminAuthMiddleware.requireAdmin,
+  attachOldState((req) => usersRepository.getUserById(req.params.id)),
   adminAuditMiddleware,
   usersController.adminUpdateUser
 );
@@ -135,6 +163,10 @@ router.delete(
   usersController.adminDeactivateUser
 );
 router.post('/api/admin/login', authRateLimiter, adminAuthMiddleware.login);
+
+// Local User Auth
+router.post('/api/auth/local/login', authRateLimiter, localAuthController.localLogin);
+
 router.post('/api/admin/2fa/verify', authRateLimiter, adminAuthMiddleware.verifyTwoFactor);
 router.post(
   '/api/admin/2fa/setup/verify',
@@ -204,29 +236,6 @@ router.delete(
   eventsController.adminDeleteEvent
 );
 
-// Core team management APIs
-router.get(
-  '/api/admin/core-team/members',
-  adminAuthMiddleware.requireScope('settings:admin'),
-  coreTeamController.adminListCoreTeamMembers
-);
-router.post(
-  '/api/admin/core-team/members',
-  adminAuthMiddleware.requireScope('settings:admin'),
-  adminAuditMiddleware,
-  coreTeamController.adminAddCoreTeamMember
-);
-router.delete(
-  '/api/admin/core-team/members/:id',
-  adminAuthMiddleware.requireScope('settings:admin'),
-  attachOldState(async (req) => {
-    const members = await coreTeamService.listMembers();
-    return members.find((m) => String(m.id) === String(req.params.id));
-  }),
-  adminAuditMiddleware,
-  coreTeamController.adminDeleteCoreTeamMember
-);
-
 // Subscription management APIs
 router.get(
   '/api/admin/subscriptions',
@@ -244,6 +253,13 @@ router.post(
   adminAuditMiddleware,
   subscriptionsController.createSubscription
 );
+
+// Banners Admin
+router.get('/api/admin/banners', adminAuthMiddleware.requireAdmin, bannersController.listAllBanners);
+router.post('/api/admin/banners', adminAuthMiddleware.requireAdmin, bannersController.createBanner);
+router.put('/api/admin/banners/:id', adminAuthMiddleware.requireAdmin, bannersController.updateBanner);
+router.delete('/api/admin/banners/:id', adminAuthMiddleware.requireAdmin, bannersController.deleteBanner);
+
 router.post(
   '/api/admin/subscriptions/:userId/cancel',
   adminAuthMiddleware.requireScope('events:write'),
@@ -292,6 +308,24 @@ router.delete(
       return res.status(500).json({ error: err.message });
     }
   }
+);
+
+// Portfolio Analytics APIs
+
+router.get(
+  '/api/portfolio/:username/analytics',
+  portfolioAnalyticsController.getPortfolioAnalytics
+);
+
+router.post(
+  '/api/portfolio/:username/visit',
+  portfolioAnalyticsController.recordPortfolioVisit
+);
+router.post('/api/portfolio/:username/visit', portfolioAnalyticsController.recordPortfolioVisit);
+
+router.get(
+  '/api/portfolio/:username/monthly-report',
+  portfolioAnalyticsController.getMonthlyReport
 );
 
 // Achievement management APIs
@@ -372,6 +406,7 @@ router.get(
     }
   }
 );
+router.use('/api/admin/settings', adminAuthMiddleware.requireAdmin, settingsRouter);
 router.post('/api/admin/impersonate/stop', adminAuthMiddleware.requireAdmin, (req, res) => {
   impersonationService.stop(req.adminSession.token);
   return res.json({ impersonating: false });
@@ -381,8 +416,83 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
 router.use(
+
   "/resource-discovery",
   resourceDiscoveryRoutes
 );
+
+router.use("/api/events", eventConflictRouter);
+
+router.use(
+  "/api/admin/waitlist",
+  waitlistRoutes
+); // Audit Log Viewer APIs
+router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
+
+router.get(
+  '/api/admin/audit-logs/stats',
+  adminAuthMiddleware.requireAdmin,
+  auditLogController.getStats
+);
+router.use(
+  "/recommendations",
+  recommendationEngine
+);
+
+// Follows/User Following System APIs
+// Follow/Unfollow operations
+router.post(
+  '/api/student/follows/:followingId',
+  requireStudentAuth,
+  protectedActionRateLimiter,
+  followsController.followUser
+);
+router.delete(
+  '/api/student/follows/:followingId',
+  requireStudentAuth,
+  protectedActionRateLimiter,
+  followsController.unfollowUser
+);
+
+// Check follow status
+router.get(
+  '/api/student/follows/status/:followingId',
+  requireStudentAuth,
+  followsController.checkFollowStatus
+);
+
+// Get followers and following lists
+router.get('/api/student/users/:userId/followers', followsController.getUserFollowers);
+router.get('/api/student/users/:userId/following', followsController.getUserFollowing);
+
+// Get follow counts
+router.get('/api/student/users/:userId/follow-counts', followsController.getFollowCounts);
+
+// Current user endpoints
+router.get(
+  '/api/student/me/followers',
+  requireStudentAuth,
+  followsController.getCurrentUserFollowers
+);
+router.get(
+  '/api/student/me/following',
+  requireStudentAuth,
+  followsController.getCurrentUserFollowing
+);
+router.get(
+  '/api/student/me/follow-counts',
+  requireStudentAuth,
+  followsController.getCurrentUserFollowCounts
+);
+
+// Activity feed from followed users
+router.get(
+  '/api/student/activity-feed/followed',
+  requireStudentAuth,
+  followsController.getFollowedUsersActivityFeed
+);
+
+// Platform Analytics APIs
+router.use("/api/analytics", platformAnalyticsRoutes);
 
 export default router;
