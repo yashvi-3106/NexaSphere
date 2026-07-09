@@ -24,31 +24,84 @@ axiosInstance.interceptors.request.use(
 );
 
 // ─── 3. Response interceptor — handle 401 globally ───────────────────────────
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 /**
  * Initialise the 401 interceptor.
  * Call this once during app bootstrap, passing your router's `navigate` function.
- *
- * Example (React Router v6):
- *   import { useNavigate } from 'react-router-dom';
- *   const navigate = useNavigate();
- *   setupAxiosInterceptors(navigate);
  */
 export function setupAxiosInterceptors(navigate) {
   axiosInstance.interceptors.response.use(
     (response) => response, // pass-through for successful responses
 
     (error) => {
-      if (error.response?.status === 401) {
-        // Stop the proactive timer — we're already logging out reactively.
-        clearAutoLogoutTimer();
+      const originalRequest = error.config;
 
-        // Clean up stored credentials.
-        removeToken();
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        if (isRefreshing) {
+          return new Promise(function(resolve, reject) {
+            failedQueue.push({ resolve, reject });
+          }).then(token => {
+            originalRequest.headers['Authorization'] = 'Bearer ' + token;
+            return axiosInstance(originalRequest);
+          }).catch(err => {
+            return Promise.reject(err);
+          });
+        }
 
-        // Redirect to login with a user-friendly message.
-        navigate('/login', {
-          replace: true,
-          state: { message: 'Your session has expired. Please log in again.' },
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        return new Promise(function (resolve, reject) {
+          // Attempt to refresh (assume /api/auth/refresh exists)
+          axios.post(`${axiosInstance.defaults.baseURL || '/api'}/auth/refresh`, {}, { withCredentials: true })
+            .then(({ data }) => {
+              // The backend usually sets an HttpOnly cookie or returns the access token
+              const newAccessToken = data.accessToken || data.token;
+              
+              if (newAccessToken && typeof window !== 'undefined') {
+                 // Try to dynamically require authUtils if setToken exists
+                 try {
+                   // Fallback logic
+                   localStorage.setItem('accessToken', newAccessToken);
+                 } catch (e) { }
+              }
+              
+              axiosInstance.defaults.headers.common['Authorization'] = 'Bearer ' + newAccessToken;
+              originalRequest.headers['Authorization'] = 'Bearer ' + newAccessToken;
+              processQueue(null, newAccessToken);
+              resolve(axiosInstance(originalRequest));
+            })
+            .catch((err) => {
+              processQueue(err, null);
+              
+              // Stop the proactive timer — we're already logging out reactively.
+              try { clearAutoLogoutTimer(); } catch (e) {}
+              // Clean up stored credentials.
+              try { removeToken(); } catch (e) {}
+
+              // Redirect to login with a user-friendly message.
+              navigate('/login', {
+                replace: true,
+                state: { message: 'Your session has expired. Please log in again.' },
+              });
+              reject(err);
+            })
+            .finally(() => {
+              isRefreshing = false;
+            });
         });
       }
 
