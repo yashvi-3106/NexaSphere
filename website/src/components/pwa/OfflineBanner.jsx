@@ -96,6 +96,17 @@ export default function OfflineBanner() {
           </span>
         )}
 
+        {!isOnline && queuedCount > 0 && 'Notification' in window && Notification.permission === 'default' && (
+          <button
+            className="pwa-banner__sync-btn"
+            style={{ marginLeft: '8px' }}
+            onClick={() => Notification.requestPermission()}
+            aria-label="Notify me when synced"
+          >
+            Notify when synced
+          </button>
+        )}
+
         {isOnline && !isSyncing && queuedCount > 0 && (
           <button
             className="pwa-banner__sync-btn"
