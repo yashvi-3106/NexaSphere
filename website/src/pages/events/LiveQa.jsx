@@ -31,6 +31,11 @@ export default function LiveQa({ eventId: propEventId, onBack }) {
       socket.emit('qa:join', { eventId });
       return () => {
         socket.emit('qa:leave', { eventId });
+        socket.off('connect');
+        socket.off('qa:list');
+        socket.off('poll:list');
+        socket.off('qa:asked');
+        socket.close();
       };
     }
   }, [eventId]);
