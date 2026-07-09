@@ -3,6 +3,7 @@ import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
 import * as moderationController from '../controllers/moderationController.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { validate } from '../middleware/validate.js';
+import { apiRateLimiter } from '../middleware/rateLimiter.js';
 import {
   aiCheckSchema,
   createFlagSchema,
@@ -21,7 +22,7 @@ const router = Router();
  * POST /moderation/ai-check — Server-side AI content moderation proxy.
  * Calls Gemini API using the server-side GEMINI_API_KEY (never exposed to client).
  */
-router.post('/ai-check', validate(aiCheckSchema), requireStudentAuth, async (req, res) => {
+router.post('/ai-check', apiRateLimiter, validate(aiCheckSchema), requireStudentAuth, async (req, res) => {
   try {
     const { content } = req.body || {};
     if (!content || typeof content !== 'string') {

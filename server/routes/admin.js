@@ -283,7 +283,7 @@ router.get('/api/admin/reports/revenue', adminAuth, async (req, res) => {
 
 import jwt from 'jsonwebtoken';
 
-router.post('/api/admin/sso-invite', validate(ssoInviteSchema), adminAuth, (req, res) => {
+router.post('/api/admin/sso-invite', apiRateLimiter, validate(ssoInviteSchema), adminAuth, (req, res) => {
   const { email } = req.body;
   if (!email || typeof email !== 'string' || !email.includes('@')) {
     return res.status(400).json({ error: 'Valid email address is required' });

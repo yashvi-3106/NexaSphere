@@ -27,6 +27,7 @@ import { Router } from 'express';
 import complianceService from '../services/complianceService.js';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import { validate } from '../middleware/validate.js';
+import { apiRateLimiter } from '../middleware/rateLimiter.js';
 import {
   recordAcceptanceSchema,
   gdprRequestSchema,
@@ -158,7 +159,7 @@ router.get('/admin/documents', adminAuth, async (req, res) => {
   }
 });
 
-router.post('/admin/documents', validate(createDocumentSchema), adminAuth, async (req, res) => {
+router.post('/admin/documents', apiRateLimiter, validate(createDocumentSchema), adminAuth, async (req, res) => {
   try {
     const { type, title, version, effectiveDate, content, summary } = req.body || {};
     if (!type || !title || !content) {
@@ -177,7 +178,7 @@ router.post('/admin/documents', validate(createDocumentSchema), adminAuth, async
   }
 });
 
-router.patch('/admin/documents/:id', validate(updateDocumentSchema), adminAuth, async (req, res) => {
+router.patch('/admin/documents/:id', apiRateLimiter, validate(updateDocumentSchema), adminAuth, async (req, res) => {
   try {
     if (!sanitizeId(req.params.id)) return res.status(400).json({ error: 'Invalid document id' });
     const actorId = req.adminSession?.username || 'admin';
@@ -232,7 +233,7 @@ router.get('/admin/gdpr', adminAuth, async (req, res) => {
   }
 });
 
-router.patch('/admin/gdpr/:id', validate(processGdprRequestSchema), adminAuth, async (req, res) => {
+router.patch('/admin/gdpr/:id', apiRateLimiter, validate(processGdprRequestSchema), adminAuth, async (req, res) => {
   try {
     if (!sanitizeId(req.params.id)) return res.status(400).json({ error: 'Invalid request id' });
     const { status, notes } = req.body || {};

@@ -3,6 +3,7 @@ import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
 import { learningPathService } from '../services/learningPathService.js';
 import { learningPathsRepository } from '../repositories/learningPathsRepository.js';
 import { validate } from '../middleware/validate.js';
+import { apiRateLimiter } from '../middleware/rateLimiter.js';
 import { enrollSchema, completeMilestoneSchema, assessSchema } from '../validators/routes/learningPathsSchemas.js';
 
 const router = express.Router();
@@ -26,7 +27,7 @@ router.get('/learning-paths/:id', requireStudentAuth, async (req, res) => {
   }
 });
 
-router.post('/learning-paths/:id/enroll', validate(enrollSchema), requireStudentAuth, async (req, res) => {
+router.post('/learning-paths/:id/enroll', apiRateLimiter, validate(enrollSchema), requireStudentAuth, async (req, res) => {
   try {
     const userId = req.studentUser.sub || req.studentUser.id;
     const { targetWeeks, initialLevel } = req.body;
@@ -71,7 +72,7 @@ router.post(
   }
 );
 
-router.post('/learning-paths/:id/assess', validate(assessSchema), requireStudentAuth, async (req, res) => {
+router.post('/learning-paths/:id/assess', apiRateLimiter, validate(assessSchema), requireStudentAuth, async (req, res) => {
   try {
     // Simple logic to set starting level based on quiz score
     const { score } = req.body; // Score from 0-10

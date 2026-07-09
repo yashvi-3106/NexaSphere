@@ -8,6 +8,7 @@ import { Router } from 'express';
 import { portfolioAnalyticsRepository } from '../repositories/portfolioAnalyticsRepository.js';
 import { portfolioRepository } from '../repositories/portfolioRepository.js';
 import { validate } from '../middleware/validate.js';
+import { apiRateLimiter } from '../middleware/rateLimiter.js';
 import {
   viewParamsSchema,
   analyticsParamsSchema,
@@ -36,7 +37,7 @@ router.post('/api/portfolio/:username/view', validate(viewParamsSchema, 'params'
   }
 });
 
-router.get('/api/portfolio/:username/analytics', validate(analyticsParamsSchema, 'params'), validate(analyticsQuerySchema, 'query'), async (req, res) => {
+router.get('/api/portfolio/:username/analytics', apiRateLimiter, validate(analyticsParamsSchema, 'params'), validate(analyticsQuerySchema, 'query'), async (req, res) => {
   try {
     const username = String(req.params.username || '').trim();
     const passkey = String(req.query.passkey || '').trim();
