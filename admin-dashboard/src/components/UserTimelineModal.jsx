@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 export default function UserTimelineModal({ user, onClose }) {
   const [timeline, setTimeline] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [usernameInput, setUsernameInput] = useState(user.username || '');
+
+  const modalRef = useFocusTrap(true, onClose);
 
   const fetchTimeline = async (email, username) => {
     setLoading(true);
@@ -60,6 +63,10 @@ export default function UserTimelineModal({ user, onClose }) {
       }}
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="User Timeline"
         style={{
           backgroundColor: 'var(--admin-bg-card, #1a1a2e)',
           padding: 24,

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { categories, topics, difficultyLevels } from '../../data/resourcesData';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 const inputStyle = {
   width: '100%',
@@ -32,6 +33,8 @@ export default function ResourceUploadModal({ open, onClose, onSubmit }) {
     fileUrl: '',
     accessLevel: 'public',
   });
+
+  const modalRef = useFocusTrap(open, onClose);
 
   if (!open) return null;
 
@@ -72,6 +75,10 @@ export default function ResourceUploadModal({ open, onClose, onSubmit }) {
       onClick={onClose}
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Upload Resource"
         style={{
           background: 'var(--card-bg)',
           borderRadius: '16px',
