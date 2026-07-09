@@ -7,6 +7,8 @@
 import { Router } from 'express';
 import { portfolioRepository } from '../repositories/portfolioRepository.js';
 import { portfolioContentSchema, portfolioPutSchema } from '../validators/portfolioSchemas.js';
+import { validate } from '../middleware/validate.js';
+import { endorseSkillSchema } from '../validators/routes/portfolioExtrasSchemas.js';
 import { protectedActionRateLimiter } from '../middleware/authRateLimiter.js';
 import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
 import notificationsService from '../services/notificationsService.js';
@@ -220,6 +222,7 @@ router.get('/portfolio/:username', async (req, res) => {
  */
 router.post(
   '/portfolio/:username/endorse',
+  validate(endorseSkillSchema),
   requireStudentAuth,
   protectedActionRateLimiter,
   async (req, res) => {

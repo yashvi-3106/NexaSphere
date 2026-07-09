@@ -26,6 +26,14 @@
 import { Router } from 'express';
 import complianceService from '../services/complianceService.js';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
+import { validate } from '../middleware/validate.js';
+import {
+  recordAcceptanceSchema,
+  gdprRequestSchema,
+  createDocumentSchema,
+  updateDocumentSchema,
+  processGdprRequestSchema,
+} from '../validators/routes/complianceSchemas.js';
 
 const router = Router();
 const adminAuth = adminAuthMiddleware.requireAdmin || adminAuthMiddleware;
@@ -81,7 +89,7 @@ router.get('/documents/:id', async (req, res) => {
 
 // ─── Public: Acceptances ──────────────────────────────────────────────────────
 
-router.post('/acceptances', async (req, res) => {
+router.post('/acceptances', validate(recordAcceptanceSchema), async (req, res) => {
   try {
     const { userId, documentId, ipAddress } = req.body || {};
     if (!userId || !documentId) {
@@ -121,7 +129,7 @@ router.get('/acceptances/check', async (req, res) => {
 
 // ─── Public: GDPR requests ────────────────────────────────────────────────────
 
-router.post('/gdpr', async (req, res) => {
+router.post('/gdpr', validate(gdprRequestSchema), async (req, res) => {
   try {
     const { userId, type, notes } = req.body || {};
     if (!userId || !type) return res.status(400).json({ error: 'userId and type are required' });
@@ -150,7 +158,7 @@ router.get('/admin/documents', adminAuth, async (req, res) => {
   }
 });
 
-router.post('/admin/documents', adminAuth, async (req, res) => {
+router.post('/admin/documents', validate(createDocumentSchema), adminAuth, async (req, res) => {
   try {
     const { type, title, version, effectiveDate, content, summary } = req.body || {};
     if (!type || !title || !content) {
@@ -169,7 +177,7 @@ router.post('/admin/documents', adminAuth, async (req, res) => {
   }
 });
 
-router.patch('/admin/documents/:id', adminAuth, async (req, res) => {
+router.patch('/admin/documents/:id', validate(updateDocumentSchema), adminAuth, async (req, res) => {
   try {
     if (!sanitizeId(req.params.id)) return res.status(400).json({ error: 'Invalid document id' });
     const actorId = req.adminSession?.username || 'admin';
@@ -224,7 +232,7 @@ router.get('/admin/gdpr', adminAuth, async (req, res) => {
   }
 });
 
-router.patch('/admin/gdpr/:id', adminAuth, async (req, res) => {
+router.patch('/admin/gdpr/:id', validate(processGdprRequestSchema), adminAuth, async (req, res) => {
   try {
     if (!sanitizeId(req.params.id)) return res.status(400).json({ error: 'Invalid request id' });
     const { status, notes } = req.body || {};

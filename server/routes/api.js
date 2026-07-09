@@ -27,6 +27,27 @@ import * as subscriptionsController from '../controllers/subscriptionsController
 import * as portfolioAnalyticsController from '../controllers/portfolioAnalyticsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
+import { validate } from '../middleware/validate.js';
+import {
+  awardXPSchema,
+  exportPDFSchema,
+  eventRegistrationSchema,
+  emailSchema,
+  addActivityEventSchema,
+  accountRecoveryRequestSchema,
+  accountRecoveryVerifySchema,
+  markAttendanceSchema,
+  adminCreateUserSchema,
+  adminUpdateUserSchema,
+  adminLoginSchema,
+  localLoginSchema,
+  verifyTwoFactorSchema,
+  verifyTwoFactorSetupSchema,
+  adminCreateEventSchema,
+  adminUpdateEventSchema,
+  createSubscriptionSchema,
+  adminBannerBodySchema,
+} from '../validators/routes/apiSchemas.js';
 <<<<<<< HEAD
 import announcementPriorityRouter from "./announcementPriority.js";
 import eventConflictRouter from "./eventConflict.js";
@@ -54,6 +75,7 @@ router.post(
   '/api/dashboard/xp',
   protectedActionRateLimiter,
   adminAuthMiddleware.requireAdmin,
+  validate(awardXPSchema),
   gamificationController.awardXP
 );
 router.post(
@@ -62,12 +84,13 @@ router.post(
   recommendationsController.getProjectRecommendations
 );
 router.get('/api/users', usersController.getPublicUsers);
-router.post('/api/whiteboard/export-pdf', whiteboardController.exportPDF);
+router.post('/api/whiteboard/export-pdf', validate(exportPDFSchema), whiteboardController.exportPDF);
 router.get('/api/content/events', eventsController.listEvents);
 router.get('/api/content/banners', bannersController.listActiveBanners);
 router.post(
   '/api/content/events/:eventId/register',
   eventRegistrationLimiter,
+  validate(eventRegistrationSchema),
   eventRegistrationController.registerForEvent
 );
 router.get('/api/content/events/:eventId/calendar', eventRegistrationController.getEventCalendar);
@@ -75,6 +98,7 @@ router.post(
   '/api/content/events/:eventId/cancel',
   eventRegistrationLimiter,
   requireStudentAuth,
+  validate(emailSchema),
   eventRegistrationController.cancelRegistration
 );
 router.get(
@@ -83,11 +107,13 @@ router.get(
 );
 router.post(
   '/api/content/events/:eventId/waitlist/confirm',
+  validate(emailSchema),
   eventRegistrationController.confirmWaitlistSpot
 );
 router.delete(
   '/api/content/events/:eventId/waitlist',
   eventRegistrationLimiter,
+  validate(emailSchema),
   eventRegistrationController.leaveWaitlist
 );
 router.get(
@@ -98,6 +124,7 @@ router.post(
   '/api/content/activity-events/:activityKey',
   protectedActionRateLimiter,
   adminAuthMiddleware.requireScope('events:write'),
+  validate(addActivityEventSchema),
   activityEventsController.addActivityEvent
 );
 router.delete(
@@ -106,11 +133,8 @@ router.delete(
   adminAuthMiddleware.requireScope('events:write'),
   activityEventsController.deleteActivityEvent
 );
-router.post('/account-recovery/request', authRateLimiter, async (req, res) => {
+router.post('/account-recovery/request', authRateLimiter, validate(accountRecoveryRequestSchema), async (req, res) => {
   const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
-  }
 
   await studentAuthService.createRecoveryRequest(email);
 
@@ -119,11 +143,8 @@ router.post('/account-recovery/request', authRateLimiter, async (req, res) => {
     message: 'If an account with that email exists, a recovery code has been sent.',
   });
 });
-router.post('/account-recovery/verify', authRateLimiter, async (req, res) => {
+router.post('/account-recovery/verify', authRateLimiter, validate(accountRecoveryVerifySchema), async (req, res) => {
   const { email, enteredCode } = req.body;
-  if (!email || !enteredCode) {
-    return res.status(400).json({ error: 'Email and code are required' });
-  }
 
   const valid = await studentAuthService.verifyRecoveryCode(email, enteredCode);
 
@@ -136,6 +157,7 @@ router.post('/account-recovery/verify', authRateLimiter, async (req, res) => {
 router.post(
   '/api/attendance/mark',
   adminAuthMiddleware.requireAdmin,
+  validate(markAttendanceSchema),
   attendanceController.markAttendance
 );
 router.get(
@@ -148,6 +170,7 @@ router.post(
   '/api/admin/users',
   adminAuthMiddleware.requireAdmin,
   adminAuditMiddleware,
+  validate(adminCreateUserSchema),
   usersController.adminCreateUser
 );
 router.put(
@@ -155,6 +178,7 @@ router.put(
   adminAuthMiddleware.requireAdmin,
   attachOldState((req) => usersRepository.getUserById(req.params.id)),
   adminAuditMiddleware,
+  validate(adminUpdateUserSchema),
   usersController.adminUpdateUser
 );
 router.delete(
@@ -163,15 +187,16 @@ router.delete(
   adminAuditMiddleware,
   usersController.adminDeactivateUser
 );
-router.post('/api/admin/login', authRateLimiter, adminAuthMiddleware.login);
+router.post('/api/admin/login', authRateLimiter, validate(adminLoginSchema), adminAuthMiddleware.login);
 
 // Local User Auth
-router.post('/api/auth/local/login', authRateLimiter, localAuthController.localLogin);
+router.post('/api/auth/local/login', authRateLimiter, validate(localLoginSchema), localAuthController.localLogin);
 
-router.post('/api/admin/2fa/verify', authRateLimiter, adminAuthMiddleware.verifyTwoFactor);
+router.post('/api/admin/2fa/verify', authRateLimiter, validate(verifyTwoFactorSchema), adminAuthMiddleware.verifyTwoFactor);
 router.post(
   '/api/admin/2fa/setup/verify',
   authRateLimiter,
+  validate(verifyTwoFactorSetupSchema),
   adminAuthMiddleware.verifyTwoFactorSetup
 );
 router.post('/api/admin/logout', adminAuthMiddleware.requireAdmin, adminAuthMiddleware.logout);
@@ -220,6 +245,7 @@ router.post(
   '/api/admin/events',
   adminAuthMiddleware.requireScope('events:write'),
   adminAuditMiddleware,
+  validate(adminCreateEventSchema),
   eventsController.adminCreateEvent
 );
 router.put(
@@ -227,6 +253,7 @@ router.put(
   adminAuthMiddleware.requireScope('events:write'),
   attachOldState((req) => eventsRepository.getById(req.params.id)),
   adminAuditMiddleware,
+  validate(adminUpdateEventSchema),
   eventsController.adminUpdateEvent
 );
 router.delete(
@@ -252,13 +279,24 @@ router.post(
   '/api/admin/subscriptions',
   adminAuthMiddleware.requireScope('events:write'),
   adminAuditMiddleware,
+  validate(createSubscriptionSchema),
   subscriptionsController.createSubscription
 );
 
 // Banners Admin
 router.get('/api/admin/banners', adminAuthMiddleware.requireAdmin, bannersController.listAllBanners);
-router.post('/api/admin/banners', adminAuthMiddleware.requireAdmin, bannersController.createBanner);
-router.put('/api/admin/banners/:id', adminAuthMiddleware.requireAdmin, bannersController.updateBanner);
+router.post(
+  '/api/admin/banners',
+  adminAuthMiddleware.requireAdmin,
+  validate(adminBannerBodySchema),
+  bannersController.createBanner
+);
+router.put(
+  '/api/admin/banners/:id',
+  adminAuthMiddleware.requireAdmin,
+  validate(adminBannerBodySchema),
+  bannersController.updateBanner
+);
 router.delete('/api/admin/banners/:id', adminAuthMiddleware.requireAdmin, bannersController.deleteBanner);
 
 router.post(
@@ -352,17 +390,14 @@ router.post(
   '/api/admin/portfolios/:username/achievements',
   adminAuthMiddleware.requireScope('events:write'),
   adminAuditMiddleware,
+  validate(achievementSchema),
   async (req, res) => {
     try {
       const username = String(req.params.username || '')
         .trim()
         .toLowerCase();
-      const validated = achievementSchema.safeParse(req.body);
-      if (!validated.success) {
-        return res.status(400).json({ error: validated.error.errors[0].message });
-      }
 
-      const achievement = await portfolioService.awardAchievement(username, validated.data);
+      const achievement = await portfolioService.awardAchievement(username, req.body);
       return res.status(201).json({ achievement });
     } catch (err) {
       return res.status(500).json({ error: err.message });

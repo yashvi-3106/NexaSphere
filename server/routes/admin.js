@@ -6,6 +6,8 @@ import { tracedFetch } from '../config/appContext.js';
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import { supabaseBreaker, HAS_SUPABASE } from '../storage/supabaseClient.js';
+import { validate } from '../middleware/validate.js';
+import { ssoInviteSchema } from '../validators/routes/adminSchemas.js';
 import { financialService } from '../services/financialService.js';
 import {
   validateConfigChange,
@@ -281,7 +283,7 @@ router.get('/api/admin/reports/revenue', adminAuth, async (req, res) => {
 
 import jwt from 'jsonwebtoken';
 
-router.post('/api/admin/sso-invite', adminAuth, (req, res) => {
+router.post('/api/admin/sso-invite', validate(ssoInviteSchema), adminAuth, (req, res) => {
   const { email } = req.body;
   if (!email || typeof email !== 'string' || !email.includes('@')) {
     return res.status(400).json({ error: 'Valid email address is required' });

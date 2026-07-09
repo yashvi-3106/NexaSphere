@@ -3,6 +3,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { supabaseRequest, HAS_SUPABASE } from '../storage/supabaseClient.js';
+import { validate } from '../middleware/validate.js';
+import { customFunnelSchema, saveReportSchema, executeReportSchema } from '../validators/routes/analyticsRouteSchemas.js';
 import {
   getDashboardSummary,
   getUserAnalytics,
@@ -129,11 +131,11 @@ router.get('/funnel', getEngagementFunnel);
 
 // Custom Funnel Analysis
 router.get('/funnel/steps', getFunnelStepTypes);
-router.post('/funnel/custom', getCustomFunnel);
+router.post('/funnel/custom', validate(customFunnelSchema), getCustomFunnel);
 
 // Custom Reports
 router.get('/reports', getCustomReports);
-router.post('/reports', saveCustomReport);
-router.post('/reports/execute', executeCustomReport);
+router.post('/reports', validate(saveReportSchema), saveCustomReport);
+router.post('/reports/execute', validate(executeReportSchema), executeCustomReport);
 
 export default router;

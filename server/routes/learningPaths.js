@@ -2,6 +2,8 @@ import express from 'express';
 import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
 import { learningPathService } from '../services/learningPathService.js';
 import { learningPathsRepository } from '../repositories/learningPathsRepository.js';
+import { validate } from '../middleware/validate.js';
+import { enrollSchema, completeMilestoneSchema, assessSchema } from '../validators/routes/learningPathsSchemas.js';
 
 const router = express.Router();
 
@@ -24,7 +26,7 @@ router.get('/learning-paths/:id', requireStudentAuth, async (req, res) => {
   }
 });
 
-router.post('/learning-paths/:id/enroll', requireStudentAuth, async (req, res) => {
+router.post('/learning-paths/:id/enroll', validate(enrollSchema), requireStudentAuth, async (req, res) => {
   try {
     const userId = req.studentUser.sub || req.studentUser.id;
     const { targetWeeks, initialLevel } = req.body;
@@ -49,6 +51,7 @@ router.get('/learning-paths/:id/leaderboard', async (req, res) => {
 
 router.post(
   '/learning-paths/milestones/:milestoneId/complete',
+  validate(completeMilestoneSchema),
   requireStudentAuth,
   async (req, res) => {
     try {
@@ -68,7 +71,7 @@ router.post(
   }
 );
 
-router.post('/learning-paths/:id/assess', requireStudentAuth, async (req, res) => {
+router.post('/learning-paths/:id/assess', validate(assessSchema), requireStudentAuth, async (req, res) => {
   try {
     // Simple logic to set starting level based on quiz score
     const { score } = req.body; // Score from 0-10

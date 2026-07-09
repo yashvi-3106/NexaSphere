@@ -2,6 +2,11 @@ import { Router } from 'express';
 import { webhookService, WEBHOOK_EVENTS } from '../services/webhookService.js';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import { protectedActionRateLimiter } from '../middleware/authRateLimiter.js';
+import { validate } from '../middleware/validate.js';
+import {
+  createWebhookSchema,
+  updateWebhookSchema,
+} from '../validators/routes/webhooksSchemas.js';
 import logger from '../utils/logger.js';
 
 const router = Router();
@@ -15,7 +20,7 @@ router.get('/events', protectedActionRateLimiter, adminAuthMiddleware.requireAdm
   }
 });
 
-router.post('/', protectedActionRateLimiter, adminAuthMiddleware.requireAdmin, async (req, res) => {
+router.post('/', validate(createWebhookSchema), protectedActionRateLimiter, adminAuthMiddleware.requireAdmin, async (req, res) => {
   try {
     const webhook = await webhookService.createWebhook(req.body, req.user);
     res.status(201).json({ success: true, data: webhook });
@@ -45,7 +50,7 @@ router.get('/:webhookId', protectedActionRateLimiter, adminAuthMiddleware.requir
   }
 });
 
-router.put('/:webhookId', protectedActionRateLimiter, adminAuthMiddleware.requireAdmin, async (req, res) => {
+router.put('/:webhookId', validate(updateWebhookSchema), protectedActionRateLimiter, adminAuthMiddleware.requireAdmin, async (req, res) => {
   try {
     const webhook = await webhookService.updateWebhook(req.params.webhookId, req.body, req.user);
     res.json({ success: true, data: webhook });

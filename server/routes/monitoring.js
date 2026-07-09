@@ -5,6 +5,8 @@
 
 import express from 'express';
 const router = express.Router();
+import { validate } from '../middleware/validate.js';
+import { rumMetricSchema, keyRotationSchema, testErrorSchema } from '../validators/routes/monitoringSchemas.js';
 import { getMetrics } from '../middleware/performanceMonitor.js';
 import {
   getErrorStats,
@@ -277,7 +279,7 @@ router.get('/logs', requireMonitoringAuth, (req, res) => {
  * Test endpoint for triggering an error
  * For development/testing only
  */
-router.post('/test-error', requireMonitoringAuth, (req, res, next) => {
+router.post('/test-error', validate(testErrorSchema), requireMonitoringAuth, (req, res, next) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(403).json({
       success: false,
@@ -297,7 +299,7 @@ router.post('/test-error', requireMonitoringAuth, (req, res, next) => {
  * GET /api/monitoring/backup-status
  * Get backup and recovery monitoring status
  */
-router.post('/rum', requireMonitoringAuth, (req, res) => {
+router.post('/rum', validate(rumMetricSchema), requireMonitoringAuth, (req, res) => {
   try {
     const duration = parseFloat(req.body?.durationSeconds);
     if (!Number.isFinite(duration) || duration < 0) {
@@ -557,7 +559,7 @@ router.get('/encryption-status', (req, res) => {
 });
 
 // Rotate encryption key
-router.post('/key-rotation', (req, res) => {
+router.post('/key-rotation', validate(keyRotationSchema), (req, res) => {
   const result = encryptionManager.rotateEncryptionKey();
 
   return res.json({
@@ -615,7 +617,7 @@ router.get('/encryption-status', (req, res) => {
 });
 
 // Rotate encryption key
-router.post('/key-rotation', (req, res) => {
+router.post('/key-rotation', validate(keyRotationSchema), (req, res) => {
   const result = encryptionManager.rotateEncryptionKey();
 
   return res.json({

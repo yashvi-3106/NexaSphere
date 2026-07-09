@@ -2,7 +2,21 @@ import { Router } from 'express';
 import multer from 'multer';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import { apiRateLimiter } from '../middleware/rateLimiter.js';
+import { validate } from '../middleware/validate.js';
 import { bulkOperationsService } from '../services/bulkOperationsService.js';
+import {
+  bulkUsersPreviewSchema,
+  bulkUsersImportSchema,
+  bulkUsersRoleSchema,
+  bulkUsersStatusSchema,
+  bulkUsersTagsSchema,
+  bulkUsersEmailSchema,
+  bulkEventsPreviewSchema,
+  bulkEventsImportSchema,
+  bulkEventsStatusSchema,
+  bulkEventsCloneSchema,
+  bulkEventsRemindSchema,
+} from '../validators/routes/bulkSchemas.js';
 
 const router = Router();
 const adminAuth = [apiRateLimiter, adminAuthMiddleware.requireAdmin];
@@ -36,7 +50,7 @@ router.get(paths('/bulk/jobs/:id'), adminAuth, (req, res) => {
 // ---------------------------------------------------------------------------
 // User Operations
 // ---------------------------------------------------------------------------
-router.post(paths('/bulk/users/preview'), adminAuth, (req, res) => {
+router.post(paths('/bulk/users/preview'), validate(bulkUsersPreviewSchema), adminAuth, (req, res) => {
   const { csv } = req.body;
   if (!csv) {
     return res.status(400).json({ error: 'CSV data is required' });
@@ -45,7 +59,7 @@ router.post(paths('/bulk/users/preview'), adminAuth, (req, res) => {
   return res.json(result);
 });
 
-router.post(paths('/bulk/users/import'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/users/import'), validate(bulkUsersImportSchema), adminAuth, async (req, res) => {
   const { csv } = req.body;
   if (!csv) {
     return res.status(400).json({ error: 'CSV data is required' });
@@ -80,7 +94,7 @@ router.get(paths('/bulk/users/export'), adminAuth, async (req, res) => {
   return res.send(csv);
 });
 
-router.post(paths('/bulk/users/role'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/users/role'), validate(bulkUsersRoleSchema), adminAuth, async (req, res) => {
   const { userIds, role } = req.body;
   if (!Array.isArray(userIds) || !role) {
     return res.status(400).json({ error: 'userIds array and role are required' });
@@ -90,7 +104,7 @@ router.post(paths('/bulk/users/role'), adminAuth, async (req, res) => {
   return res.status(202).json(job);
 });
 
-router.post(paths('/bulk/users/status'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/users/status'), validate(bulkUsersStatusSchema), adminAuth, async (req, res) => {
   const { userIds, status } = req.body;
   if (!Array.isArray(userIds) || !status) {
     return res.status(400).json({ error: 'userIds array and status are required' });
@@ -100,7 +114,7 @@ router.post(paths('/bulk/users/status'), adminAuth, async (req, res) => {
   return res.status(202).json(job);
 });
 
-router.post(paths('/bulk/users/tags'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/users/tags'), validate(bulkUsersTagsSchema), adminAuth, async (req, res) => {
   const { userIds, tags } = req.body;
   if (!Array.isArray(userIds) || !Array.isArray(tags)) {
     return res.status(400).json({ error: 'userIds array and tags array are required' });
@@ -110,7 +124,7 @@ router.post(paths('/bulk/users/tags'), adminAuth, async (req, res) => {
   return res.status(202).json(job);
 });
 
-router.post(paths('/bulk/users/email'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/users/email'), validate(bulkUsersEmailSchema), adminAuth, async (req, res) => {
   const { userIds, subject, message } = req.body;
   if (!Array.isArray(userIds) || !subject || !message) {
     return res.status(400).json({ error: 'userIds array, subject, and message are required' });
@@ -123,7 +137,7 @@ router.post(paths('/bulk/users/email'), adminAuth, async (req, res) => {
 // ---------------------------------------------------------------------------
 // Event Operations
 // ---------------------------------------------------------------------------
-router.post(paths('/bulk/events/preview'), adminAuth, (req, res) => {
+router.post(paths('/bulk/events/preview'), validate(bulkEventsPreviewSchema), adminAuth, (req, res) => {
   const { csv } = req.body;
   if (!csv) {
     return res.status(400).json({ error: 'CSV data is required' });
@@ -132,7 +146,7 @@ router.post(paths('/bulk/events/preview'), adminAuth, (req, res) => {
   return res.json(result);
 });
 
-router.post(paths('/bulk/events/import'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/events/import'), validate(bulkEventsImportSchema), adminAuth, async (req, res) => {
   const { csv } = req.body;
   if (!csv) {
     return res.status(400).json({ error: 'CSV data is required' });
@@ -157,7 +171,7 @@ router.post(
   }
 );
 
-router.post(paths('/bulk/events/status'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/events/status'), validate(bulkEventsStatusSchema), adminAuth, async (req, res) => {
   const { eventIds, status } = req.body;
   if (!Array.isArray(eventIds) || !status) {
     return res.status(400).json({ error: 'eventIds array and status are required' });
@@ -167,7 +181,7 @@ router.post(paths('/bulk/events/status'), adminAuth, async (req, res) => {
   return res.status(202).json(job);
 });
 
-router.post(paths('/bulk/events/clone'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/events/clone'), validate(bulkEventsCloneSchema), adminAuth, async (req, res) => {
   const { eventIds, offsetDays } = req.body;
   if (!Array.isArray(eventIds) || typeof offsetDays !== 'number') {
     return res.status(400).json({ error: 'eventIds array and numeric offsetDays are required' });
@@ -192,7 +206,7 @@ router.get(paths('/bulk/events/export'), adminAuth, async (req, res) => {
   return res.send(csv);
 });
 
-router.post(paths('/bulk/events/remind'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/events/remind'), validate(bulkEventsRemindSchema), adminAuth, async (req, res) => {
   const { eventIds } = req.body;
   if (!Array.isArray(eventIds)) {
     return res.status(400).json({ error: 'eventIds array is required' });

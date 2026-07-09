@@ -2,10 +2,16 @@ import { Router } from 'express';
 import { portfolioExportService } from '../services/portfolioExportService.js';
 import { portfolioRepository } from '../repositories/portfolioRepository.js';
 import logger from '../utils/logger.js';
+import { validate } from '../middleware/validate.js';
+import {
+  usernameParamsSchema,
+  pdfQuerySchema,
+  websiteQuerySchema,
+} from '../validators/routes/portfolioExportSchemas.js';
 
 const router = Router();
 
-router.get('/:username/pdf', async (req, res) => {
+router.get('/:username/pdf', validate(usernameParamsSchema, 'params'), validate(pdfQuerySchema, 'query'), async (req, res) => {
   try {
     const { username } = req.params;
     const { pageSize = 'A4', includeContact = 'true', watermark = 'true' } = req.query;
@@ -26,7 +32,7 @@ router.get('/:username/pdf', async (req, res) => {
   }
 });
 
-router.get('/:username/website', async (req, res) => {
+router.get('/:username/website', validate(usernameParamsSchema, 'params'), validate(websiteQuerySchema, 'query'), async (req, res) => {
   try {
     const { username } = req.params;
     const { includeSEO = 'true', includeAnalytics = 'false', analyticsId = '' } = req.query;
@@ -57,7 +63,7 @@ router.get('/:username/website', async (req, res) => {
   }
 });
 
-router.get('/:username/qr-code', async (req, res) => {
+router.get('/:username/qr-code', validate(usernameParamsSchema, 'params'), async (req, res) => {
   try {
     const { username } = req.params;
     const portfolioUrl = `${process.env.FRONTEND_URL || 'https://nexasphere.com'}/portfolio/${username}`;
@@ -77,7 +83,7 @@ router.get('/:username/qr-code', async (req, res) => {
   }
 });
 
-router.get('/:username/website/html', async (req, res) => {
+router.get('/:username/website/html', validate(usernameParamsSchema, 'params'), validate(websiteQuerySchema, 'query'), async (req, res) => {
   try {
     const { username } = req.params;
     const { includeSEO = 'true', includeAnalytics = 'false', analyticsId = '' } = req.query;
@@ -101,7 +107,7 @@ router.get('/:username/website/html', async (req, res) => {
   }
 });
 
-router.get('/:username/website/css', async (req, res) => {
+router.get('/:username/website/css', validate(usernameParamsSchema, 'params'), async (req, res) => {
   try {
     const { username } = req.params;
     const result = await portfolioExportService.generateWebsite(username);

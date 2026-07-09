@@ -5,6 +5,11 @@ import { announcementsService } from '../services/announcementsService.js';
 import { apiRateLimiter } from '../middleware/rateLimiter.js';
 import eventManager from '../services/eventEmitterService.js';
 import logger from '../utils/logger.js';
+import { validate } from '../middleware/validate.js';
+import {
+  createAnnouncementSchema,
+  updateAnnouncementSchema,
+} from '../validators/routes/announcementsSchemas.js';
 
 const router = Router();
 
@@ -50,6 +55,7 @@ router.get(
 
 router.post(
   '/api/admin/announcements',
+  validate(createAnnouncementSchema),
   adminAuthMiddleware.requireScope('events:write'),
   apiRateLimiter,
   async (req, res) => {
@@ -75,6 +81,7 @@ router.post(
 
 router.put(
   '/api/admin/announcements/:id',
+  validate(updateAnnouncementSchema),
   adminAuthMiddleware.requireScope('events:write'),
   apiRateLimiter,
   async (req, res) => {

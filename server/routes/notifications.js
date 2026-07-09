@@ -16,7 +16,13 @@ import { pushSubscriptionsRepository } from '../repositories/pushSubscriptionsRe
 import { notificationPreferencesRepository } from '../repositories/notificationPreferencesRepository.js';
 import { studentAuthService } from '../services/studentAuthService.js';
 import { notificationSchema } from '../validators/notificationSchemas.js';
-import { requireNotificationPrefAuth } from '../middleware/auth/customAuth.js';
+import { validate } from '../middleware/validate.js';
+import {
+  markReadSchema,
+  markAllReadSchema,
+  updatePreferencesSchema,
+  bulkPreferencesSchema,
+} from '../validators/routes/notificationsSchemas.js';
 
 const router = Router();
 
@@ -167,6 +173,7 @@ router.post(
  */
 router.post(
   '/notifications/mark-read',
+  validate(markReadSchema),
   requireNotificationAuth,
   notificationRateLimiter,
   async (req, res) => {
@@ -196,6 +203,7 @@ router.post(
  */
 router.post(
   '/notifications/mark-all-read',
+  validate(markAllReadSchema),
   requireNotificationAuth,
   notificationRateLimiter,
   async (req, res) => {
@@ -274,6 +282,7 @@ router.delete(
  */
 router.post(
   '/notifications',
+  validate(notificationSchema),
   adminAuthMiddleware.requireAdmin,
   notificationRateLimiter,
   async (req, res) => {
@@ -369,7 +378,7 @@ router.get('/notifications/preferences', requireNotificationPrefAuth, async (req
   }
 });
 
-router.put('/notifications/preferences', requireNotificationPrefAuth, async (req, res) => {
+router.put('/notifications/preferences', validate(updatePreferencesSchema), requireNotificationPrefAuth, async (req, res) => {
   try {
     const userId = req.body.userId || 'global';
     const { category, email, push, in_app, sms, frequency, quiet_start, quiet_end, dnd } = req.body;
@@ -390,7 +399,7 @@ router.put('/notifications/preferences', requireNotificationPrefAuth, async (req
   }
 });
 
-router.put('/notifications/preferences/bulk', requireNotificationPrefAuth, async (req, res) => {
+router.put('/notifications/preferences/bulk', validate(bulkPreferencesSchema), requireNotificationPrefAuth, async (req, res) => {
   try {
     const userId = req.body.userId || 'global';
     const { preferences } = req.body;

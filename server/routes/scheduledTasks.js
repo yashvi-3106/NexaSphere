@@ -13,6 +13,8 @@
 
 import { Router } from 'express';
 import { schedulerService } from '../services/schedulerService.js';
+import { validate } from '../middleware/validate.js';
+import { updateTaskSchema, triggerTaskSchema } from '../validators/routes/scheduledTasksSchemas.js';
 
 const router = Router();
 
@@ -69,7 +71,7 @@ router.get('/:id/history', sanitizeId, (req, res) => {
 });
 
 // ─── PATCH /api/admin/scheduled-tasks/:id ────────────────────────────────────
-router.patch('/:id', sanitizeId, (req, res) => {
+router.patch('/:id', validate(updateTaskSchema), sanitizeId, (req, res) => {
   try {
     const { enabled, cron } = req.body;
     let task = schedulerService.getTask(req.params.id);
@@ -94,7 +96,7 @@ router.patch('/:id', sanitizeId, (req, res) => {
 });
 
 // ─── POST /api/admin/scheduled-tasks/:id/run ─────────────────────────────────
-router.post('/:id/run', sanitizeId, async (req, res) => {
+router.post('/:id/run', validate(triggerTaskSchema), sanitizeId, async (req, res) => {
   try {
     const task = await schedulerService.triggerNow(req.params.id);
     res.json({ message: 'Task executed successfully', task });

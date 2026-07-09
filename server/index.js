@@ -121,6 +121,8 @@ app.use("/api/activity-timeline", activityTimelineRoutes);
 import { initializeTypesenseCollections } from './config/typesense.js';
 import moderationRouter from './routes/moderation.js';
 import rbacRouter from './routes/rbac.js';
+import { validate } from './middleware/validate.js';
+import * as indexSchemas from './validators/routes/indexSchemas.js';
 
 validateLimiters();
 
@@ -451,7 +453,7 @@ app.use('/api', tierRateLimiter());
 app.use(readOnlyGuard);
 
 // Mount route modules
-app.post('/api/analytics/track', logEvent);
+app.post('/api/analytics/track', validate(indexSchemas.analyticsTrackSchema), logEvent);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/health-dashboard', healthDashboardRouter);
 app.use('/api', documentationRouter);
@@ -490,10 +492,10 @@ app.use('/api/admin/rbac', adminAuth, rbacRouter);
 
 // Database Backup & Recovery Endpoints
 app.get('/api/admin/backups', adminAuth, backupController.getBackups);
-app.post('/api/admin/backups/manual', adminAuth, backupController.runManualBackup);
-app.post('/api/admin/backups/restore', adminAuth, backupController.runRestore);
+app.post('/api/admin/backups/manual', validate(indexSchemas.manualBackupSchema), adminAuth, backupController.runManualBackup);
+app.post('/api/admin/backups/restore', validate(indexSchemas.restoreBackupSchema), adminAuth, backupController.runRestore);
 app.get('/api/admin/backups/restore-test-history', adminAuth, backupController.getRestoreHistory);
-app.delete('/api/admin/backups', adminAuth, backupController.deleteBackup);
+app.delete('/api/admin/backups', validate(indexSchemas.deleteBackupSchema), adminAuth, backupController.deleteBackup);
 
 const defaultContent = {
   events: [
@@ -1284,16 +1286,16 @@ app.get('/api/auth/github/callback', studentAuthController.githubCallback);
 app.get('/api/auth/me', requireStudentAuth, studentAuthController.getMe);
 app.delete('/api/auth/me', requireStudentAuth, studentAuthController.deleteAccount);
 app.get('/api/auth/export', requireStudentAuth, studentAuthController.exportData);
-app.post('/api/auth/theme', requireStudentAuth, studentAuthController.updateTheme);
+app.post('/api/auth/theme', validate(indexSchemas.updateThemeSchema), requireStudentAuth, studentAuthController.updateTheme);
 app.post('/api/auth/logout', studentAuthController.logout);
 
 // Student Profile Endpoints
 app.get('/api/auth/profile', requireStudentAuth, studentAuthController.getProfile);
-app.put('/api/auth/profile', requireStudentAuth, studentAuthController.updateProfile);
+app.put('/api/auth/profile', validate(indexSchemas.updateProfileSchema), requireStudentAuth, studentAuthController.updateProfile);
 app.get('/api/auth/registrations', requireStudentAuth, studentAuthController.getRegistrations);
 
 // Slack Integration Endpoints
-app.post('/api/auth/slack-settings', requireStudentAuth, studentAuthController.updateSlackSettings);
+app.post('/api/auth/slack-settings', validate(indexSchemas.slackSettingsSchema), requireStudentAuth, studentAuthController.updateSlackSettings);
 app.get('/api/slack/auth', slackController.startSlackAuth);
 app.get('/api/slack/auth/callback', slackController.slackAuthCallback);
 app.post(
@@ -1302,7 +1304,7 @@ app.post(
   slackController.handleSlackCommand
 );
 app.get('/api/admin/slack/config', adminAuth, slackController.getSlackConfig);
-app.post('/api/admin/slack/config', adminAuth, slackController.updateSlackConfig);
+app.post('/api/admin/slack/config', validate(indexSchemas.slackConfigSchema), adminAuth, slackController.updateSlackConfig);
 app.delete('/api/admin/slack/disconnect', adminAuth, slackController.disconnectSlack);
 
 // â”€â”€ Event Admin Management â”€â”€
@@ -1315,28 +1317,28 @@ app.delete('/api/admin/events/:id', adminAuth, eventsController.adminDeleteEvent
 app.get('/api/streams', streamController.listStreams);
 app.get('/api/streams/event/:eventId', streamController.getStreamByEvent);
 app.get('/api/streams/:id', streamController.getStream);
-app.post('/api/streams', adminAuth, streamController.createStream);
-app.put('/api/streams/:id', adminAuth, streamController.updateStream);
-app.patch('/api/streams/:id/status', adminAuth, streamController.setStreamStatus);
+app.post('/api/streams', validate(indexSchemas.createStreamSchema), adminAuth, streamController.createStream);
+app.put('/api/streams/:id', validate(indexSchemas.updateStreamSchema), adminAuth, streamController.updateStream);
+app.patch('/api/streams/:id/status', validate(indexSchemas.streamStatusSchema), adminAuth, streamController.setStreamStatus);
 app.delete('/api/streams/:id', adminAuth, streamController.deleteStream);
-app.post('/api/streams/:id/chat', apiRateLimiter, streamController.addChatMessage);
+app.post('/api/streams/:id/chat', validate(indexSchemas.addChatMessageSchema), apiRateLimiter, streamController.addChatMessage);
 app.get('/api/streams/:id/chat', streamController.listChatMessages);
-app.post('/api/streams/:id/ban', adminAuth, streamController.banUser);
-app.post('/api/streams/:id/polls', adminAuth, streamController.createPoll);
+app.post('/api/streams/:id/ban', validate(indexSchemas.banUserSchema), adminAuth, streamController.banUser);
+app.post('/api/streams/:id/polls', validate(indexSchemas.createPollSchema), adminAuth, streamController.createPoll);
 app.get('/api/streams/:id/polls', streamController.listPolls);
-app.post('/api/streams/polls/:pollId/vote', streamController.votePoll);
+app.post('/api/streams/polls/:pollId/vote', validate(indexSchemas.votePollSchema), streamController.votePoll);
 app.patch('/api/streams/polls/:pollId/close', adminAuth, streamController.closePoll);
 app.patch('/api/streams/chat/:messageId/moderate', adminAuth, streamController.moderateChatMessage);
 app.get('/api/admin/streams', adminAuth, streamController.adminListAll);
-app.post('/api/streams/:id/mod-chat', adminAuth, streamController.addModChatMessage);
+app.post('/api/streams/:id/mod-chat', validate(indexSchemas.addModChatMessageSchema), adminAuth, streamController.addModChatMessage);
 app.get('/api/streams/:id/mod-chat', adminAuth, streamController.listModChatMessages);
 app.get('/api/streams/:id/analytics', adminAuth, streamController.getStreamAnalytics);
 
 // Streaming Engagement: Q&A and Reactions
-app.post('/api/streams/:id/questions', streamController.addQuestion);
+app.post('/api/streams/:id/questions', validate(indexSchemas.addQuestionSchema), streamController.addQuestion);
 app.get('/api/streams/:id/questions', streamController.listQuestions);
-app.patch('/api/streams/questions/:qId/answer', adminAuth, streamController.answerQuestion);
-app.post('/api/streams/:id/reactions', streamController.addReaction);
+app.patch('/api/streams/questions/:qId/answer', validate(indexSchemas.answerQuestionSchema), adminAuth, streamController.answerQuestion);
+app.post('/api/streams/:id/reactions', validate(indexSchemas.addReactionSchema), streamController.addReaction);
 app.get('/api/streams/:id/reactions', streamController.getReactions);
 
 // search routes
@@ -1498,7 +1500,7 @@ app.get('/api/notifications/preferences', adminAuth, async (req, res) => {
   }
 });
 // Notification analytics (lightweight collector)
-app.put('/api/notifications/preferences', adminAuth, async (req, res) => {
+app.put('/api/notifications/preferences', validate(indexSchemas.notificationPreferencesSchema), adminAuth, async (req, res) => {
   try {
     const userId = req.body.userId || 'global';
     const { category, email, push, in_app, sms, frequency, quiet_start, quiet_end, dnd } = req.body;
@@ -1519,7 +1521,7 @@ app.put('/api/notifications/preferences', adminAuth, async (req, res) => {
   }
 });
 
-app.put('/api/notifications/preferences/bulk', adminAuth, async (req, res) => {
+app.put('/api/notifications/preferences/bulk', validate(indexSchemas.bulkNotificationPreferencesSchema), adminAuth, async (req, res) => {
   try {
     const userId = req.body.userId || 'global';
     const { preferences } = req.body;
@@ -1629,8 +1631,8 @@ app.delete('/api/forum/replies/:replyId', requireStudentAuth, forumController.de
 app.post('/api/forum/threads/:id/vote', requireStudentAuth, forumController.voteThread);
 app.post('/api/forum/replies/:replyId/vote', requireStudentAuth, forumController.voteReply);
 app.post('/api/forum/threads/:id/accept/:replyId', requireStudentAuth, forumController.acceptReply);
-app.patch('/api/admin/forum/threads/:id/moderate', adminAuth, forumController.moderateThread);
-app.patch('/api/admin/forum/replies/:replyId/moderate', adminAuth, forumController.moderateReply);
+app.patch('/api/admin/forum/threads/:id/moderate', validate(indexSchemas.moderateThreadSchema), adminAuth, forumController.moderateThread);
+app.patch('/api/admin/forum/replies/:replyId/moderate', validate(indexSchemas.moderateReplySchema), adminAuth, forumController.moderateReply);
 app.get('/api/admin/forum/threads', adminAuth, forumController.adminListThreads);
 
 function requireMentorshipAuth(req, res, next) {
@@ -1657,6 +1659,7 @@ app.get('/api/mentorship/requests', requireMentorshipAuth, mentorshipController.
 app.get('/api/mentorship/requests/:id', requireMentorshipAuth, mentorshipController.getMentorship);
 app.put(
   '/api/mentorship/requests/:id/status',
+  validate(indexSchemas.updateMentorshipStatusSchema),
   requireMentorshipAuth,
   mentorshipController.updateMentorshipStatus
 );
@@ -1683,7 +1686,7 @@ app.get('/api/recommendations', searchRateLimiter, searchController.recommendati
 // Public resource endpoints
 app.get('/api/resources', resourcesController.listResources);
 app.get('/api/resources/:id', resourcesController.getResource);
-app.post('/api/resources', resourcesController.createResource);
+app.post('/api/resources', validate(indexSchemas.createResourceSchema), resourcesController.createResource);
 app.post('/api/resources/:id/vote', resourcesController.voteResource);
 app.post('/api/resources/:id/download', resourcesController.downloadResource);
 app.post('/api/resources/:id/download-track', resourcesController.downloadResource);
@@ -1698,10 +1701,10 @@ app.post(
 
 // Admin resource management
 app.get('/api/admin/resources', adminAuth, resourcesController.listResources);
-app.post('/api/admin/resources', adminAuth, resourcesController.createResource);
-app.put('/api/admin/resources/:id', adminAuth, resourcesController.updateResource);
+app.post('/api/admin/resources', validate(indexSchemas.createResourceSchema), adminAuth, resourcesController.createResource);
+app.put('/api/admin/resources/:id', validate(indexSchemas.updateResourceSchema), adminAuth, resourcesController.updateResource);
 app.delete('/api/admin/resources/:id', adminAuth, resourcesController.deleteResource);
-app.patch('/api/admin/resources/:id/moderate', adminAuth, resourcesController.moderateResource);
+app.patch('/api/admin/resources/:id/moderate', validate(indexSchemas.moderateResourceSchema), adminAuth, resourcesController.moderateResource);
 // Must be registered after all routes.
 app.use(notFoundHandler);
 addSentryErrorHandler(app);

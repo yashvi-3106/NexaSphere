@@ -1,4 +1,10 @@
 import { Router } from "express";
+import { validate } from "../middleware/validate.js";
+import {
+  joinWaitlistSchema,
+  autoEnrollSchema,
+  setDeadlineSchema,
+} from "../validators/routes/waitlistSchemas.js";
 import { adminAuthMiddleware } from "../middleware/adminAuthMiddleware.js";
 import * as waitlistController from "../controllers/waitlistController.js";
 
@@ -9,6 +15,7 @@ const router = Router();
  */
 router.post(
   "/join",
+  validate(joinWaitlistSchema),
   adminAuthMiddleware.requireAdmin,
   waitlistController.joinWaitlist
 );
@@ -29,6 +36,7 @@ router.get(
  */
 router.post(
   "/auto-enroll",
+  validate(autoEnrollSchema),
   adminAuthMiddleware.requireAdmin,
   waitlistController.autoEnroll
 );
@@ -56,6 +64,7 @@ router.get(
  */
 router.post(
   "/deadline",
+  validate(setDeadlineSchema),
   adminAuthMiddleware.requireAdmin,
   waitlistController.setDeadline
 );

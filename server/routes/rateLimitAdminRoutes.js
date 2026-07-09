@@ -6,7 +6,17 @@ import { Router } from 'express';
 import Redis from 'ioredis';
 import logger from '../utils/logger.js';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
+import { validate } from '../middleware/validate.js';
 import rateLimit from 'express-rate-limit';
+import {
+  overrideBodySchema,
+  overrideParamsSchema,
+  whitelistBodySchema,
+  whitelistParamsSchema,
+  blacklistBodySchema,
+  blacklistParamsSchema,
+  unblockBodySchema,
+} from '../validators/routes/rateLimitAdminRoutesSchemas.js';
 import {
   addToWhitelist,
   removeFromWhitelist,
@@ -156,13 +166,12 @@ router.get(
 
 router.post(
   '/api/admin/rate-limits/override',
+  validate(overrideBodySchema),
   adminAuthMiddleware.requireAdmin,
 
   async (req, res) => {
     try {
       const { identifier, limitPerMinute } = req.body;
-      if (!identifier || !limitPerMinute)
-        return res.status(400).json({ error: 'identifier and limitPerMinute are required' });
 
       const r = await redis();
       if (r) await r.set(`ratelimit:override:${identifier}`, String(limitPerMinute), 'EX', 86400);
@@ -182,6 +191,7 @@ router.post(
 
 router.delete(
   '/api/admin/rate-limits/override/:identifier',
+  validate(overrideParamsSchema, 'params'),
   adminAuthMiddleware.requireAdmin,
 
   async (req, res) => {
@@ -210,12 +220,12 @@ router.get(
 
 router.post(
   '/api/admin/rate-limits/whitelist',
+  validate(whitelistBodySchema),
   adminAuthMiddleware.requireAdmin,
 
   async (req, res) => {
     try {
       const { ip } = req.body;
-      if (!ip) return res.status(400).json({ error: 'ip is required' });
       await addToWhitelist(ip);
       logger.info('IP whitelisted', { ip, by: req.adminSession?.adminId });
       res.json({ success: true });
@@ -227,6 +237,7 @@ router.post(
 
 router.delete(
   '/api/admin/rate-limits/whitelist/:ip',
+  validate(whitelistParamsSchema, 'params'),
   adminAuthMiddleware.requireAdmin,
 
   async (req, res) => {
@@ -254,12 +265,12 @@ router.get(
 
 router.post(
   '/api/admin/rate-limits/blacklist',
+  validate(blacklistBodySchema),
   adminAuthMiddleware.requireAdmin,
 
   async (req, res) => {
     try {
       const { ip } = req.body;
-      if (!ip) return res.status(400).json({ error: 'ip is required' });
       await addToBlacklist(ip);
       logger.info('IP blacklisted', { ip, by: req.adminSession?.adminId });
       res.json({ success: true });
@@ -271,6 +282,7 @@ router.post(
 
 router.delete(
   '/api/admin/rate-limits/blacklist/:ip',
+  validate(blacklistParamsSchema, 'params'),
   adminAuthMiddleware.requireAdmin,
 
   async (req, res) => {
@@ -285,12 +297,12 @@ router.delete(
 
 router.post(
   '/api/admin/rate-limits/unblock',
+  validate(unblockBodySchema),
   adminAuthMiddleware.requireAdmin,
 
   async (req, res) => {
     try {
       const { ip } = req.body;
-      if (!ip) return res.status(400).json({ error: 'ip is required' });
       await unblockIp(ip);
       logger.info('IP auto-block lifted', { ip, by: req.adminSession?.adminId });
       res.json({ success: true });
