@@ -29,6 +29,7 @@ import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 <<<<<<< HEAD
 import announcementPriorityRouter from "./announcementPriority.js";
+import eventPricingRoutes from "./eventPricingRoutes.js";
 import eventConflictRouter from "./eventConflict.js";
 import waitlistRoutes from "./waitlist.js";
 =======
@@ -426,6 +427,7 @@ announcementPriorityRouter
 );
 
 router.use("/api/events", eventConflictRouter);
+router.use("/api/events/:eventId/pricing", eventPricingRoutes);
 
 router.use(
   "/api/admin/waitlist",
