@@ -124,6 +124,11 @@ services:
     networks:
       - default
       - observability
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:8000/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 networks:
   observability:
@@ -131,3 +136,25 @@ networks:
     driver: bridge
 
 # Redis is used for rate limiting and Socket.IO session sharing.
+
+  # ── Java Microservices API (optional) ────────────────────────────────────────
+  java-api:
+    profiles: ['java', 'observability']
+    build:
+      context: ./server-java
+      dockerfile: Dockerfile
+    expose:
+      - '8081'
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      OTEL_SERVICE_NAME: nexasphere-java
+      OTEL_ENABLED: 'false'
+    restart: unless-stopped
+    networks:
+      - default
+      - observability
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:8081/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3

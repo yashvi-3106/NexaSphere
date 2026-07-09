@@ -15,7 +15,12 @@ const router = Router();
  * and load balancers (Render, Railway, etc.).
  */
 router.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'nexasphere-api', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'healthy', 
+    uptime: process.uptime(),
+    service: 'nexasphere-api', 
+    timestamp: new Date().toISOString() 
+  });
 });
 
 /**

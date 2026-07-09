@@ -13,8 +13,13 @@ async def health_check(response: Response):
     """
     start_time = time.time()
     
+    import psutil
+    process = psutil.Process(os.getpid())
+    uptime = time.time() - process.create_time()
+
     health_status = {
-        "status": "ok",
+        "status": "healthy",
+        "uptime": uptime,
         "dependencies": {
             "supabase": "unknown",
             "google_sheets": "unknown",
