@@ -24,7 +24,7 @@ function parsePositiveInt(value, fallback) {
 // Shared env-var config for the general API limiter
 // Override via API_RATE_LIMIT_WINDOW_MS and API_RATE_LIMIT_MAX in .env
 // ---------------------------------------------------------------------------
-const API_WINDOW_MS = parsePositiveInt(process.env.API_RATE_LIMIT_WINDOW_MS, 10 * 60 * 1000);
+const API_WINDOW_MS = parsePositiveInt(process.env.API_RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000);
 
 const API_MAX_REQUESTS = parsePositiveInt(process.env.API_RATE_LIMIT_MAX, 100);
 
@@ -123,15 +123,15 @@ export const formRateLimiter = rateLimit({
   },
 });
 
-// Authentication rate limiter — 10 requests per IP per minute
+// Authentication rate limiter — 5 requests per IP per 15 minutes
 export const authRateLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: true,
   handler: createLimiterHandler(
     'Authentication rate limit exceeded',
-    'Too many login attempts, please try again after a minute.'
+    'Too many login attempts, please try again after 15 minutes.'
   ),
 });
 
