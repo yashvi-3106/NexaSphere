@@ -21,6 +21,8 @@ model User {
   feedbacks        EventFeedback[]
   actionItems      ActionItem[]
   settingsChanges  SettingsChangeLog[]
+
+  @@index([createdAt])
 }
 
 model Workspace {
@@ -148,6 +150,9 @@ model ActionItem {
   updatedAt   DateTime @updatedAt
 
   assignee User? @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([status])
 }
 
 model PlatformSetting {
