@@ -6,10 +6,10 @@ export const activeTraces = new Map();
 const tracer = trace.getTracer('nexasphere-api');
 
 export function tracingMiddleware(req, res, next) {
-  const reqId = req.headers['x-request-id'] || crypto.randomUUID();
+  const reqId = req.headers['X-Correlation-ID'] || crypto.randomUUID();
 
   req.reqId = reqId;
-  res.setHeader('X-Request-ID', reqId);
+  res.setHeader('X-Correlation-ID', reqId);
 
   const traceEntry = {
     reqId,

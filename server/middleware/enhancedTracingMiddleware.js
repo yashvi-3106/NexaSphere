@@ -28,11 +28,11 @@ function parseTraceparent(header) {
 }
 
 export function enhancedTracingMiddleware(req, res, next) {
-  const reqId = req.headers['x-request-id'] || crypto.randomUUID();
+  const reqId = req.headers['X-Correlation-ID'] || crypto.randomUUID();
   const startTime = Date.now();
 
   req.reqId = reqId;
-  res.setHeader('X-Request-ID', reqId);
+  res.setHeader('X-Correlation-ID', reqId);
 
   // Extract or generate W3C trace context
   const incomingTraceparent = req.headers['traceparent'];

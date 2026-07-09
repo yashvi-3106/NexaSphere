@@ -127,10 +127,10 @@ app.add_middleware(
 
 @app.middleware("http")
 async def request_id_middleware(request: Request, call_next):
-    req_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    req_id = request.headers.get("X-Correlation-ID") or str(uuid.uuid4())
     token = request_id_context.set(req_id)
     response = await call_next(request)
-    response.headers["X-Request-ID"] = req_id
+    response.headers["X-Correlation-ID"] = req_id
     request_id_context.reset(token)
     return response
 
