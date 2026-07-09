@@ -1,7 +1,29 @@
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
-const httpServer = createServer();
+const httpServer = createServer((req, res) => {
+  // 1. Prevent Clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+
+  // 2. Enforce Strict Content Security Policy (CSP)
+  // Whitelisting 'self' and allowing connections for WebSockets/APIs
+  const cspDirectives = [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'", // Often needed for React/Vite dev environments
+    "img-src 'self' data:",
+    "connect-src 'self' ws: wss: http: https:", // Explicitly allowing external API and WebSocket connections
+    "frame-ancestors 'none'"
+  ].join('; ');
+
+  res.setHeader('Content-Security-Policy', cspDirectives);
+
+  // Send a basic response for standard HTTP pings
+  if (req.method === 'GET' && req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('NexaSphere API Gateway & WebSocket Server is secure and running.');
+  }
+});
 const io = new Server(httpServer, {
   cors: { origin: '*' },
 });
