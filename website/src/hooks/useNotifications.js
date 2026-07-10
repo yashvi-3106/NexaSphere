@@ -174,7 +174,9 @@ export function useNotifications() {
                 suppressedReason: !channelEnabled ? 'channel' : dnd ? 'dnd' : 'quiet',
               });
               localStorage.setItem(key, JSON.stringify(arr));
-            } catch (e) {}
+            } catch (e) {
+              setNotifications((prev) => [note, ...prev]);
+            }
             return;
           }
 
