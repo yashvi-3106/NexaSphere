@@ -30,7 +30,6 @@ import { slackIntegrationService } from './services/slackIntegrationService.js';
 import { initializeSocketIO } from './config/socket.js';
 import adminStreamRouter from './routes/adminStream.js';
 import faqRouter from './routes/faqRoutes.js';
-import { setupAuditContext } from './middleware/adminAuditMiddleware.js';
 import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
 import healthRouter from './routes/health.js';
@@ -42,6 +41,7 @@ import recoveryRouter from './routes/recovery.js';
 import portfolioExportRouter from './routes/portfolioExport.js';
 import userGroupsRouter from './routes/userGroups.js';
 import notificationsRouter from './routes/notifications.js';
+import notificationPreferenceRoutes from './routes/notificationPreference.js';
 import adminRouter from './routes/admin.js';
 import portfolioAnalyticsRouter from './routes/portfolioAnalytics.js';
 import announcementsRouter from './routes/announcements.js';
@@ -98,6 +98,7 @@ import { loadPersistedPushSubscriptions } from './routes/notifications.js';
 import * as mentorshipController from './controllers/mentorshipController.js';
 import { xssSanitizer } from './middleware/xssSanitizer.js';
 import { tierRateLimiter } from './middleware/tierRateLimiter.js';
+import { readOnlyGuard } from './services/readOnlyService.js';
 import { startWebhookRetryProcessor } from './services/webhookRetryProcessor.js';
 import { csrfProtection } from './middleware/csrfMiddleware.js';
 import compression from 'compression';
@@ -108,12 +109,12 @@ import { learningPathService } from './services/learningPathService.js';
 import * as resourcesController from './controllers/resourcesController.js';
 import * as backupController from './controllers/backupController.js';
 import scheduledTasksRouter from './routes/scheduledTasks.js';
+import emailTemplateRouter from './routes/emailTemplateRoutes.js';
 import financialsRouter from './routes/financials.js';
 import { schedulerService } from './services/schedulerService.js';
 import feedbackRouter from './routes/feedbackRoutes.js';
 import * as slackController from './controllers/slackController.js';
 import activityTimelineRoutes from './routes/activityTimeline.js';
-app.use('/api/activity-timeline', activityTimelineRoutes);
 
 import { initializeTypesenseCollections } from './config/typesense.js';
 import moderationRouter from './routes/moderation.js';
@@ -160,6 +161,7 @@ app.set('trust proxy', 1);
 initializeSentry(app);
 app.use(compression());
 app.use('/api/notification-preferences', notificationPreferenceRoutes);
+app.use('/api/activity-timeline', activityTimelineRoutes);
 
 // Use compression with fallback (Brotli supported by default in compression v1.8 if zlib supports it)
 // Skip compression for responses smaller than 1KB (1024 bytes)

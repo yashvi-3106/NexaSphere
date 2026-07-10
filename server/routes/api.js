@@ -24,13 +24,17 @@ import { studentAuthService } from '../services/studentAuthService.js';
 import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
 import * as sponsorshipsController from '../controllers/sponsorshipsController.js';
 import * as subscriptionsController from '../controllers/subscriptionsController.js';
+import * as followsController from '../controllers/followsController.js';
 import * as portfolioAnalyticsController from '../controllers/portfolioAnalyticsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import announcementPriorityRouter from './announcementPriority.js';
 import eventConflictRouter from './eventConflict.js';
 import waitlistRoutes from './waitlist.js';
+import recommendationEngine from './recommendationEngine.js';
+import platformAnalyticsRoutes from './platformAnalytics.js';
 import * as localAuthController from '../controllers/localAuthController.js';
+import * as whiteboardController from '../controllers/whiteboardController.js';
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
