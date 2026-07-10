@@ -15,12 +15,15 @@ import {
 } from 'lucide-react';
 import { useSearch } from '../hooks/useSearch';
 
+import DOMPurify from 'dompurify';
+
 function Highlight({ text, query }) {
   if (!text) return null;
   
   // If the text contains Typesense highlight <mark> tags, render it as HTML safely
   if (String(text).includes('<mark>')) {
-    return <span dangerouslySetInnerHTML={{ __html: text }} />;
+    const clean = DOMPurify.sanitize(text, { ALLOWED_TAGS: ['mark'] });
+    return <span dangerouslySetInnerHTML={{ __html: clean }} />;
   }
 
   if (!query) return <>{text}</>;
