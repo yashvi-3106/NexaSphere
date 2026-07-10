@@ -29,6 +29,8 @@ import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 <<<<<<< HEAD
 import announcementPriorityRouter from "./announcementPriority.js";
+import smartFormsRoutes from "./smartFormsRoutes.js";
+import smartFormsGlobalRoutes from "./smartFormsGlobalRoutes.js";
 import eventConflictRouter from "./eventConflict.js";
 import waitlistRoutes from "./waitlist.js";
 =======
@@ -426,6 +428,8 @@ announcementPriorityRouter
 );
 
 router.use("/api/events", eventConflictRouter);
+router.use("/api/events/:eventId/forms", smartFormsRoutes);
+router.use("/api/forms", smartFormsGlobalRoutes);
 
 router.use(
   "/api/admin/waitlist",
