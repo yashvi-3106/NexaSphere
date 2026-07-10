@@ -13,7 +13,7 @@ export function useContentModeration() {
       return result;
     } catch (error) {
       console.error('Moderation failed:', error);
-      return { isAppropriate: true, action: 'allow', flags: [] };
+      return { isAppropriate: false, action: 'block', flags: [{ type: 'system_error', confidence: 1 }] };
     } finally {
       setModerating(false);
     }
