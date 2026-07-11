@@ -41,6 +41,7 @@ import * as gamificationController from '../controllers/gamificationController.j
 import multer from 'multer';
 
 const router = Router();
+const apiAnalyticsRoutes = require("./apiAnalytics");
 
 router.use(rateLimitAdminRoutes);
 router.use(throttleMiddleware);
@@ -500,5 +501,7 @@ router.get(
 
 // Platform Analytics APIs
 router.use('/api/analytics', platformAnalyticsRoutes);
+
+router.use("/api-analytics", apiAnalyticsRoutes);
 
 export default router;

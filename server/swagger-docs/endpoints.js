@@ -1269,5 +1269,168 @@
  *         description: Historical comparison retrieved
  */
 
+/**
+ * @swagger
+ * tags:
+ *   - name: API Analytics
+ *     description: Platform-Wide API Usage Analytics & Developer Portal
+ */
 
+/**
+ * @swagger
+ * /api/api-analytics/dashboard:
+ *   get:
+ *     summary: Get API usage dashboard
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Dashboard retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/requests:
+ *   get:
+ *     summary: Get request analytics
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Request analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/response-times:
+ *   get:
+ *     summary: Get response time metrics
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Response time metrics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/errors:
+ *   get:
+ *     summary: Get API error analytics
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Error analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/docs:
+ *   get:
+ *     summary: Get interactive API documentation
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Documentation retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/sdk:
+ *   get:
+ *     summary: Get SDK documentation
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: SDK documentation retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/changelog:
+ *   get:
+ *     summary: Get API changelog
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Changelog retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/versions:
+ *   get:
+ *     summary: Get API versions
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: API versions retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/keys:
+ *   get:
+ *     summary: Get API keys
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: API keys retrieved successfully
+ *
+ *   post:
+ *     summary: Generate API key
+ *     tags: [API Analytics]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: API key generated successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/keys/{id}:
+ *   delete:
+ *     summary: Revoke API key
+ *     tags: [API Analytics]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: API key revoked successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/rate-limits:
+ *   get:
+ *     summary: Get rate limit usage
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Rate limit information retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/sandbox:
+ *   get:
+ *     summary: Get API testing sandbox
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Sandbox information retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/announcements:
+ *   get:
+ *     summary: Get developer announcements
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Developer announcements retrieved successfully
+ */
 export default {};
