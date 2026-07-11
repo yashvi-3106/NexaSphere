@@ -473,4 +473,219 @@
  *                       format: float
  */
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Workspaces
+ *     description: Smart Workspace for Club & Team Collaboration
+ */
+
+/**
+ * @swagger
+ * /api/workspaces:
+ *   get:
+ *     summary: Get all workspaces
+ *     tags: [Workspaces]
+ *     responses:
+ *       200:
+ *         description: Workspaces retrieved successfully
+ *
+ *   post:
+ *     summary: Create a workspace
+ *     tags: [Workspaces]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Workspace created successfully
+ */
+
+/**
+ * @swagger
+ * /api/workspaces/{id}:
+ *   get:
+ *     summary: Get workspace by ID
+ *     tags: [Workspaces]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Workspace retrieved successfully
+ *
+ *   put:
+ *     summary: Update workspace
+ *     tags: [Workspaces]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Workspace updated successfully
+ *
+ *   delete:
+ *     summary: Delete workspace
+ *     tags: [Workspaces]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Workspace deleted successfully
+ */
+
+/**
+ * @swagger
+ * /api/workspaces/{id}/documents:
+ *   get:
+ *     summary: Get shared documents
+ *     tags: [Workspaces]
+ *     responses:
+ *       200:
+ *         description: Documents retrieved successfully
+ *
+ *   post:
+ *     summary: Upload shared document
+ *     tags: [Workspaces]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Document uploaded successfully
+ */
+
+/**
+ * @swagger
+ * /api/workspaces/{id}/discussions:
+ *   get:
+ *     summary: Get team discussions
+ *     tags: [Workspaces]
+ *     responses:
+ *       200:
+ *         description: Discussions retrieved successfully
+ *
+ *   post:
+ *     summary: Add discussion
+ *     tags: [Workspaces]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Discussion added successfully
+ */
+
+/**
+ * @swagger
+ * /api/workspaces/{id}/calendar:
+ *   get:
+ *     summary: Get shared calendar
+ *     tags: [Workspaces]
+ *     responses:
+ *       200:
+ *         description: Calendar retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workspaces/{id}/tasks:
+ *   get:
+ *     summary: Get workspace tasks
+ *     tags: [Workspaces]
+ *     responses:
+ *       200:
+ *         description: Tasks retrieved successfully
+ *
+ *   post:
+ *     summary: Create task
+ *     tags: [Workspaces]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Task created successfully
+ */
+
+/**
+ * @swagger
+ * /api/workspaces/{id}/notes:
+ *   post:
+ *     summary: Add meeting notes
+ *     tags: [Workspaces]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Meeting notes added successfully
+ */
+
+/**
+ * @swagger
+ * /api/workspaces/{id}/polls:
+ *   post:
+ *     summary: Create quick poll
+ *     tags: [Workspaces]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Poll created successfully
+ */
+
+/**
+ * @swagger
+ * /api/workspaces/{id}/announcements:
+ *   post:
+ *     summary: Create team announcement
+ *     tags: [Workspaces]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Announcement created successfully
+ */
+
+/**
+ * @swagger
+ * /api/workspaces/{id}/timeline:
+ *   get:
+ *     summary: Get activity timeline
+ *     tags: [Workspaces]
+ *     responses:
+ *       200:
+ *         description: Timeline retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workspaces/{id}/bookmarks:
+ *   get:
+ *     summary: Get shared bookmarks
+ *     tags: [Workspaces]
+ *     responses:
+ *       200:
+ *         description: Bookmarks retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workspaces/{id}/analytics:
+ *   get:
+ *     summary: Get workspace analytics
+ *     tags: [Workspaces]
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully
+ */
+
 export default {};

@@ -28,7 +28,7 @@ import multer from 'multer';
 const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
-
+const workspaceRoutes = require("./workspace");
 const router = Router();
 
 // Public
@@ -379,5 +379,7 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   const active = impersonationService.getActive(req.adminSession.token);
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
+
+router.use("/workspaces", workspaceRoutes);
 
 export default router;
