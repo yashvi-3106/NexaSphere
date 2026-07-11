@@ -12,12 +12,16 @@ if (process.env.REDIS_URL) {
 }
 
 export const eventRemindersQueueName = 'event-reminders';
+export const waitlistExpiryQueueName = 'waitlist-expiry';
 
 // Initialize the queue if Redis is configured
 export const eventRemindersQueue = connection
   ? new Queue(eventRemindersQueueName, { connection })
   : null;
 
+export const waitlistExpiryQueue = connection
+  ? new Queue(waitlistExpiryQueueName, { connection })
+  : null;
 /**
  * Schedule an event reminder job.
  * @param {string} eventId
@@ -62,6 +66,48 @@ export async function scheduleReminderJob({
     return job;
   } catch (error) {
     logger.error(`[queueService] Failed to schedule reminder job: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * Schedule a waitlist expiry job.
+ * @param {string} eventId
+ * @param {string} email target user email
+ * @param {number} delayMs time in ms to delay the job execution (e.g., 24 hours)
+ */
+export async function scheduleWaitlistExpiryJob({ eventId, email, delayMs = 24 * 60 * 60 * 1000 }) {
+  if (!waitlistExpiryQueue) {
+    logger.warn('[queueService] Cannot schedule waitlist expiry, Redis is not configured.');
+    return null;
+  }
+
+  try {
+    const job = await waitlistExpiryQueue.add(
+      'waitlist-expiry',
+      { eventId, email, type: 'waitlist-expiry' },
+      {
+        delay: delayMs,
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: {
+          age: 3600 * 24,
+          count: 1000,
+        },
+        removeOnFail: {
+          age: 3600 * 24 * 7,
+        },
+      }
+    );
+    logger.info(
+      `[queueService] Scheduled waitlist expiry for ${email} on event ${eventId} (Job ID: ${job.id}) in ${delayMs}ms`
+    );
+    return job;
+  } catch (error) {
+    logger.error(`[queueService] Failed to schedule waitlist expiry job: ${error.message}`);
     throw error;
   }
 }

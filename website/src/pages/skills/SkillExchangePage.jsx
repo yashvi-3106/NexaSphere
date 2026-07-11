@@ -569,7 +569,15 @@ export default function SkillExchangePage({ onBack }) {
                   >
                     <span>{entry.xp} XP</span>
                     <span>{entry.sessions} sessions</span>
-                    <span>{entry.streak} week streak</span>
+                    <span>
+                      {entry.streak > 0 ? (
+                        <span style={{ color: '#F59E0B', fontWeight: 'bold' }}>
+                          {entry.streak} 🔥 week streak
+                        </span>
+                      ) : (
+                        `${entry.streak} week streak`
+                      )}
+                    </span>
                   </div>
                 </div>
               ))}

@@ -1,11 +1,29 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, ArrowRight, Calendar, Zap, Users, BookOpen } from 'lucide-react';
-import { useEventSearch } from '../hooks/useEventSearch';
+import {
+  Search,
+  X,
+  ArrowRight,
+  Calendar,
+  Zap,
+  Users,
+  BookOpen,
+  User,
+  Folder,
+  MessageSquare,
+} from 'lucide-react';
+import { useSearch } from '../hooks/useSearch';
 
 function Highlight({ text, query }) {
-  if (!query || !text) return <>{text}</>;
+  if (!text) return null;
+  
+  // If the text contains Typesense highlight <mark> tags, render it as HTML safely
+  if (String(text).includes('<mark>')) {
+    return <span dangerouslySetInnerHTML={{ __html: text }} />;
+  }
+
+  if (!query) return <>{text}</>;
   const safe = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const parts = String(text).split(new RegExp(`(${safe})`, 'gi'));
   return (
@@ -51,6 +69,58 @@ const TYPE_CONFIG = {
     icon: <Users size={16} color="#00c864" />,
     label: 'Member',
   },
+  user: {
+    bg: 'rgba(0,200,255,0.15)',
+    color: '#00c8ff',
+    icon: <User size={16} color="#00c8ff" />,
+    label: 'User',
+  },
+  portfolio: {
+    bg: 'rgba(255,100,255,0.15)',
+    color: '#ff64ff',
+    icon: <User size={16} color="#ff64ff" />,
+    label: 'Portfolio',
+  },
+  community: {
+    bg: 'rgba(245,158,11,0.15)',
+    color: '#f59e0b',
+    icon: <Folder size={16} color="#f59e0b" />,
+    label: 'Community',
+  },
+  post: {
+    bg: 'rgba(167,139,250,0.15)',
+    color: '#a78bfa',
+    icon: <MessageSquare size={16} color="#a78bfa" />,
+    label: 'Discussion',
+  },
+  resource: {
+    bg: 'rgba(34,197,94,0.15)',
+    color: '#22c55e',
+    icon: <BookOpen size={16} color="#22c55e" />,
+    label: 'Resource',
+  },
+};
+
+const CATEGORIES_ORDER = [
+  'event',
+  'activity',
+  'member',
+  'user',
+  'portfolio',
+  'community',
+  'post',
+  'resource',
+];
+
+const GROUP_TITLES = {
+  event: 'Events',
+  activity: 'Activities',
+  member: 'Core Team',
+  user: 'Registered Users',
+  portfolio: 'User Portfolios',
+  community: 'Communities & Groups',
+  post: 'Discussion Posts',
+  resource: 'Learning Resources',
 };
 
 export default function SearchBar({ open, onClose, activities, events, onNavigate, onEventClick }) {
@@ -58,10 +128,36 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
   const inputRef = useRef(null);
   const listRef = useRef(null);
   const [focusIdx, setFocusIdx] = useState(-1);
-  const { query, setQuery, filter, setFilter, results, loading, clearSearch } = useEventSearch(
-    activities,
-    events
-  );
+  const {
+    query,
+    setQuery,
+    filter,
+    setFilter,
+    results,
+    groupedResults,
+    loading,
+    error,
+    clearSearch,
+    recentSearches,
+    addRecentSearch,
+    removeRecentSearch,
+  } = useSearch(activities, events);
+
+  const [localQuery, setLocalQuery] = useState('');
+  const timeoutRef = useRef(null);
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setLocalQuery(val);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setQuery(val);
+    }, 350);
+  };
+
+  useEffect(() => {
+    setLocalQuery(query);
+  }, [query]);
 
   useEffect(() => {
     if (open) {
@@ -78,20 +174,36 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
 
   const handleClick = useCallback(
     (result) => {
+      addRecentSearch(result.title || query);
       if (result.type === 'activity') onNavigate('activity', result.key || result.id);
       else if (result.type === 'event')
         onEventClick(result.event || { id: result.id, name: result.title });
-      else if (result.type === 'member') navigate(result.url || '/team');
+      else if (result.type === 'member') window.location.href = result.url || '/team';
+      else if (result.type === 'user' || result.type === 'portfolio')
+        window.location.href = result.url;
+      else if (result.type === 'community' || result.type === 'post' || result.type === 'resource')
+        navigate(result.url);
       onClose();
       clearSearch();
     },
-    [onNavigate, onEventClick, onClose, clearSearch, navigate]
+    [onNavigate, onEventClick, onClose, clearSearch, addRecentSearch, query, navigate]
   );
 
   useEffect(() => {
     const fn = (e) => {
       if (e.key === 'Escape') onClose();
-      if (!results.length) return;
+      if (!results.length) {
+        if (e.key === 'Enter' && query.trim()) {
+          e.preventDefault();
+          addRecentSearch(query);
+          navigate(
+            `/search?q=${encodeURIComponent(query)}${filter !== 'all' ? `&type=${filter}` : ''}`
+          );
+          onClose();
+          clearSearch();
+        }
+        return;
+      }
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setFocusIdx((prev) => (prev < results.length - 1 ? prev + 1 : 0));
@@ -100,19 +212,41 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
         e.preventDefault();
         setFocusIdx((prev) => (prev > 0 ? prev - 1 : results.length - 1));
       }
-      if (e.key === 'Enter' && focusIdx >= 0 && focusIdx < results.length) {
+      if (e.key === 'Enter') {
         e.preventDefault();
-        handleClick(results[focusIdx]);
+        if (focusIdx >= 0 && focusIdx < results.length) {
+          handleClick(results[focusIdx]);
+        } else if (query.trim()) {
+          addRecentSearch(query);
+          navigate(
+            `/search?q=${encodeURIComponent(query)}${filter !== 'all' ? `&type=${filter}` : ''}`
+          );
+          onClose();
+          clearSearch();
+        }
       }
     };
     if (open) window.addEventListener('keydown', fn);
     return () => window.removeEventListener('keydown', fn);
-  }, [open, results, focusIdx]);
+  }, [
+    open,
+    results,
+    focusIdx,
+    query,
+    filter,
+    handleClick,
+    navigate,
+    addRecentSearch,
+    clearSearch,
+    onClose,
+  ]);
 
   useEffect(() => {
     if (focusIdx >= 0 && listRef.current) {
-      const el = listRef.current.children[focusIdx];
-      if (el) el.scrollIntoView?.({ block: 'nearest' });
+      const activeElement = listRef.current.querySelector('[aria-selected="true"]');
+      if (activeElement) {
+        activeElement.scrollIntoView?.({ block: 'nearest' });
+      }
     }
   }, [focusIdx]);
 
@@ -171,7 +305,7 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search events, members, activities…"
+                placeholder="Search events, posts, users, resources…"
                 aria-label="Search"
                 style={{
                   flex: 1,
@@ -230,8 +364,11 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
               {[
                 { key: 'all', label: 'All' },
                 { key: 'events', label: 'Events' },
+                { key: 'posts', label: 'Discussions' },
+                { key: 'resources', label: 'Resources' },
+                { key: 'members', label: 'Core Team' },
+                { key: 'users', label: 'Users' },
                 { key: 'activities', label: 'Activities' },
-                { key: 'members', label: 'Members' },
               ].map((f) => (
                 <button
                   key={f.key}
@@ -264,11 +401,99 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
             </div>
 
             <div ref={listRef} style={{ maxHeight: '420px', overflowY: 'auto' }} role="listbox">
-              {!query && (
+              {error && (
+                <div
+                  style={{
+                    padding: '20px',
+                    color: '#CC1111',
+                    fontSize: '0.9rem',
+                    textAlign: 'center',
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+
+              {!query && recentSearches.length > 0 && (
+                <div style={{ padding: '16px 20px' }}>
+                  <div
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      color: 'var(--t2)',
+                      marginBottom: '10px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span>Recent Searches</span>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('ns_recent_searches');
+                        window.location.reload();
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--c1)',
+                        cursor: 'pointer',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {recentSearches.map((s) => (
+                      <span
+                        key={s}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: 'rgba(255,255,255,0.06)',
+                          padding: '5px 12px',
+                          borderRadius: '16px',
+                          fontSize: '0.8rem',
+                          color: 'var(--t1)',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s',
+                        }}
+                        onClick={() => {
+                          setQuery(s);
+                          inputRef.current?.focus();
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')
+                        }
+                      >
+                        <span>{s}</span>
+                        <X
+                          size={13}
+                          style={{ cursor: 'pointer', color: 'var(--t3)' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeRecentSearch(s);
+                          }}
+                        />
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!query && recentSearches.length === 0 && (
                 <div style={{ padding: '44px 20px', textAlign: 'center', color: 'var(--t2)' }}>
                   <Search size={34} color="rgba(204,17,17,0.35)" style={{ marginBottom: '12px' }} />
                   <div style={{ fontSize: '0.95rem', marginBottom: '8px' }}>
-                    Type to search events, members &amp; activities
+                    Type to search events, posts, users &amp; resources
                   </div>
                   <div style={{ fontSize: '0.78rem', opacity: 0.6 }}>
                     Press{' '}
@@ -289,13 +514,24 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
               {loading && query && (
                 <div
                   style={{
-                    padding: '24px 20px',
+                    padding: '32px 20px',
                     textAlign: 'center',
                     color: 'var(--t2)',
                     fontSize: '0.9rem',
                   }}
                 >
-                  Searching across events, members, and activities…
+                  <div
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      border: '2px solid rgba(204,17,17,0.2)',
+                      borderTop: '2px solid #CC1111',
+                      animation: 'spin 0.8s linear infinite',
+                      margin: '0 auto 12px',
+                    }}
+                  />
+                  Searching platform…
                 </div>
               )}
 
@@ -318,88 +554,162 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
                 </div>
               )}
 
-              {results.map((result, idx) => {
-                const tc = TYPE_CONFIG[result.type] || TYPE_CONFIG.event;
-                return (
-                  <button
-                    key={`${result.id}-${result.type}`}
-                    onClick={() => handleClick(result)}
-                    role="option"
-                    aria-selected={focusIdx === idx}
-                    style={{
-                      width: '100%',
-                      textAlign: 'left',
-                      background: focusIdx === idx ? 'rgba(204,17,17,0.12)' : 'none',
-                      border: 'none',
-                      borderBottom: '1px solid rgba(255,255,255,0.05)',
-                      padding: '14px 20px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '14px',
-                      transition: 'background 0.15s',
-                      color: 'var(--t1)',
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = 'rgba(204,17,17,0.07)')
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background =
-                        focusIdx === idx ? 'rgba(204,17,17,0.12)' : 'none')
-                    }
-                  >
-                    <div
-                      style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '11px',
-                        flexShrink: 0,
-                        background: tc.bg,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {tc.icon}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '3px' }}>
-                        <Highlight text={result.title} query={query} />
-                      </div>
-                      {result.description && (
+              {!loading && query && results.length > 0 && (
+                <div style={{ paddingBottom: '8px' }}>
+                  {CATEGORIES_ORDER.map((type) => {
+                    const items = groupedResults[type];
+                    if (!items || items.length === 0) return null;
+                    return (
+                      <div key={type} style={{ marginTop: '8px' }}>
                         <div
                           style={{
-                            color: 'var(--t2)',
-                            fontSize: '0.82rem',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
+                            padding: '8px 20px 4px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.08em',
+                            color: 'var(--c1)',
+                            borderBottom: '1px solid rgba(255,255,255,0.04)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
                           }}
                         >
-                          <Highlight text={result.description.slice(0, 90)} query={query} />
-                          {result.description.length > 90 && '…'}
+                          {TYPE_CONFIG[type]?.icon}
+                          {GROUP_TITLES[type]}
                         </div>
-                      )}
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          marginTop: '5px',
-                          fontSize: '0.7rem',
-                          padding: '1px 9px',
-                          borderRadius: '10px',
-                          background: tc.bg,
-                          color: tc.color,
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {tc.label}
-                      </span>
-                    </div>
-                    <ArrowRight size={15} color="var(--t2)" style={{ flexShrink: 0 }} />
-                  </button>
-                );
-              })}
+                        {items.map((result) => {
+                          const idx = results.indexOf(result);
+                          const tc = TYPE_CONFIG[result.type] || TYPE_CONFIG.event;
+                          return (
+                            <button
+                              key={`${result.id}-${result.type}`}
+                              onClick={() => handleClick(result)}
+                              role="option"
+                              aria-selected={focusIdx === idx}
+                              style={{
+                                width: '100%',
+                                textAlign: 'left',
+                                background: focusIdx === idx ? 'rgba(204,17,17,0.12)' : 'none',
+                                border: 'none',
+                                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                padding: '14px 20px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '14px',
+                                transition: 'background 0.15s',
+                                color: 'var(--t1)',
+                              }}
+                              onMouseEnter={() => setFocusIdx(idx)}
+                              onMouseLeave={() => setFocusIdx(-1)}
+                            >
+                              <div
+                                style={{
+                                  width: '38px',
+                                  height: '38px',
+                                  borderRadius: '11px',
+                                  flexShrink: 0,
+                                  background: tc.bg,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                {tc.icon}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div
+                                  style={{
+                                    fontWeight: 600,
+                                    fontSize: '0.95rem',
+                                    marginBottom: '3px',
+                                  }}
+                                >
+                                  <Highlight text={result.title} query={query} />
+                                </div>
+                                {result.description && (
+                                  <div
+                                    style={{
+                                      color: 'var(--t2)',
+                                      fontSize: '0.82rem',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    <Highlight
+                                      text={result.description.slice(0, 90)}
+                                      query={query}
+                                    />
+                                    {result.description.length > 90 && '…'}
+                                  </div>
+                                )}
+                                <span
+                                  style={{
+                                    display: 'inline-block',
+                                    marginTop: '5px',
+                                    fontSize: '0.7rem',
+                                    padding: '1px 9px',
+                                    borderRadius: '10px',
+                                    background: tc.bg,
+                                    color: tc.color,
+                                    textTransform: 'capitalize',
+                                  }}
+                                >
+                                  {tc.label}
+                                </span>
+                              </div>
+                              <ArrowRight size={15} color="var(--t2)" style={{ flexShrink: 0 }} />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
+            {query && results.length > 0 && (
+              <div
+                style={{
+                  padding: '12px 20px',
+                  borderTop: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(0,0,0,0.15)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <span style={{ fontSize: '0.78rem', color: 'var(--t3)' }}>
+                  Press Enter to view all results
+                </span>
+                <button
+                  onClick={() => {
+                    addRecentSearch(query);
+                    navigate(
+                      `/search?q=${encodeURIComponent(query)}${filter !== 'all' ? `&type=${filter}` : ''}`
+                    );
+                    onClose();
+                    clearSearch();
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--c1)',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  View all results <ArrowRight size={14} />
+                </button>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

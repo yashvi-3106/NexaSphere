@@ -5,6 +5,7 @@ import NotificationBell from '../components/NotificationBell';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import { useStudentAuth } from '../context/StudentAuthContext';
 import LanguageSelector from '../components/common/LanguageSelector';
+import { useTranslation } from 'react-i18next';
 
 const TABS = [
   'Home',
@@ -12,19 +13,16 @@ const TABS = [
   'Events',
   'Projects',
   'Roadmaps',
-  'Recommendations',
-  'Portfolio',
-  'Blog',
   'Resources',
-  'Gamification',
   'Forum',
-  'Mentorship',
-  'Q&A / Polling',
   'About',
   'Core Team',
   'Contact',
 ];
 
+// Bookmark toggle button for quick access to saved content.
+// Used in both mobile and desktop navigation to provide users with
+// convenient access to their bookmarked pages for a better navigation experience.
 function BookmarkToggle({ onToggle }) {
   return (
     <button
@@ -63,11 +61,28 @@ function BookmarkToggle({ onToggle }) {
   );
 }
 
-export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onToggleBookmarks }) {
+export default function Navbar({
+  activeTab,
+  onTabChange,
+  onApply,
+  onJoin,
+  onToggleBookmarks,
+  onSearchToggle,
+}) {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
+  const { t } = useTranslation();
+
+  const getTabLabel = (tab) => {
+    let key = tab.toLowerCase().replace(/\s+/g, '_');
+    if (key === 'core_team') key = 'team';
+    const translated = t(`nav.${key}`);
+    return translated && !translated.startsWith('nav.') ? translated : tab;
+  };
   const [compact, setCompact] = useState(window.innerWidth <= 1200);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const eventsTabRef = useWalkthroughStep('search_events');
 
   useEffect(() => {
     const s = () => setScrolled(window.scrollY > 20);
@@ -136,35 +151,60 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
             >
               📋
             </button>
+            <button
+              onClick={onSearchToggle}
+              aria-label="Search"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--t1)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px',
+                borderRadius: '50%',
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </button>
             <BookmarkToggle onToggle={onToggleBookmarks} />
             <ThemeToggle />
             <LanguageSelector />
-            {isAuthenticated ? (
-              <span
-                className="ns-nav-user-badge"
-                onClick={() => navigate('/dashboard')}
-                style={{ cursor: 'pointer', fontSize: '0.8rem', color: 'var(--t1)' }}
-                title={user?.name || user?.email}
-              >
-                👤
-              </span>
-            ) : (
-              <button
-                className="ns-nav-login-btn"
-                onClick={() => login('google')}
-                aria-label="Sign in"
-                style={{
-                  background: 'none',
-                  border: '1px solid var(--border)',
-                  color: 'var(--t1)',
-                  borderRadius: '6px',
-                  padding: '2px 8px',
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                }}
-              >
-                Login
-              </button>
+            {isAuthenticated && (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span
+                  className="ns-nav-user-badge"
+                  onClick={() => navigate('/settings/account')}
+                  style={{ cursor: 'pointer', fontSize: '1rem', color: 'var(--t1)' }}
+                  title="Settings & Privacy"
+                >
+                  ⚙️
+                </span>
+                <span
+                  className="ns-nav-user-badge"
+                  onClick={() => navigate('/dashboard')}
+                  style={{ cursor: 'pointer', fontSize: '0.8rem', color: 'var(--t1)' }}
+                  title={user?.name || user?.email}
+                >
+                  👤
+                </span>
+              </div>
             )}
           </div>
         </div>
@@ -179,7 +219,7 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
               onClick={() => handleTab(t)}
               aria-current={activeTab === t ? 'page' : undefined}
             >
-              {t}
+              {getTabLabel(t)}
             </button>
           ))}
 
@@ -188,7 +228,7 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
             onClick={onJoin}
             aria-label="Join as Member"
           >
-            Join
+            {t('nav.join', 'Join')}
           </button>
 
           <button
@@ -196,7 +236,7 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
             onClick={onApply}
             aria-label="Apply for Core Team"
           >
-            Apply
+            {t('nav.apply', 'Apply')}
           </button>
         </div>
       </nav>
@@ -225,7 +265,9 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
           </div>
 
           <div className="ns-nav-actions">
-            <NotificationBell />
+            <WalkthroughWrapper stepId="notifications" style={{ display: 'flex' }}>
+              <NotificationBell />
+            </WalkthroughWrapper>
             <button
               onClick={() => navigate('/notifications')}
               aria-label="Notification history"
@@ -241,6 +283,58 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
             >
               📋
             </button>
+            <button
+              onClick={onSearchToggle}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '16px',
+                padding: '5px 12px',
+                fontSize: '0.8rem',
+                color: 'var(--t2)',
+                cursor: 'pointer',
+                transition: 'background 0.2s, border-color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+                e.currentTarget.style.borderColor = 'rgba(204,17,17,0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <span>Search...</span>
+              <kbd
+                style={{
+                  background: 'rgba(255,255,255,0.12)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '4px',
+                  padding: '1px 5px',
+                  fontSize: '0.65rem',
+                  color: 'var(--t3)',
+                  fontFamily: 'monospace',
+                }}
+              >
+                Ctrl+K
+              </kbd>
+            </button>
             <BookmarkToggle onToggle={onToggleBookmarks} />
             <div className="ns-nav-ctas">
               <button
@@ -248,7 +342,7 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
                 onClick={onJoin}
                 aria-label="Join as Member"
               >
-                Join
+                {t('nav.join', 'Join')}
               </button>
 
               <button
@@ -256,31 +350,32 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
                 onClick={onApply}
                 aria-label="Apply for Core Team"
               >
-                Apply
+                {t('nav.apply', 'Apply')}
               </button>
             </div>
 
             <ThemeToggle />
             <LanguageSelector />
 
-            {isAuthenticated ? (
-              <span
-                className="ns-nav-user-badge"
-                onClick={() => navigate('/dashboard')}
-                style={{ cursor: 'pointer', fontSize: '0.9rem', color: 'var(--t1)' }}
-                title={user?.name || user?.email}
-              >
-                👤
-              </span>
-            ) : (
-              <button
-                className="btn btn-sm btn-outline"
-                onClick={() => login('google')}
-                aria-label="Sign in"
-                style={{ marginLeft: '4px' }}
-              >
-                Login
-              </button>
+            {isAuthenticated && (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span
+                  className="ns-nav-user-badge"
+                  onClick={() => navigate('/settings/account')}
+                  style={{ cursor: 'pointer', fontSize: '1rem', color: 'var(--t1)' }}
+                  title="Settings & Privacy"
+                >
+                  ⚙️
+                </span>
+                <span
+                  className="ns-nav-user-badge"
+                  onClick={() => navigate('/dashboard')}
+                  style={{ cursor: 'pointer', fontSize: '0.9rem', color: 'var(--t1)' }}
+                  title={user?.name || user?.email}
+                >
+                  👤
+                </span>
+              </div>
             )}
 
             <button
@@ -304,10 +399,11 @@ export default function Navbar({ activeTab, onTabChange, onApply, onJoin, onTogg
                   className={`ns-nav-tab${activeTab === t ? ' active' : ''}${
                     t === 'Contact' ? ' contact-tab contact-nav-tab' : ''
                   }`}
+                  ref={t === 'Events' ? eventsTabRef : null}
                   onClick={() => handleTab(t)}
                   aria-current={activeTab === t ? 'page' : undefined}
                 >
-                  {t}
+                  {getTabLabel(t)}
                 </button>
               </li>
             ))}

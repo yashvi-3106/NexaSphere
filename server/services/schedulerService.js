@@ -13,7 +13,8 @@ import notificationsService from './notificationsService.js';
 import { withDb } from '../repositories/db.js';
 import { HAS_SUPABASE } from '../storage/supabaseClient.js';
 import { backupService } from './backupService.js';
-import { sendEmail } from './emailService.js';
+import { segmentationService } from './segmentationService.js';
+import { portfolioRepository } from '../repositories/portfolioRepository.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -164,6 +165,14 @@ const TASK_DEFINITIONS = [
     enabled: true,
   },
   {
+    id: 'auto-user-segmentation',
+    name: 'Auto User Segmentation',
+    description: 'Updates user activity levels based on engagement for targeting',
+    cron: '0 0 * * *', // Daily at midnight
+    category: 'users',
+    enabled: true,
+  },
+  {
     id: 'inactive-user-check',
     name: 'Inactive User Check',
     description: 'Flags accounts with no activity in the past 90 days',
@@ -184,6 +193,14 @@ const TASK_DEFINITIONS = [
     name: 'Analytics Aggregation',
     description: 'Aggregates page-view and engagement analytics data',
     cron: '0 * * * *', // Every hour
+    category: 'analytics',
+    enabled: true,
+  },
+  {
+    id: 'evaluate-segments',
+    name: 'Evaluate Analytics Segments',
+    description: 'Periodically evaluate rules and assign users to segments',
+    cron: '0 */6 * * *', // Every 6 hours
     category: 'analytics',
     enabled: true,
   },
@@ -209,6 +226,14 @@ const TASK_DEFINITIONS = [
     description: 'Processes queued email campaigns in batches',
     cron: '*/5 * * * *', // Every 5 minutes
     category: 'email',
+    enabled: true,
+  },
+  {
+    id: 'portfolio-github-sync',
+    name: 'Portfolio GitHub Sync',
+    description: 'Refreshes cached GitHub activity for portfolios with a linked GitHub username',
+    cron: '0 3 * * 1', // Weekly, Mondays at 03:00
+    category: 'portfolio',
     enabled: true,
   },
 ];
@@ -255,12 +280,21 @@ class SchedulerService extends EventEmitter {
     if (!next) return;
 
     task.nextRun = next;
-    const delay = next.getTime() - Date.now();
+    const MAX_DELAY = 2147483647; // max 32-bit signed int (~24.8 days)
+    const rawDelay = next.getTime() - Date.now();
+    const delay = Math.min(Math.max(rawDelay, 0), MAX_DELAY);
+    const needsRecheck = rawDelay > MAX_DELAY;
 
     const existing = this._timers.get(taskId);
     if (existing) clearTimeout(existing);
 
-    const handle = setTimeout(() => this._runTask(taskId), delay);
+    const handle = setTimeout(() => {
+      if (needsRecheck) {
+        this._scheduleNext(taskId);
+      } else {
+        this._runTask(taskId);
+      }
+    }, delay);
     // Allow the process to exit even if a timer is pending
     if (handle.unref) handle.unref();
     this._timers.set(taskId, handle);
@@ -333,6 +367,9 @@ class SchedulerService extends EventEmitter {
       case 'weekly-analytics-report':
         await this._generateWeeklyAnalyticsReport();
         break;
+      case 'auto-user-segmentation':
+        await segmentationService.runAutoSegmentation();
+        break;
       case 'inactive-user-check':
         await this._flagInactiveUsers();
         break;
@@ -341,6 +378,9 @@ class SchedulerService extends EventEmitter {
         break;
       case 'analytics-aggregation':
         await this._aggregateAnalytics();
+        break;
+      case 'evaluate-segments':
+        await this._evaluateSegments();
         break;
       case 'overdue-task-reminder':
         console.log('[SchedulerService] Processing overdue task notifications...');
@@ -352,9 +392,18 @@ class SchedulerService extends EventEmitter {
       case 'email-queue-processor':
         await this._processEmailQueue();
         break;
+      case 'portfolio-github-sync':
+        await this._syncPortfolioGithubData();
+        break;
       default:
         throw new Error(`No implementation for task "${task.id}"`);
     }
+  }
+
+  async _evaluateSegments() {
+    logger.info('[Scheduler] Evaluating analytics segments');
+    const { analyticsService } = await import('./analyticsService.js');
+    await analyticsService.evaluateSegments();
   }
 
   async _sendEmailDigest() {
@@ -417,30 +466,8 @@ class SchedulerService extends EventEmitter {
   }
 
   async _backupDatabase() {
-    logger.info('[Scheduler] Starting database backup');
-    if (!HAS_SUPABASE) {
-      logger.info('[Scheduler] No database configured, skipping backup');
-      return;
-    }
-    const tables = [
-      'events',
-      'student_users',
-      'core_team_members',
-      'resources',
-      'push_subscriptions',
-    ];
-    let totalRows = 0;
-    await withDb(async (client) => {
-      for (const table of tables) {
-        try {
-          const { rows } = await client.query(`SELECT COUNT(*) as count FROM ${table}`);
-          totalRows += parseInt(rows[0]?.count || '0', 10);
-        } catch {
-          logger.warn(`[Scheduler] Backup: table ${table} not found, skipping`);
-        }
-      }
-    });
-    logger.info(`[Scheduler] Backup summary: ${tables.length} tables, ${totalRows} total rows`);
+    logger.info('[Scheduler] Starting database full backup');
+    await backupService.runDailyBackup();
   }
 
   async _generateDailyAttendanceReport() {
@@ -639,6 +666,50 @@ class SchedulerService extends EventEmitter {
     }
   }
 
+  async _syncPortfolioGithubData() {
+    logger.info('[Scheduler] Starting weekly portfolio GitHub sync');
+    try {
+      const portfolios = await portfolioRepository.listAll();
+      const withGithub = portfolios.filter((p) => p.githubUsername);
+
+      if (withGithub.length === 0) {
+        logger.info('[Scheduler] No portfolios with a linked GitHub username, skipping');
+        return;
+      }
+
+      let checked = 0;
+      let failed = 0;
+
+      for (const portfolio of withGithub) {
+        try {
+          const res = await fetch(
+            `https://api.github.com/users/${encodeURIComponent(portfolio.githubUsername)}`
+          );
+          if (!res.ok) {
+            failed++;
+            continue;
+          }
+          checked++;
+          // Rate-limit friendly: small delay between unauthenticated GitHub
+          // API calls to avoid tripping the 60 req/hour anonymous limit.
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+        } catch (err) {
+          failed++;
+          logger.warn(
+            `[Scheduler] GitHub sync failed for @${portfolio.githubUsername}: ${err.message}`
+          );
+        }
+      }
+
+      logger.info(
+        `[Scheduler] Portfolio GitHub sync complete: ${checked} verified, ${failed} failed, out of ${withGithub.length} linked portfolios`
+      );
+    } catch (err) {
+      logger.error('[Scheduler] Portfolio GitHub sync error:', err.message);
+      throw err;
+    }
+  }
+
   // ── Public API ───────────────────────────────────────────────────────────────
 
   /** Return snapshot of all tasks (safe to serialise). */
@@ -728,6 +799,18 @@ class SchedulerService extends EventEmitter {
       successRate: totalRuns ? (((totalRuns - totalFails) / totalRuns) * 100).toFixed(1) : '100.0',
       avgDurationMs: avgDuration,
     };
+  }
+
+  // ── Public API ───────────────────────────────────────────────────────────────
+
+  /** Shutdown scheduler and clear all active timers. */
+  shutdown() {
+    for (const handle of this._timers.values()) {
+      clearTimeout(handle);
+    }
+    this._timers.clear();
+    this._tasks.clear();
+    this._initialized = false;
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────

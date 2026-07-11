@@ -119,6 +119,7 @@ export default function AdminPage({ onBack }) {
             <input
               type="text"
               placeholder="Username"
+              aria-label="Username"
               className="input-field"
               value={loginData.username}
               onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
@@ -127,6 +128,7 @@ export default function AdminPage({ onBack }) {
             <input
               type="password"
               placeholder="Password"
+              aria-label="Password"
               className="input-field"
               value={loginData.password}
               onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
@@ -190,13 +192,11 @@ export default function AdminPage({ onBack }) {
         </div>
       </header>
 
-      {loading && <div className="loader-overlay">Loading...</div>}
-
-      <DashboardStats stats={data.stats} />
+      <DashboardStats stats={data.stats} loading={loading} />
 
       <div className="charts-grid">
-        <UserGrowthChart data={data.growth} />
-        <EventAttendanceChart data={data.events} />
+        <UserGrowthChart data={data.growth} loading={loading} />
+        <EventAttendanceChart data={data.events} loading={loading} />
       </div>
     </div>
   );

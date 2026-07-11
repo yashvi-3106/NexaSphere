@@ -11,7 +11,7 @@ const WEBSITE_URL = import.meta.env.VITE_WEBSITE_URL || 'http://localhost:5175';
 const links = [
   { to: '/dashboard', label: 'Dashboard', icon: 'Dashboard' },
   { to: '/dashboard/analytics', label: 'Analytics', icon: 'BarChart' },
-  { to: '/dashboard/analytics/funnel', label: 'Funnel Analysis', icon: 'TrendingDown' },
+  { to: '/dashboard/segments', label: 'Segments', icon: 'Users' },
   { to: '/dashboard/events', label: 'Events', icon: 'Calendar', requiredScope: 'events:read' },
   {
     to: '/dashboard/waiting-room',
@@ -49,10 +49,22 @@ const links = [
     icon: 'Users',
     requiredScope: 'settings:admin',
   },
+  {
+    to: '/dashboard/roles',
+    label: 'User Roles',
+    icon: 'Shield',
+    requiredScope: 'settings:admin',
+  },
   { to: '/dashboard/membership', label: 'Membership', icon: 'FileText' },
   { to: '/dashboard/recruitment', label: 'Recruitment', icon: 'UserPlus' },
   { to: '/dashboard/certificates', label: 'Certificates', icon: 'Award' },
   { to: '/dashboard/announcements', label: 'Announcements', icon: 'Megaphone' },
+  {
+    to: '/dashboard/banners',
+    label: 'Banners (Hero)',
+    icon: 'Image',
+    requiredScope: 'settings:admin',
+  },
   {
     to: '/dashboard/portfolios',
     label: 'Portfolios',
@@ -85,6 +97,41 @@ const links = [
     label: 'Q&A / Polling',
     icon: 'MessageSquare',
     requiredScope: 'events:read',
+  },
+  {
+    to: '/dashboard/tasks',
+    label: 'Scheduled Tasks',
+    icon: 'Clock',
+    requiredScope: 'settings:admin',
+  },
+  {
+    to: '/dashboard/audit-logs',
+    label: 'Audit Logs',
+    icon: 'FileText',
+    requiredScope: 'settings:admin',
+  },
+  {
+    to: '/dashboard/scheduled-tasks',
+    label: 'Scheduled Tasks',
+    icon: 'Clock',
+    requiredScope: 'settings:admin',
+  },
+  {
+    to: '/dashboard/backups',
+    label: 'Backups / Restore',
+    icon: 'Database',
+    requiredScope: 'settings:admin',
+  },
+  {
+    to: '/dashboard/reports',
+    label: 'Reports',
+    icon: 'Target',
+  },
+  {
+    to: '/dashboard/sso-invites',
+    label: 'SSO Invites',
+    icon: 'UserPlus',
+    requiredScope: 'settings:admin',
   },
 ];
 
@@ -268,6 +315,7 @@ export function Sidebar() {
                 to={to}
                 end={to === '/dashboard'}
                 className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                aria-current={({ isActive }) => (isActive ? 'page' : undefined)}
                 onClick={close}
               >
                 <AdminIcon name={icon} size={16} aria-hidden="true" />

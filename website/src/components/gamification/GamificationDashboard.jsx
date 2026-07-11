@@ -418,6 +418,9 @@ export default function GamificationDashboard() {
               <tr>
                 <th style={{ padding: '12px 16px', color: '#9CA3AF', textAlign: 'left' }}>Rank</th>
                 <th style={{ padding: '12px 16px', color: '#9CA3AF', textAlign: 'left' }}>User</th>
+                <th style={{ padding: '12px 16px', textAlign: 'center', color: '#9CA3AF' }}>
+                  Streak
+                </th>
                 <th style={{ padding: '12px 16px', textAlign: 'right', color: '#9CA3AF' }}>
                   Level
                 </th>
@@ -435,6 +438,27 @@ export default function GamificationDashboard() {
                       <span style={{ fontSize: '20px' }}>{user.avatar}</span>
                       <span style={{ color: '#FFFFFF' }}>{user.name}</span>
                     </div>
+                  </td>
+                  <td
+                    style={{
+                      padding: '12px 16px',
+                      textAlign: 'center',
+                      color: '#F59E0B',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    {user.streak > 0 ? (
+                      <span title={`${user.streak} day streak!`}>
+                        {user.streak}{' '}
+                        <DynamicIcon
+                          name="Flame"
+                          size={14}
+                          style={{ display: 'inline', verticalAlign: 'middle' }}
+                        />
+                      </span>
+                    ) : (
+                      <span style={{ color: '#4B5563' }}>-</span>
+                    )}
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'right', color: '#FFFFFF' }}>
                     {user.level}

@@ -1,19 +1,53 @@
 import { useState, useEffect } from 'react';
+import UserTimelineModal from '../components/UserTimelineModal';
 
 const ROLES = ['member', 'moderator', 'admin'];
+const PASSWORD_REQUIREMENTS = [
+  { test: (value) => value.length >= 8, message: 'at least 8 characters' },
+  { test: (value) => /[A-Z]/.test(value), message: 'one uppercase letter' },
+  { test: (value) => /[a-z]/.test(value), message: 'one lowercase letter' },
+  { test: (value) => /[0-9]/.test(value), message: 'one number' },
+  { test: (value) => /[^A-Za-z0-9]/.test(value), message: 'one special character' },
+];
+
+function getPasswordValidationError(password) {
+  const missing = PASSWORD_REQUIREMENTS.filter((requirement) => !requirement.test(password)).map(
+    (requirement) => requirement.message
+  );
+  return missing.length ? `Password must include ${missing.join(', ')}.` : '';
+}
 
 export default function UserManager() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(null);
+  const [awardBadgeUser, setAwardBadgeUser] = useState(null);
+  const [badgeForm, setBadgeForm] = useState({
+    name: '',
+    description: '',
+    icon: 'Award',
+  });
   const [editUser, setEditUser] = useState(null);
+  const [timelineUser, setTimelineUser] = useState(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState(null);
+  const [resetPasswordForm, setResetPasswordForm] = useState({ newPassword: '' });
+  const [resetPasswordError, setResetPasswordError] = useState('');
   const [form, setForm] = useState({
     username: '',
     display_name: '',
     email: '',
     admin_roles: 'member',
   });
+
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [csvText, setCsvText] = useState('');
+  const [importPreview, setImportPreview] = useState(null);
+  const [importJobId, setImportJobId] = useState(null);
+  const [importProgress, setImportProgress] = useState(null);
+  const [importErrors, setImportErrors] = useState([]);
 
   async function fetchUsers() {
     setLoading(true);
@@ -32,50 +66,228 @@ export default function UserManager() {
     fetchUsers();
   }, []);
 
-  async function handleCreate() {
-    const res = await fetch('/api/admin/users', {
+  useEffect(() => {
+    let interval;
+    if (importJobId && importProgress !== 100) {
+      interval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/admin/bulk/jobs/${importJobId}`, { credentials: 'include' });
+          if (res.ok) {
+            const job = await res.json();
+            setImportProgress(job.progress);
+            if (job.status === 'completed' || job.status === 'failed') {
+              setImportErrors(job.errors || []);
+              clearInterval(interval);
+              fetchUsers(); // Refresh after import
+            }
+          }
+        } catch (err) {
+          console.error('Failed to poll job status');
+        }
+      }, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [importJobId, importProgress]);
+
+  function downloadCsvTemplate() {
+    const template = 'email,username,displayname,role,major,year,tags\njohn@college.edu,johndoe,John Doe,user,Computer Science,2028,tech;sports\n';
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'users_import_template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleFileSelected(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const text = await file.text();
+    setCsvText(text);
+
+    // Get preview
+    const res = await fetch('/api/admin/bulk/users/preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify(form),
+      body: JSON.stringify({ csv: text }),
     });
     if (res.ok) {
-      setShowAddModal(false);
-      setForm({ username: '', display_name: '', email: '', admin_roles: 'member' });
-      fetchUsers();
+      const data = await res.json();
+      setImportPreview(data);
     } else {
-      const d = await res.json();
-      alert(d.error);
+      alert('Failed to generate preview');
+    }
+  }
+
+  async function handleImportSubmit() {
+    if (!csvText) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/bulk/users/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ csv: csvText }),
+      });
+      if (res.ok) {
+        const job = await res.json();
+        setImportJobId(job.id);
+        setImportProgress(0);
+      } else {
+        alert('Failed to start import');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleCreate() {
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setShowAddModal(false);
+        setForm({ username: '', display_name: '', email: '', admin_roles: 'member' });
+        fetchUsers();
+      } else {
+        const d = await res.json();
+        alert(d.error);
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
   async function handleUpdate() {
-    const res = await fetch(`/api/admin/users/${editUser.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        display_name: form.display_name,
-        email: form.email,
-        admin_roles: form.admin_roles,
-      }),
-    });
-    if (res.ok) {
-      setEditUser(null);
-      fetchUsers();
-    } else {
-      const d = await res.json();
-      alert(d.error);
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/users/${editUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          display_name: form.display_name,
+          email: form.email,
+          admin_roles: form.admin_roles,
+        }),
+      });
+      if (res.ok) {
+        setEditUser(null);
+        fetchUsers();
+      } else {
+        const d = await res.json();
+        alert(d.error);
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
   async function handleDeactivate(id) {
     if (!confirm('Deactivate this user?')) return;
-    const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE', credentials: 'include' });
-    if (res.ok) fetchUsers();
-    else {
-      const d = await res.json();
-      alert(d.error);
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (res.ok) fetchUsers();
+      else {
+        const d = await res.json();
+        alert(d.error);
+      }
+    } finally {
+      setDeleting(null);
+    }
+  }
+
+  async function handleAwardBadge() {
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/users/${awardBadgeUser.id}/badges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...badgeForm,
+          isCustom: true,
+          earnedAt: new Date(),
+        }),
+      });
+      if (res.ok) {
+        setAwardBadgeUser(null);
+        setBadgeForm({ name: '', description: '', icon: 'Award' });
+        fetchUsers();
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Failed to award badge');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleUnlock(id) {
+    if (!confirm('Unlock this user account?')) return;
+    try {
+      const res = await fetch(`/api/admin/users/${id}/unlock`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) alert('Account unlocked successfully');
+      else alert('Failed to unlock');
+    } catch (e) {
+      console.error(e);
+      alert('Error unlocking account');
+    }
+  }
+
+  function openResetPassword(user) {
+    setResetPasswordUser(user);
+    setResetPasswordForm({ newPassword: '' });
+    setResetPasswordError('');
+  }
+
+  function closeResetPassword() {
+    setResetPasswordUser(null);
+    setResetPasswordForm({ newPassword: '' });
+    setResetPasswordError('');
+  }
+
+  async function handleResetPassword() {
+    const newPassword = resetPasswordForm.newPassword;
+    const validationError = getPasswordValidationError(newPassword);
+    if (validationError) {
+      setResetPasswordError(validationError);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/users/${resetPasswordUser.id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ newPassword }),
+      });
+      if (res.ok) {
+        closeResetPassword();
+        alert('Password reset successfully');
+      } else {
+        alert('Failed to reset password');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error resetting password');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -103,9 +315,7 @@ export default function UserManager() {
         }}
       >
         <h2>User Management</h2>
-        <button onClick={() => setShowAddModal(true)} disabled={submitting}>
-          + Add User
-        </button>
+        <button onClick={() => setShowAddModal(true)}>+ Add User</button>
       </div>
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -132,18 +342,10 @@ export default function UserManager() {
                 {user.joined_at ? new Date(user.joined_at).toLocaleDateString() : '-'}
               </td>
               <td style={{ padding: '8px', display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => openEdit(user)}
-                  disabled={deleting === user.id || submitting}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeactivate(user.id)}
-                  disabled={deleting === user.id || submitting}
-                >
-                  {deleting === user.id ? 'Deactivating…' : 'Deactivate'}
-                </button>
+                <button onClick={() => openEdit(user)}>Edit</button>
+                <button onClick={() => handleDeactivate(user.id)}>Deactivate</button>
+                <button onClick={() => handleUnlock(user.id)}>Unlock</button>
+                <button onClick={() => openResetPassword(user)}>Reset Password</button>
               </td>
             </tr>
           ))}
@@ -215,6 +417,64 @@ export default function UserManager() {
             </div>
           </div>
         </div>
+      )}
+
+      {resetPasswordUser && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              padding: '24px',
+              borderRadius: '8px',
+              minWidth: '320px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <h3>Reset Password</h3>
+            <p style={{ margin: 0 }}>
+              Set a new password for {resetPasswordUser.display_name || resetPasswordUser.email}.
+            </p>
+            <input
+              type="password"
+              placeholder="New Password"
+              autoComplete="new-password"
+              value={resetPasswordForm.newPassword}
+              onChange={(e) => {
+                const newPassword = e.target.value;
+                setResetPasswordForm({ newPassword });
+                setResetPasswordError(getPasswordValidationError(newPassword));
+              }}
+            />
+            <small>
+              Password must include uppercase, lowercase, number, special character, and be at least
+              8 characters.
+            </small>
+            {resetPasswordError && <p style={{ color: 'red', margin: 0 }}>{resetPasswordError}</p>}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={handleResetPassword} disabled={submitting}>
+                Reset Password
+              </button>
+              <button onClick={closeResetPassword} disabled={submitting}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {timelineUser && (
+        <UserTimelineModal user={timelineUser} onClose={() => setTimelineUser(null)} />
       )}
     </div>
   );

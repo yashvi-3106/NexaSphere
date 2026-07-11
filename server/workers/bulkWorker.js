@@ -1,7 +1,8 @@
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import logger from '../utils/logger.js';
-import { bulkOperationsQueue, bulkOperationsService } from '../services/bulkOperationsService.js';
+import { bulkOperationsService, bulkOperationsQueue } from '../services/bulkOperationsService.js';
+import { sendEmail } from '../services/emailService.js';
 
 let connection;
 if (process.env.REDIS_URL) {
@@ -31,6 +32,24 @@ export const bulkWorker =
                 [{ message: err.message }],
                 'failed'
               );
+              throw err;
+            }
+          } else if (job.name === 'send_welcome_email') {
+            const { email, displayName, plainPassword } = job.data;
+            logger.info(`[bulkWorker] Sending welcome email to ${email}`);
+            try {
+              await sendEmail({
+                to: email,
+                subject: 'Welcome to NexaSphere!',
+                templateName: 'generic',
+                data: {
+                  name: displayName || 'Student',
+                  message: `Your account has been created. You can log in using your email and this temporary password: ${plainPassword} \nPlease change it after your first login.`,
+                },
+              });
+              return { sent: true };
+            } catch (err) {
+              logger.error(`[bulkWorker] Error sending welcome email to ${email}: ${err.message}`);
               throw err;
             }
           }

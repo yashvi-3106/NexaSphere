@@ -123,6 +123,17 @@ export async function withDb(fn) {
     const handleStats = (err) => {
       const duration = Date.now() - start;
       const sqlText = typeof config === 'string' ? config : config?.text || 'unknown';
+
+      // Slow query profiling (>= 100ms)
+      if (duration >= 100) {
+        import('../utils/queryLogger.js')
+          .then(({ recordSlowQuery }) =>
+            recordSlowQuery(sqlText, duration, { error: err?.message })
+          )
+          .catch(() => {});
+      }
+
+      // Request trace collection (existing behavior)
       import('../config/appContext.js')
         .then(({ appContext }) => {
           const store = appContext.getStore();
@@ -187,6 +198,12 @@ export function _resetPools() {
 
 export function setWithDbOverride(fn) {
   withDbOverride = fn;
+}
+
+export async function query(text, params) {
+  return withDb(async (client) => {
+    return client.query(text, params);
+  });
 }
 
 export { pg };

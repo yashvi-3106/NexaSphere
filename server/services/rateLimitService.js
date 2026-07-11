@@ -5,11 +5,16 @@ import logger from '../utils/logger.js';
 
 let redisClient = null;
 
+/**
+ * A bounded in-memory rate-limit store that evicts the oldest
+ * entries when capacity is reached, instead of purging all keys.
+ */
 class CappedMemoryStore {
   constructor(maxKeys = 10000) {
     this.store = new MemoryStore();
     this.maxKeys = maxKeys;
     this.options = null;
+    this.keyOrder = [];
   }
 
   init(options) {
@@ -18,15 +23,8 @@ class CappedMemoryStore {
   }
 
   async increment(key) {
-    const localKeysCount = this.store.localKeys?.length || 0;
-    if (localKeysCount >= this.maxKeys) {
-      logger.warn(
-        '[RateLimiter] Fallback memory store capacity exceeded. Purging to prevent OOM.',
-        { capacity: this.maxKeys }
-      );
-      if (this.store.shutdown) this.store.shutdown();
-      this.store = new MemoryStore();
-      if (this.options) this.store.init(this.options);
+    if (this.store.localKeys?.length >= this.maxKeys) {
+      this.evictLRU();
     }
     return this.store.increment(key);
   }
@@ -36,15 +34,31 @@ class CappedMemoryStore {
   }
 
   async resetKey(key) {
+    this.keyOrder = this.keyOrder.filter((k) => k !== key);
     return this.store.resetKey(key);
   }
 
   async get(key) {
     return this.store.get ? this.store.get(key) : undefined;
   }
+
+  evictLRU() {
+    const keys = this.store.localKeys || [];
+    const evictCount = Math.max(1, Math.floor(this.maxKeys * 0.1));
+    const toEvict = keys.slice(0, evictCount);
+
+    for (const key of toEvict) {
+      this.store.resetKey(key);
+      this.keyOrder = this.keyOrder.filter((k) => k !== key);
+    }
+
+    logger.warn('[RateLimiter] CappedMemoryStore LRU eviction', {
+      evicted: toEvict.length,
+      remaining: (this.store.localKeys?.length || 0) - toEvict.length,
+    });
+  }
 }
 
-// Determine available Redis URL
 const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
 
 if (process.env.UPSTASH_REDIS_REST_URL && !process.env.REDIS_URL) {
@@ -57,7 +71,6 @@ if (redisUrl) {
     redisClient = new Redis(redisUrl, {
       maxRetriesPerRequest: 1,
       retryStrategy(times) {
-        // Stop retrying after 3 attempts to allow graceful fallback to memory
         if (times > 3) {
           logger.warn(
             '[RateLimiter] Redis unreachable after 3 retries, falling back to memory store if necessary.'
@@ -81,18 +94,9 @@ if (redisUrl) {
   }
 }
 
-/**
- * Creates a rate limit store. Uses Redis if configured and reachable,
- * otherwise returns a CappedMemoryStore to force express-rate-limit to fall back
- * gracefully to a bounded memory store.
- *
- * @param {string} prefix The Redis key prefix to isolate limiters
- * @returns {RedisStore | CappedMemoryStore}
- */
 export function createRateLimitStore(prefix) {
   if (redisClient) {
     return new RedisStore({
-      // @ts-expect-error - rate-limit-redis v3 uses sendCommand with ioredis
       sendCommand: (...args) => redisClient.call(...args),
       prefix: prefix,
     });
@@ -100,7 +104,6 @@ export function createRateLimitStore(prefix) {
   return new CappedMemoryStore(10000);
 }
 
-// For testing purposes
 export function _getRedisClient() {
   return redisClient;
 }

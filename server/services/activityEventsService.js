@@ -29,11 +29,17 @@ export const activityEventsService = {
     return {
       rows: rows.map((row) => sanitizeActivityEventRecord(row)),
       total,
+      page,
+      limit,
     };
   },
 
+  async assertCanManage(body) {
+    await coreTeamService.assertCanManageActivityEvent(body);
+  },
+
   async addActivityEvent(activityKey, input) {
-    await coreTeamService.assertCanManageActivityEvent(input);
+    await this.assertCanManage(input);
 
     const payload = {
       id: input.id,
@@ -55,9 +61,7 @@ export const activityEventsService = {
   },
 
   async deleteActivityEvent(activityKey, eventId, input) {
-    if (input) {
-      await coreTeamService.assertCanManageActivityEvent(input);
-    }
+    await this.assertCanManage(input);
     return activityEventsRepository.delete(activityKey, eventId);
   },
 };
