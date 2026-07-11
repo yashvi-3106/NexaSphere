@@ -115,8 +115,10 @@ import { schedulerService } from './services/schedulerService.js';
 import feedbackRouter from './routes/feedbackRoutes.js';
 import * as slackController from './controllers/slackController.js';
 import activityTimelineRoutes from './routes/activityTimeline.js';
+import advancedProfileRoutes from './routes/advancedProfile.js';
 
 import { initializeTypesenseCollections } from './config/typesense.js';
+
 import moderationRouter from './routes/moderation.js';
 import rbacRouter from './routes/rbac.js';
 
@@ -390,7 +392,12 @@ app.use(readOnlyGuard);
 
 // Mount route modules
 app.post('/api/analytics/track', logEvent);
+
+// Advanced user profile endpoints
+app.use('/', advancedProfileRoutes);
+
 app.use('/api/monitoring', monitoringRouter);
+
 app.use('/api/health-dashboard', healthDashboardRouter);
 app.use('/api', documentationRouter);
 app.use('/', apiRouter);
