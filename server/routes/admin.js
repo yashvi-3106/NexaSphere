@@ -5,6 +5,7 @@
 import { tracedFetch } from '../config/appContext.js';
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
+import { supabaseBreaker, HAS_SUPABASE } from '../storage/supabaseClient.js';
 import { financialService } from '../services/financialService.js';
 import {
   validateConfigChange,
@@ -71,11 +72,43 @@ const membershipBreaker = circuitBreakerRegistry.register(
 );
 
 /**
- * GET /membership — Fetch membership responses from Google Apps Script,
- * protected by a circuit breaker. Returns an empty list if the script URL
- * or secret is not configured, or if the circuit is open.
+ * GET /membership — Fetch membership responses from Supabase (primary source of truth).
+ * Falls back to Google Apps Script if Supabase is unavailable.
+ * This ensures form submissions are always visible to admins even when
+ * Google Sheets writes fail (quota, network, etc.).
  */
 router.get('/membership', adminAuth, async (req, res) => {
+  // Primary: Read from Supabase (source of truth)
+  if (HAS_SUPABASE) {
+    try {
+      const data = await supabaseBreaker.execute(
+        'form_submissions?form_type=eq.membership&order=created_at.desc',
+        {
+          method: 'GET',
+        }
+      );
+      const responses = (data || []).map((row) => ({
+        submittedAt: row.created_at,
+        formType: row.form_type,
+        fullName: row.full_name,
+        collegeEmail: row.college_email,
+        whatsapp: row.whatsapp,
+        ...row.payload,
+      }));
+      return res.json({ responses });
+    } catch (err) {
+      if (err.code === 'CIRCUIT_OPEN') {
+        console.warn(
+          '[Membership] Supabase circuit breaker is OPEN, falling back to Google Apps Script'
+        );
+      } else {
+        console.error('[Membership] Failed to fetch from Supabase:', err.message);
+      }
+      // Fall through to Google Apps Script fallback
+    }
+  }
+
+  // Fallback: Google Apps Script (legacy path)
   const scriptUrl = process.env.MEMBERSHIP_SCRIPT_URL;
   const secret = process.env.MEMBERSHIP_SECRET;
 
@@ -88,10 +121,12 @@ router.get('/membership', adminAuth, async (req, res) => {
     return res.json({ responses: data.responses || [] });
   } catch (err) {
     if (err.code === 'CIRCUIT_OPEN') {
-      console.warn('[Membership] Circuit breaker is OPEN, returning empty responses');
+      console.warn(
+        '[Membership] Google Apps Script circuit breaker is OPEN, returning empty responses'
+      );
       return res.json({ responses: [] });
     }
-    console.error('[Membership] Failed to fetch responses:', err.message);
+    console.error('[Membership] Failed to fetch responses from Google Apps Script:', err.message);
     return res.status(500).json({ error: 'Failed to fetch membership responses' });
   }
 });
@@ -136,22 +171,6 @@ router.get('/api/admin/database-recovery', adminAuth, (req, res) => {
 
 router.get('/api/admin/database-audit-log', adminAuth, (req, res) => {
   res.json(createRecoveryAuditLog());
-});
-
-router.get('/api/admin/read-only-status', adminAuth, (req, res) => {
-  res.json(getReadOnlyStatus());
-});
-
-router.post('/api/admin/read-only-enable', adminAuth, (req, res) => {
-  res.json(activateReadOnlyMode());
-});
-
-router.post('/api/admin/read-only-disable', adminAuth, (req, res) => {
-  res.json(deactivateReadOnlyMode());
-});
-
-router.get('/api/admin/read-only-log', adminAuth, (req, res) => {
-  res.json(createIncidentLog());
 });
 
 router.get('/api/admin/read-only-status', adminAuth, (req, res) => {
@@ -259,5 +278,33 @@ router.get('/api/admin/reports/revenue', adminAuth, async (req, res) => {
     res.status(500).json({ error: error.message || 'Failed to generate revenue report' });
   }
 });
+
+import jwt from 'jsonwebtoken';
+
+router.post('/api/admin/sso-invite', adminAuth, (req, res) => {
+  const { email } = req.body;
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email address is required' });
+  }
+
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    return res.status(500).json({ error: 'JWT_SECRET is not configured on the server' });
+  }
+
+  // Generate a token valid for 24 hours
+  const token = jwt.sign({ email: email.toLowerCase(), bypassSso: true }, jwtSecret, {
+    expiresIn: '24h',
+  });
+
+  const baseUrl = process.env.BASE_URL || 'http://localhost:8080';
+  const inviteUrl = `${baseUrl}/api/auth/google?token=${token}`;
+
+  return res.json({ token, inviteUrl });
+});
+
+router.get('/sessions', adminAuth, adminAuthMiddleware.getSecurityOverview);
+router.delete('/sessions/:sessionId', adminAuth, adminAuthMiddleware.revokeSession);
+router.delete('/sessions', adminAuth, adminAuthMiddleware.logoutOtherSessions);
 
 export default router;

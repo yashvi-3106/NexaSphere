@@ -35,7 +35,7 @@ test.before(() => {
   activityEventsRepository.delete = async (key, id) => true;
   coreTeamService.listMembers = async () => [TEST_MEMBER];
   coreTeamService.assertCanManageActivityEvent = async (input) => {
-    if (!input.password || input.password !== 'TestPassword123') {
+    if (!input || !input.password || input.password !== 'TestPassword123') {
       throw new UnauthorizedError('Invalid credentials');
     }
   };
@@ -248,6 +248,8 @@ test('Multiple concurrent auth checks do not interfere with each other', async (
 test('Authorization is enforced for both create and delete operations', async () => {
   const validInput = {
     name: 'Event',
+    date: '2026-07-04T12:00:00Z',
+    description: 'Test Description',
     password: 'TestPassword123',
     coreTeamName: 'Test User',
   };
@@ -258,10 +260,21 @@ test('Authorization is enforced for both create and delete operations', async ()
     .catch((e) => e);
 
   const deleteCheck = await activityEventsService
-    .deleteActivityEvent('test-key', 'event-id')
+    .deleteActivityEvent('test-key', 'event-id', validInput)
     .catch((e) => e);
 
   // Both should succeed with valid credentials
   assert(createCheck.id || !createCheck.message, 'Create should succeed with valid auth');
   assert.equal(deleteCheck, true, 'Delete should succeed with valid auth');
+});
+
+// Edge Case 11: deleteActivityEvent requires credentials
+test('deleteActivityEvent rejects requests without credentials', async () => {
+  await assert.rejects(
+    async () => {
+      await activityEventsService.deleteActivityEvent('test-key', 'event-id');
+    },
+    UnauthorizedError,
+    'Deletion should be rejected when credentials are not provided'
+  );
 });

@@ -1,4 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+// Validates a date value before formatting — avoids rendering literal
+// "Invalid Date" text when the API returns a null or malformed timestamp.
+function formatStreamDate(value) {
+  if (!value) return 'Unknown';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'Unknown';
+  return d.toLocaleString();
+}
+function formatStreamTime(value) {
+  if (!value) return 'Unknown';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'Unknown';
+  return d.toLocaleTimeString();
+}
 import { getApiBase } from '../../utils/runtimeConfig';
 import { useParams } from 'react-router-dom';
 import {
@@ -349,7 +364,7 @@ function LiveStreamPage() {
               <Users className="w-4 h-4" /> {stream.viewerCount || 0} viewers
             </span>
             {stream.scheduledStart && (
-              <span>Scheduled: {new Date(stream.scheduledStart).toLocaleString()}</span>
+              <span>Scheduled: {formatStreamDate(stream.scheduledStart)}</span>
             )}
           </div>
         </div>
@@ -412,7 +427,7 @@ function LiveStreamPage() {
                   <div className="flex justify-between">
                     <span className="text-gray-400">Started</span>
                     <span className="font-medium">
-                      {new Date(stream.startedAt).toLocaleTimeString()}
+                      {formatStreamTime(stream.startedAt)}
                     </span>
                   </div>
                 )}
@@ -420,7 +435,7 @@ function LiveStreamPage() {
                   <div className="flex justify-between">
                     <span className="text-gray-400">Ended</span>
                     <span className="font-medium">
-                      {new Date(stream.endedAt).toLocaleTimeString()}
+                      {formatStreamTime(stream.endedAt)}
                     </span>
                   </div>
                 )}

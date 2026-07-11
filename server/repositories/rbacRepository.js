@@ -1,4 +1,4 @@
-import { query } from '../utils/db.js';
+import { query } from './db.js';
 import { DEFAULT_ROLES } from '../config/rbac.js';
 
 const CUSTOM_ROLES_TABLE = 'custom_roles';

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import InterestSelector from '../../components/dashboard/InterestSelector';
 import QuestTracker from '../../components/dashboard/QuestTracker';
 import Leaderboard from '../../components/dashboard/Leaderboard';
@@ -11,26 +12,14 @@ import { useStudentAuth } from '../../context/StudentAuthContext';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
 
 export default function DashboardPage({ onBack }) {
-  const { user: authUser } = useStudentAuth();
-  const { theme: currentTheme, setTheme } = useTheme();
-  const currentUser = authUser
-    ? {
-        id: authUser.sub || authUser.id,
-        name: authUser.name || 'Explorer',
-        email: authUser.email || '',
-        role: authUser.role || 'student',
-      }
-    : { id: 'user_123', name: 'Explorer', email: '', role: 'student' };
-
+  const [currentUser] = useState({ id: 'user_123', name: 'Explorer' });
   const [interests, setInterests] = useState([]);
   const [quests, setQuests] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [timeframe, setTimeframe] = useState('all');
   const [recommendations, setRecommendations] = useState([]);
   const [loadingRecs, setLoadingRecs] = useState(false);
 
-  // No quest/leaderboard endpoints exist on the backend yet.
-  // These are seeded with static data until the backend implements
-  // /api/dashboard/quests and /api/dashboard/leaderboard.
   const isDemoMode = !getApiBase();
 
   useEffect(() => {
@@ -50,44 +39,30 @@ export default function DashboardPage({ onBack }) {
         completed: false,
       },
     ]);
+  }, []);
 
-    setLeaderboard(
-      [
-        {
-          id: 'u1',
-          userId: 'user_123',
-          username: 'Explorer',
-          xp: 450,
-          level: 3,
-        },
-        {
-          id: 'u2',
-          userId: 'user_456',
-          username: 'TechNinja',
-          xp: 850,
-          level: 5,
-        },
-        {
-          id: 'u3',
-          userId: 'user_789',
-          username: 'CodeMaster',
-          xp: 320,
-          level: 2,
-        },
-      ].sort((a, b) => b.xp - a.xp || a.username.localeCompare(b.username))
-    );
-  }, [currentUser]);
+  useEffect(() => {
+    // Simulated data based on timeframe
+    const data = {
+      all: [
+        { id: 'u1', userId: 'user_123', username: 'Explorer', xp: 450, level: 3, streak: 5 },
+        { id: 'u2', userId: 'user_456', username: 'TechNinja', xp: 850, level: 5, streak: 12 },
+        { id: 'u3', userId: 'user_789', username: 'CodeMaster', xp: 320, level: 2, streak: 0 },
+      ].sort((a, b) => b.xp - a.xp),
+      week: [
+        { id: 'u2', userId: 'user_456', username: 'TechNinja', xp: 200, level: 5, streak: 12 },
+      ],
+      month: [{ id: 'u1', userId: 'user_123', username: 'Explorer', xp: 350, level: 3, streak: 5 }],
+    };
+    setLeaderboard(data[timeframe] || data.all);
+  }, [timeframe]);
 
   const toggleInterest = (domain) => {
     setInterests((prev) => {
       const newInterests = prev.includes(domain)
         ? prev.filter((d) => d !== domain)
         : [...prev, domain];
-
-      // Quest trigger
-      if (newInterests.length >= 3) {
-        completeQuest('q2');
-      }
+      if (newInterests.length >= 3) completeQuest('q2');
       return newInterests;
     });
   };
@@ -101,14 +76,12 @@ export default function DashboardPage({ onBack }) {
     setLoadingRecs(true);
     try {
       const recommendationsUrl = buildUrl(getAiApiBase(), `/recommend/events/${currentUser.id}`);
-      if (!recommendationsUrl) {
-        throw new Error('Recommendations service is not configured');
-      }
-
-      const res = await fetch(recommendationsUrl);
-      if (res.ok) {
-        const data = await res.json();
-        setRecommendations(data.recommended_events || []);
+      if (recommendationsUrl) {
+        const res = await fetch(recommendationsUrl);
+        if (res.ok) {
+          const data = await res.json();
+          setRecommendations(data.recommended_events || []);
+        }
       }
     } catch (e) {
       if (import.meta.env.DEV) {
@@ -120,21 +93,14 @@ export default function DashboardPage({ onBack }) {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchRecommendations();
-    }, 1000);
+    const timer = setTimeout(() => fetchRecommendations(), 1000);
     return () => clearTimeout(timer);
   }, [interests]);
 
   return (
     <div
       className="dashboard-page"
-      style={{
-        padding: '24px',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        color: 'var(--t1)',
-      }}
+      style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto', color: 'var(--t1)' }}
     >
       <div
         style={{
@@ -174,7 +140,6 @@ export default function DashboardPage({ onBack }) {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
           gap: '24px',
-          marginBottom: '24px',
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -188,7 +153,6 @@ export default function DashboardPage({ onBack }) {
           >
             <InterestSelector selectedInterests={interests} onToggleInterest={toggleInterest} />
           </div>
-
           <div
             style={{
               background: 'var(--bg-glass)',
@@ -288,6 +252,50 @@ export default function DashboardPage({ onBack }) {
                 </button>
               </div>
             </div>
+
+            {/* Admin Integrations Card */}
+            {(currentUser.role === 'admin' ||
+              currentUser.role === 'SuperAdmin' ||
+              currentUser.role === 'faculty') && (
+              <div
+                style={{
+                  background: 'var(--bg-glass)',
+                  padding: '20px',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(204,17,17,0.15)',
+                  marginTop: '20px',
+                }}
+              >
+                <h3
+                  style={{
+                    marginBottom: '12px',
+                    fontSize: '1.05rem',
+                    color: 'var(--t1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  ⚙️ Admin Integrations
+                </h3>
+                <button
+                  onClick={() => navigate('/admin/webhooks')}
+                  style={{
+                    width: '100%',
+                    background: 'rgba(204,17,17,0.15)',
+                    border: '1px solid var(--c1)',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    color: '#fff',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  Manage Webhooks
+                </button>
+              </div>
+            )}
           </div>
 
           <div
@@ -302,54 +310,39 @@ export default function DashboardPage({ onBack }) {
               Personalized Recommendations
             </h3>
             {interests.length === 0 ? (
-              <p style={{ color: 'var(--t2)' }}>
-                Select some interests above to see recommendations!
-              </p>
+              <p style={{ color: 'var(--t2)' }}>Select interests to see recommendations!</p>
             ) : loadingRecs ? (
-              <DashboardCardSkeleton count={3} />
-            ) : recommendations.length > 0 ? (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px',
-                }}
-              >
-                {recommendations.map((rec, i) => (
-                  <div
-                    key={rec.id ?? rec.title ?? i}
-                    style={{
-                      padding: '12px',
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid var(--c1-50)',
-                      borderRadius: '8px',
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold', color: 'var(--c1)' }}>
-                      {rec.title || 'Event'}
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--t2)' }}>
-                      Match Score: {Math.round((rec.score || 0.8) * 100)}%
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <DashboardCardSkeleton />
             ) : (
-              <p style={{ color: 'var(--t2)' }}>
-                No new recommendations based on your current interests.
-              </p>
+              recommendations.map((rec, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: '12px',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid var(--c1-50)',
+                    borderRadius: '8px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  <div style={{ fontWeight: 'bold', color: 'var(--c1)' }}>{rec.title}</div>
+                </div>
+              ))
             )}
           </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {isDemoMode && (
-            <p style={{ color: '#f59e0b', fontSize: '0.8rem', marginBottom: '8px' }}>
-              ⚠ Demo mode — quests and leaderboard show sample data until the backend is connected.
-            </p>
+            <p style={{ color: '#f59e0b', fontSize: '0.8rem' }}>⚠ Demo mode — sample data only.</p>
           )}
           <QuestTracker quests={quests} onCompleteQuest={completeQuest} />
-          <Leaderboard users={leaderboard} currentUserId={currentUser.id} />
+          <Leaderboard
+            users={leaderboard}
+            currentUserId={currentUser.id}
+            timeframe={timeframe}
+            setTimeframe={setTimeframe}
+          />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

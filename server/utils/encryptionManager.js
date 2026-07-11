@@ -1,8 +1,14 @@
 import crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-cbc';
-let ENCRYPTION_KEY =
-  process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex').slice(0, 32);
+let ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+if (!ENCRYPTION_KEY) {
+  if (process.env.NODE_ENV === 'test') {
+    ENCRYPTION_KEY = 'a'.repeat(32);
+  } else {
+    throw new Error('FATAL: ENCRYPTION_KEY environment variable is not set.');
+  }
+}
 
 let auditLogs = [];
 

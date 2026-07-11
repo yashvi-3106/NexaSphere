@@ -1105,6 +1105,79 @@ async function fetchWithAuth(url, options = {}) {
           },
         });
       }
+
+      // /api/admin/backups/restore-test-history
+      else if (url.startsWith('/api/admin/backups/restore-test-history')) {
+        resolve({
+          history: [
+            {
+              id: 'rest_test_1',
+              verified_at: new Date(Date.now() - 86400000 * 15).toISOString(),
+              backup_key: 'backup_full_2026-06-08.enc',
+              restore_type: 'full',
+              status: 'success',
+              duration_ms: 1420,
+            },
+            {
+              id: 'rest_test_2',
+              verified_at: new Date(Date.now() - 86400000 * 45).toISOString(),
+              backup_key: 'backup_full_2026-05-08.enc',
+              restore_type: 'full',
+              status: 'success',
+              duration_ms: 1390,
+            },
+          ],
+        });
+      }
+
+      // /api/admin/backups
+      else if (url.startsWith('/api/admin/backups')) {
+        if (method === 'GET') {
+          resolve({
+            stats: {
+              totalSize: 45890000,
+              totalCount: 3,
+              storageType: 'AWS S3 Redundant Bucket (eu-west-1)',
+              utilizationPercentage: 14,
+            },
+            backups: [
+              {
+                key: 'backup_full_2026-06-22.enc',
+                filename: 'backup_full_2026-06-22.enc',
+                type: 'full',
+                size: 24500000,
+                location: 's3',
+                date: new Date(Date.now() - 86400000).toISOString(),
+              },
+              {
+                key: 'backup_inc_2026-06-23.enc',
+                filename: 'backup_inc_2026-06-23.enc',
+                type: 'incremental',
+                size: 1390000,
+                location: 's3',
+                date: new Date(Date.now() - 3600000 * 4).toISOString(),
+              },
+              {
+                key: 'backup_full_2026-06-15.enc',
+                filename: 'backup_full_2026-06-15.enc',
+                type: 'full',
+                size: 20000000,
+                location: 's3',
+                date: new Date(Date.now() - 86400000 * 8).toISOString(),
+              },
+            ],
+          });
+        } else if (method === 'POST' && url.includes('/manual')) {
+          resolve({
+            key: `backup_manual_${Date.now()}.enc`,
+            filename: `backup_manual_${Date.now()}.enc`,
+          });
+        } else if (method === 'POST' && url.includes('/restore')) {
+          resolve({ result: { durationMs: 480 } });
+        } else if (method === 'DELETE') {
+          resolve({ success: true });
+        }
+      }
     }, 300); // simulate slight network delay
   });
 }
@@ -1668,10 +1741,124 @@ export const api = {
     getBillingHistory: (userId) => fetchWithAuth(`/api/admin/subscriptions/${userId}/billing`),
   },
 
+  sso: {
+    generateInvite: (email) =>
+      fetchWithAuth('/api/admin/sso-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      }),
+  },
+
   reports: {
     getEngagement: () => fetchWithAuth('/api/admin/reports/engagement'),
     getRevenue: () => fetchWithAuth('/api/admin/reports/revenue'),
   },
+
+  backups: {
+    get: () => fetchWithAuth('/api/admin/backups'),
+    getRestoreHistory: () => fetchWithAuth('/api/admin/backups/restore-test-history'),
+    runManual: (type) =>
+      fetchWithAuth('/api/admin/backups/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
+      }),
+    restore: (backupKey) =>
+      fetchWithAuth('/api/admin/backups/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backupKey }),
+      }),
+    restorePITR: (targetTime) =>
+      fetchWithAuth('/api/admin/backups/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetTime }),
+      }),
+    delete: (key) =>
+      fetchWithAuth(`/api/admin/backups/${encodeURIComponent(key)}`, { method: 'DELETE' }),
+  },
+
+  moderation: {
+    getFlags: (filters = {}) => {
+      const query = new URLSearchParams(filters).toString();
+      return fetchWithAuth(`/api/moderation/flags${query ? `?${query}` : ''}`);
+    },
+    getFlagById: (id) => fetchWithAuth(`/api/moderation/flags/${id}`),
+    approveFlag: (id) =>
+      fetchWithAuth(`/api/moderation/flags/${id}/approve`, { method: 'PUT' }),
+    rejectFlag: (id, reason) =>
+      fetchWithAuth(`/api/moderation/flags/${id}/remove`, {
+        method: 'PUT',
+        body: JSON.stringify({ reason }),
+      }),
+    warnUser: (userId) =>
+      fetchWithAuth(`/api/moderation/users/${userId}/warn`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: 'Violating community guidelines' }),
+      }),
+    banUser: (userId) =>
+      fetchWithAuth(`/api/moderation/users/${userId}/warn`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: 'Permanent ban for repeated violations' }),
+      }),
+    getAppeals: (filters = {}) => {
+      const query = new URLSearchParams(filters).toString();
+      return fetchWithAuth(`/api/moderation/appeals${query ? `?${query}` : ''}`);
+    },
+    approveAppeal: (id, note) =>
+      fetchWithAuth(`/api/moderation/appeals/${id}/review`, {
+        method: 'PUT',
+        body: JSON.stringify({ decision: 'overturned', decisionNote: note }),
+      }),
+    rejectAppeal: (id, note) =>
+      fetchWithAuth(`/api/moderation/appeals/${id}/review`, {
+        method: 'PUT',
+        body: JSON.stringify({ decision: 'upheld', decisionNote: note }),
+      }),
+    getStats: () => fetchWithAuth('/api/moderation/stats'),
+  },
+
+  rbac: {
+    getRoles: () => fetchWithAuth('/api/admin/rbac/roles'),
+    getPermissions: () => fetchWithAuth('/api/admin/rbac/permissions'),
+    getPermissionMatrix: () => fetchWithAuth('/api/admin/rbac/matrix'),
+    createRole: (roleData) =>
+      fetchWithAuth('/api/admin/rbac/roles', {
+        method: 'POST',
+        body: JSON.stringify(roleData),
+      }),
+    updateRole: (roleName, roleData) =>
+      fetchWithAuth(`/api/admin/rbac/roles/${roleName}`, {
+        method: 'PUT',
+        body: JSON.stringify(roleData),
+      }),
+    deleteRole: (roleName) =>
+      fetchWithAuth(`/api/admin/rbac/roles/${roleName}`, {
+        method: 'DELETE',
+      }),
+    getUsersWithRoles: () => fetchWithAuth('/api/admin/rbac/users'),
+    assignRole: (assignment) =>
+      fetchWithAuth('/api/admin/rbac/assign', {
+        method: 'POST',
+        body: JSON.stringify(assignment),
+      }),
+    revokeRole: (userId, roleName) =>
+      fetchWithAuth(`/api/admin/rbac/assign/${userId}/${roleName}`, {
+        method: 'DELETE',
+      }),
+    bulkAssignRoles: (assignments) =>
+      fetchWithAuth('/api/admin/rbac/bulk-assign', {
+        method: 'POST',
+        body: JSON.stringify({ assignments }),
+      }),
+    getAuditLogs: (filters = {}) => {
+      const query = new URLSearchParams(filters).toString();
+      return fetchWithAuth(`/api/admin/rbac/audit${query ? `?${query}` : ''}`);
+    },
+  },
 };
+
 
 export { auth, eventEmitter, EVENTS };

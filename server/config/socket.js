@@ -21,17 +21,12 @@ const rooms = {
 };
 const PROTECTED_ROOMS = ['admin-room'];
 
-// Tracks which socket IDs have joined which workspace rooms via join_room
 const workspaceRoomMembers = new Map();
 
-// Per-socket rate limiter for join_room events to prevent room enumeration
 const joinRoomAttempts = new Map();
 const MAX_JOIN_ROOM_ATTEMPTS = 20;
 const JOIN_ROOM_WINDOW_MS = 60000;
 
-/**
- * Parse Bearer token from auth header
- */
 function parseBearer(authHeader) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) return '';
   return authHeader.slice(7).trim();
@@ -41,10 +36,18 @@ function parseBearer(authHeader) {
  * Initialize Socket.IO
  * @param {Object} httpServer - HTTP server instance
  */
+export function resolveSocketCorsOrigin(env = process.env) {
+  if (env.FRONTEND_URL) return env.FRONTEND_URL;
+  if (env.NODE_ENV === 'production') {
+    throw new Error('FRONTEND_URL must be set in production for Socket.IO CORS');
+  }
+  return 'http://localhost:5173';
+}
+
 export function initializeSocketIO(httpServer) {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: resolveSocketCorsOrigin(),
       credentials: true,
     },
     reconnection: true,
@@ -67,7 +70,6 @@ export function initializeSocketIO(httpServer) {
     logger.info('Socket.IO using in-memory adapter (REDIS_URL not set).');
   }
 
-  // Connection auth middleware — checks handshake auth token
   io.use(async (socket, next) => {
     const token =
       socket.handshake.auth?.token || parseBearer(socket.handshake.headers?.authorization);
@@ -79,8 +81,9 @@ export function initializeSocketIO(httpServer) {
           socket.adminAuthenticated = true;
           socket.adminPermissions = resolveAdminPermissions(session);
         }
-      } catch {
-        // Auth check is best-effort at connection time
+      } catch (err) {
+        logger.warn('Socket auth middleware error:', err.message);
+        return next(new Error('Authentication failed'));
       }
     }
     next();
@@ -95,14 +98,9 @@ export function initializeSocketIO(httpServer) {
   return io;
 }
 
-/**
- * Socket.IO connection event handler (exposed for security validation)
- * @param {Object} socket - Socket.io socket instance
- */
 export function _onConnection(socket) {
   logger.info('User connected', { socketId: socket.id, admin: !!socket.adminAuthenticated });
 
-  // Auto-join authenticated admin sockets to permission-scoped rooms
   if (socket.adminAuthenticated) {
     if (!socket.adminPermissions) {
       socket.adminPermissions = resolveAdminPermissions(socket.adminSession);
@@ -118,12 +116,9 @@ export function _onConnection(socket) {
     });
   }
 
-  // Keep track of identify operations to rate limit floods per-socket (Max 3 events per lifetime)
   let identifyCount = 0;
 
-  // Store connected user
   socket.on('user:identify', (userData) => {
-    // 1. Enforce Per-Socket Identification Rate Limiting
     identifyCount++;
     if (identifyCount > 3) {
       logger.warn('Socket identification flood detected, forcing disconnect', {
@@ -133,7 +128,6 @@ export function _onConnection(socket) {
       return;
     }
 
-    // 2. Defensive Payload Structure & Type Validation
     if (!userData || typeof userData !== 'object') {
       logger.warn('Invalid user identification payload type rejected', { socketId: socket.id });
       return;
@@ -141,7 +135,6 @@ export function _onConnection(socket) {
 
     const { userId, email } = userData;
 
-    // Validate fields exist and are strictly primitive strings
     if (typeof userId !== 'string' || typeof email !== 'string') {
       logger.warn('User identification payload fields must be primitive strings', {
         socketId: socket.id,
@@ -149,13 +142,11 @@ export function _onConnection(socket) {
       return;
     }
 
-    // 3. Strict Size Bounds (128 char for IDs, 256 for Email)
     if (userId.length > 128 || email.length > 256) {
       logger.warn('Oversized user identification payload values rejected', { socketId: socket.id });
       return;
     }
 
-    // 4. Safe Deep Copy (Persist sanitized primitives)
     connectedUsers.set(socket.id, {
       id: String(userId),
       email: String(email),
@@ -166,31 +157,25 @@ export function _onConnection(socket) {
     logger.info('User identified successfully', { userId: String(userId), socketId: socket.id });
   });
 
-  // Approved public-facing rooms that standard users can join
   const ALLOWED_PUBLIC_ROOMS = ['notifications-room', 'events-room', 'admin-room'];
   const MAX_ROOMS_PER_SOCKET = 10;
 
-  // Join notification room
   socket.on('room:join', (roomName) => {
-    // 1. Primitive Type Validation
     if (typeof roomName !== 'string') {
       logger.warn('Socket room:join payload must be a string', { socketId: socket.id });
       return;
     }
 
-    // 2. Strict Allowlist Match
     if (!ALLOWED_PUBLIC_ROOMS.includes(roomName)) {
       logger.warn('Unapproved room:join attempt rejected', { socketId: socket.id, room: roomName });
       return socket.emit('room:join:error', { error: 'Invalid or unauthorized room name' });
     }
 
-    // 3. Authorization Check for Protected Rooms
     if (PROTECTED_ROOMS.includes(roomName) && !socket.adminAuthenticated) {
       logger.warn('Unauthorized room join attempt', { socketId: socket.id, room: roomName });
       return socket.emit('room:join:error', { error: 'Authentication required to join this room' });
     }
 
-    // 4. Per-Socket Bounded Active Rooms Cap (Set size check)
     const joinedCount = socket.rooms ? socket.rooms.size - 1 : 0;
     if (joinedCount >= MAX_ROOMS_PER_SOCKET) {
       logger.warn('Socket joined rooms limit exceeded', { socketId: socket.id });
@@ -201,16 +186,13 @@ export function _onConnection(socket) {
     logger.info('User joined room', { socketId: socket.id, room: roomName });
   });
 
-  // Leave room
   socket.on('room:leave', (roomName) => {
     if (typeof roomName !== 'string') return;
     socket.leave(roomName);
     logger.info('User left room', { socketId: socket.id, room: roomName });
   });
 
-  // Join workspace room (Issue #205)
   socket.on('join_room', (roomId, user) => {
-    // 1. Primitive Type & Structure Regex Validation (UUID/ObjectId/Workspace Name)
     if (typeof roomId !== 'string' || !/^[a-zA-Z0-9\-_]{1,100}$/.test(roomId)) {
       logger.warn('Malformed workspace roomId join attempt rejected', {
         socketId: socket.id,
@@ -219,14 +201,12 @@ export function _onConnection(socket) {
       return;
     }
 
-    // 2. Per-Socket Bounded Active Rooms Cap
     const joinedCount = socket.rooms ? socket.rooms.size - 1 : 0;
     if (joinedCount >= MAX_ROOMS_PER_SOCKET) {
       logger.warn('Socket workspace joined rooms limit exceeded', { socketId: socket.id });
       return;
     }
 
-    // 3. Per-socket rate limit to prevent room enumeration
     const now = Date.now();
     let attempts = joinRoomAttempts.get(socket.id);
     if (!attempts || now > attempts.resetAt) {
@@ -239,7 +219,6 @@ export function _onConnection(socket) {
       return;
     }
 
-    // 4. Track room membership for event relay authorization
     if (!workspaceRoomMembers.has(roomId)) {
       workspaceRoomMembers.set(roomId, new Set());
     }
@@ -248,7 +227,6 @@ export function _onConnection(socket) {
     socket.join(roomId);
     logger.info('User joined workspace room', { socketId: socket.id, roomId });
 
-    // Sanitize user details to prevent reference leaks / massive nested objects
     const sanitizedUser =
       user && typeof user === 'object'
         ? {
@@ -265,7 +243,6 @@ export function _onConnection(socket) {
       .emit('user_joined', { socketId: socket.id, user: sanitizedUser, timestamp: Date.now() });
   });
 
-  // Leave workspace room
   socket.on('leave_room', (roomId) => {
     if (typeof roomId !== 'string') return;
     _removeWorkspaceMember(roomId, socket.id);
@@ -274,7 +251,6 @@ export function _onConnection(socket) {
     socket.to(roomId).emit('user_left', { socketId: socket.id });
   });
 
-  // Workspace synchronization events — only relay if sender is a room member
   socket.on('workspace_update', (data) => {
     const { roomId, ...payload } = data;
     if (roomId && _isWorkspaceMember(roomId, socket.id)) {
@@ -282,7 +258,6 @@ export function _onConnection(socket) {
     }
   });
 
-  // Event planning real-time collaboration
   socket.on('planning:join', (eventId) => {
     if (typeof eventId === 'string' && /^[a-zA-Z0-9\-_]{1,100}$/.test(eventId)) {
       socket.join(`planning:${eventId}`);
@@ -325,7 +300,6 @@ export function _onConnection(socket) {
     }
   });
 
-  // Authenticate socket for admin rooms using admin token
   socket.on('admin:authenticate', async ({ token } = {}) => {
     if (!token) {
       return socket.emit('admin:authenticated', { success: false, error: 'Token is required' });
@@ -357,7 +331,6 @@ export function _onConnection(socket) {
     }
   });
 
-  // Waiting room — join queue
   socket.on('waiting:join', ({ eventId, fullName, email, isPriority } = {}) => {
     if (!eventId || !email || !fullName) return;
     const userId = socket.id;
@@ -366,14 +339,12 @@ export function _onConnection(socket) {
     socket.emit('waiting:joined', { eventId, ...result });
   });
 
-  // Waiting room — get current queue status
   socket.on('waiting:status', ({ eventId } = {}) => {
     if (!eventId) return;
     const queue = waitingRoomService.getQueue(eventId);
     socket.emit('waiting:status:update', { eventId, queue, total: queue.length });
   });
 
-  // Waiting room — admin admit one
   socket.on('waiting:admit-one', ({ eventId } = {}) => {
     if (!socket.adminAuthenticated || !eventId) return;
     const entry = waitingRoomService.admitOne(eventId);
@@ -382,34 +353,29 @@ export function _onConnection(socket) {
     }
   });
 
-  // Waiting room — admin admit all
   socket.on('waiting:admit-all', ({ eventId } = {}) => {
     if (!socket.adminAuthenticated || !eventId) return;
     const admitted = waitingRoomService.admitAll(eventId);
     socket.emit('waiting:admitted-entries', { eventId, count: admitted.length });
   });
 
-  // Waiting room — admin remove attendee
   socket.on('waiting:remove', ({ eventId, entryId } = {}) => {
     if (!socket.adminAuthenticated || !eventId || !entryId) return;
     waitingRoomService.removeFromQueue(eventId, entryId);
     socket.emit('waiting:removed-entry', { eventId, entryId });
   });
 
-  // Waiting room — admin move to front
   socket.on('waiting:move-front', ({ eventId, entryId } = {}) => {
     if (!socket.adminAuthenticated || !eventId || !entryId) return;
     waitingRoomService.moveToFront(eventId, entryId);
     socket.emit('waiting:moved-front', { eventId, entryId });
   });
 
-  // Waiting room — admin send message to waiting room
   socket.on('waiting:send-message', ({ eventId, message } = {}) => {
     if (!socket.adminAuthenticated || !eventId || !message) return;
     waitingRoomService.sendMessage(eventId, message);
   });
 
-  // Handle disconnection
   socket.on('disconnect', () => {
     connectedUsers.delete(socket.id);
     _cleanupWorkspaceMembership(socket.id);
@@ -417,15 +383,11 @@ export function _onConnection(socket) {
     logger.info('User disconnected', { socketId: socket.id });
   });
 
-  // Error handling
   socket.on('error', (error) => {
     logger.error('Socket error', { error: error.message, socketId: socket.id });
   });
 }
 
-/**
- * Get Socket.IO instance
- */
 export function getIO() {
   if (!io) {
     throw new Error('Socket.IO not initialized');
@@ -433,27 +395,18 @@ export function getIO() {
   return io;
 }
 
-/**
- * Emit event to all connected clients
- */
 export function broadcastEvent(eventName, data) {
   if (!io) return;
   io.emit(eventName, data);
   logger.debug('Broadcast event', { event: eventName });
 }
 
-/**
- * Emit event to specific room
- */
 export function emitToRoom(roomName, eventName, data) {
   if (!io) return;
   io.to(roomName).emit(eventName, data);
   logger.debug('Emit to room', { room: roomName, event: eventName });
 }
 
-/**
- * Emit event to specific user
- */
 export function emitToUser(userId, eventName, data) {
   if (!io) return;
   const user = Array.from(connectedUsers.values()).find((u) => u.id === userId);
@@ -463,23 +416,20 @@ export function emitToUser(userId, eventName, data) {
   }
 }
 
-/**
- * Get connected users count
- */
+export function emitToUserByEmail(email, eventName, data) {
+  if (!io) return;
+  io.to(`user-${String(email).toLowerCase()}`).emit(eventName, data);
+  logger.debug('Emit to user by email room', { email, event: eventName });
+}
+
 export function getConnectedUsersCount() {
   return connectedUsers.size;
 }
 
-/**
- * Get all connected users
- */
 export function getConnectedUsers() {
   return Array.from(connectedUsers.values());
 }
 
-/**
- * Get room reference
- */
 export function getRoom(roomType) {
   return rooms[roomType] || null;
 }
@@ -518,15 +468,10 @@ function _cleanupWorkspaceMembership(socketId) {
   }
 }
 
-/**
- * Emit an event to the admin role-scoped room(s) that have permission
- * to receive it.  Falls back to the legacy shared `admin-room` for
- * `super_admin` so single-admin deployments continue working.
- *
- * @param {string|string[]} roles - Role name(s) (e.g. 'membership_admin')
- * @param {string} eventName - Event name
- * @param {Object} data - Payload
- */
+export function _setIOForTests(mockIo) {
+  io = mockIo;
+}
+
 export function emitToRole(roles, eventName, data) {
   if (!io) return;
   const list = Array.isArray(roles) ? roles : [roles];
@@ -552,9 +497,11 @@ export default {
   broadcastEvent,
   emitToRoom,
   emitToUser,
+  emitToUserByEmail,
   emitToRole,
   _clearConnectedUsers,
   _clearWorkspaceRoomMembers,
   _clearJoinRoomAttempts,
   _onConnection,
+  _setIOForTests,
 };

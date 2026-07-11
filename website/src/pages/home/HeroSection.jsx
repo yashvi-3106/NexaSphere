@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { apiClient } from '../../utils/apiClient';
+import { useTranslation } from 'react-i18next';
 
 import { BRAND_LOGO_ICON } from '../../shared/brandAssets';
 import { IconArrowRight, IconSpark, DynamicIcon } from '../../shared/Icons';
@@ -186,11 +188,12 @@ function Logo3D({ ready, isLight }) {
 
 /* â”€â”€ Stats bar â”€â”€ */
 function StatsBar({ vis, isLight }) {
+  const { t } = useTranslation();
   const items = [
-    { v: '12', l: 'Members', i: 'Users' },
-    { v: '8', l: 'Activities', i: 'Activity' },
-    { v: '1', l: 'Events Done', i: 'Calendar' },
-    { v: '∞', l: 'Ideas', i: 'Lightbulb' },
+    { v: '12', l: t('hero.stats.members', 'Members'), i: 'Users' },
+    { v: '8', l: t('hero.stats.activities', 'Activities'), i: 'Activity' },
+    { v: '1', l: t('hero.stats.events_done', 'Events Done'), i: 'Calendar' },
+    { v: '∞', l: t('hero.stats.ideas', 'Ideas'), i: 'Lightbulb' },
   ];
   return (
     <div
@@ -344,11 +347,26 @@ function Atmosphere({ isLight }) {
 }
 
 export default function HeroSection({ onTabChange, onApply, onJoin, theme = 'dark' }) {
+  const { t } = useTranslation();
   const [ready, setReady] = useState(false);
   const [statsVis, setStatsVis] = useState(false);
+  const [activeBanner, setActiveBanner] = useState(null);
   const isLight = theme === 'light';
 
   useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const res = await apiClient('/api/content/banners');
+        if (res.banners && res.banners.length > 0) {
+          // simple rotation logic: pick random or first. Here we pick the first scheduled active banner
+          setActiveBanner(res.banners[0]);
+        }
+      } catch (e) {
+        console.error('Failed to fetch banners', e);
+      }
+    };
+    fetchBanners();
+
     const t1 = setTimeout(() => setReady(true), 80);
     const t2 = setTimeout(() => setStatsVis(true), 900);
     return () => {
@@ -398,11 +416,15 @@ export default function HeroSection({ onTabChange, onApply, onJoin, theme = 'dar
       </div>
       <Atmosphere isLight={isLight} />
 
-      <div
-        className="hero-content"
-        style={{ position: 'relative', zIndex: 2, paddingBottom: '80px' }}
-      >
-        <Logo3D ready={ready} isLight={isLight} />
+      <div className="hero-content" style={{ position: 'relative', zIndex: 2, paddingBottom: '80px' }}>
+          {activeBanner ? (
+            <div className="mb-8 w-full max-w-4xl mx-auto cursor-pointer" onClick={() => activeBanner.linkUrl ? window.open(activeBanner.linkUrl, '_blank') : null}>
+              <img src={activeBanner.imageUrl} alt={activeBanner.title} style={{ width: '100%', borderRadius: '16px', boxShadow: '0 12px 32px rgba(0,0,0,0.4)', objectFit: 'cover', maxHeight: '400px' }} />
+            </div>
+          ) : (
+            <Logo3D ready={ready} isLight={isLight} />
+          )}
+
         <HeroTitle isLight={isLight} />
 
         <p
@@ -416,7 +438,7 @@ export default function HeroSection({ onTabChange, onApply, onJoin, theme = 'dar
             opacity: 1,
           }}
         >
-          GL Bajaj&apos;s Student-Driven Tech Ecosystem
+          {t('hero.tagline', "GL Bajaj's Student-Driven Tech Ecosystem")}
           <span
             style={{
               animation: 'blink 1s step-end infinite',
@@ -455,12 +477,12 @@ export default function HeroSection({ onTabChange, onApply, onJoin, theme = 'dar
               onClick={() => (onJoin ? onJoin() : onTabChange('Core Team'))}
             >
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                Join as Member <IconArrowRight />
+                {t('hero.join_as_member', 'Join as Member')} <IconArrowRight />
               </span>
             </RippleBtn>
             <RippleBtn cls="btn-outline" onClick={() => onTabChange('Core Team')}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                Core Team <IconArrowRight />
+                {t('hero.core_team', 'Core Team')} <IconArrowRight />
               </span>
             </RippleBtn>
           </div>
@@ -484,14 +506,14 @@ export default function HeroSection({ onTabChange, onApply, onJoin, theme = 'dar
                 lineHeight: 1.5,
               }}
             >
-              Want to be part of the NexaSphere Core Team?
+              {t('hero.want_to_be_part', 'Want to be part of the NexaSphere Core Team?')}
             </p>
             <RippleBtn
               cls="btn-join"
               onClick={() => (onApply ? onApply() : onTabChange('Core Team'))}
             >
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                Apply for Core Team <IconSpark />
+                {t('hero.apply_for_core_team', 'Apply for Core Team')} <IconSpark />
               </span>
             </RippleBtn>
           </div>
@@ -536,7 +558,7 @@ export default function HeroSection({ onTabChange, onApply, onJoin, theme = 'dar
             fontFamily: "'Space Mono',monospace",
           }}
         >
-          SCROLL
+          {t('hero.scroll', 'SCROLL')}
         </div>
         <div
           className="scroll-indicator-line"
