@@ -38,6 +38,7 @@ import * as whiteboardController from '../controllers/whiteboardController.js';
 import multer from 'multer';
 
 const router = Router();
+const digitalAssetRoutes = require("./digitalAsset");
 
 router.use(rateLimitAdminRoutes);
 router.use(throttleMiddleware);
@@ -489,5 +490,6 @@ router.get(
 
 // Platform Analytics APIs
 router.use("/api/analytics", platformAnalyticsRoutes);
+router.use("/digital-assets", digitalAssetRoutes);
 
 export default router;

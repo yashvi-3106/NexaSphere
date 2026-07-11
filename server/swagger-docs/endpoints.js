@@ -661,8 +661,6 @@
  *       200:
  *         description: Notification history returned successfully
  */
- * ...
- */
 
 /**
  * @swagger
@@ -1110,17 +1108,6 @@
  *         description: Export permissions retrieved successfully
  */
 
- * /api/search/trending:
- *   get:
- *     summary: Trending Searches
- *     description: Returns the most popular search queries.
- *     tags:
- *       - Global Search
- *     responses:
- *       200:
- *         description: Trending searches retrieved successfully.
- */
-
 /**
  * @swagger
  * /api/search/recent:
@@ -1243,4 +1230,253 @@
  *       200:
  *         description: Activity statistics
  */
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Digital Assets
+ *     description: Organization-Wide Digital Asset Management System
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets:
+ *   get:
+ *     summary: Get all digital assets
+ *     tags: [Digital Assets]
+ *     responses:
+ *       200:
+ *         description: Assets retrieved successfully
+ *
+ *   post:
+ *     summary: Upload a new digital asset
+ *     tags: [Digital Assets]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Asset uploaded successfully
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/{id}:
+ *   get:
+ *     summary: Get asset by ID
+ *     tags: [Digital Assets]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Asset retrieved successfully
+ *
+ *   put:
+ *     summary: Update asset
+ *     tags: [Digital Assets]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Asset updated successfully
+ *
+ *   delete:
+ *     summary: Delete asset
+ *     tags: [Digital Assets]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Asset deleted successfully
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/search:
+ *   get:
+ *     summary: Search assets
+ *     tags: [Digital Assets]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Search results returned successfully
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/category/{category}:
+ *   get:
+ *     summary: Filter assets by category
+ *     tags: [Digital Assets]
+ *     parameters:
+ *       - in: path
+ *         name: category
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Category assets retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/folders:
+ *   get:
+ *     summary: Get folders
+ *     tags: [Digital Assets]
+ *     responses:
+ *       200:
+ *         description: Folder list retrieved
+ *
+ *   post:
+ *     summary: Create folder
+ *     tags: [Digital Assets]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Folder created successfully
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/duplicates:
+ *   get:
+ *     summary: Detect duplicate assets
+ *     tags: [Digital Assets]
+ *     responses:
+ *       200:
+ *         description: Duplicate assets retrieved
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/tags/{id}:
+ *   get:
+ *     summary: Generate AI tags
+ *     tags: [Digital Assets]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: AI tags generated successfully
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/history/{id}:
+ *   get:
+ *     summary: Get asset version history
+ *     tags: [Digital Assets]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Version history retrieved
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/preview/{id}:
+ *   get:
+ *     summary: Preview asset
+ *     tags: [Digital Assets]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Asset preview generated
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/bulk-upload:
+ *   post:
+ *     summary: Bulk upload assets
+ *     tags: [Digital Assets]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Assets uploaded successfully
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/bulk-download:
+ *   post:
+ *     summary: Bulk download assets
+ *     tags: [Digital Assets]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Assets downloaded successfully
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/share:
+ *   post:
+ *     summary: Share asset
+ *     tags: [Digital Assets]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Asset shared successfully
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/storage:
+ *   get:
+ *     summary: Storage usage analytics
+ *     tags: [Digital Assets]
+ *     responses:
+ *       200:
+ *         description: Storage analytics retrieved
+ */
+
+/**
+ * @swagger
+ * /api/digital-assets/expiring:
+ *   get:
+ *     summary: Get expiring assets
+ *     tags: [Digital Assets]
+ *     responses:
+ *       200:
+ *         description: Expiring assets retrieved
+ */
+
 export default {};
