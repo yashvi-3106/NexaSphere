@@ -1,4 +1,4 @@
-const recommendationEngineService = {
+export const recommendationEngineService = {
   getRecommendations(userId) {
     return {
       userId,
@@ -6,83 +6,74 @@ const recommendationEngineService = {
       recommendations: {
         events: [
           {
-            id: "event1",
-            title: "AI Workshop",
+            id: 'event1',
+            title: 'AI Workshop',
             score: 96,
-            reason: "Based on your previous event registrations"
+            reason: 'Based on your previous event registrations',
           },
           {
-            id: "event2",
-            title: "Hackathon 2026",
+            id: 'event2',
+            title: 'Hackathon 2026',
             score: 93,
-            reason: "Trending among AI students"
-          }
+            reason: 'Trending among AI students',
+          },
         ],
 
         clubs: [
           {
-            id: "club1",
-            name: "AI Club",
-            score: 95
+            id: 'club1',
+            name: 'AI Club',
+            score: 95,
           },
           {
-            id: "club2",
-            name: "Coding Club",
-            score: 89
-          }
+            id: 'club2',
+            name: 'Coding Club',
+            score: 89,
+          },
         ],
 
         portfolios: [
           {
-            id: "portfolio1",
-            owner: "Rahul",
-            title: "Machine Learning Projects"
-          }
+            id: 'portfolio1',
+            owner: 'Rahul',
+            title: 'Machine Learning Projects',
+          },
         ],
 
         resources: [
           {
-            id: "resource1",
-            title: "Node.js Backend Guide"
-          }
-        ]
-      }
+            id: 'resource1',
+            title: 'Node.js Backend Guide',
+          },
+        ],
+      },
     };
   },
 
   getTrendingRecommendations() {
     return {
-      events: [
-        "Hackathon",
-        "Web Development Bootcamp"
-      ],
+      events: ['Hackathon', 'Web Development Bootcamp'],
 
-      clubs: [
-        "Robotics Club",
-        "AI Club"
-      ],
+      clubs: ['Robotics Club', 'AI Club'],
 
-      announcements: [
-        "Placement Drive",
-        "Tech Fest"
-      ]
+      announcements: ['Placement Drive', 'Tech Fest'],
     };
   },
 
   submitFeedback(userId, recommendationId, feedback) {
     return {
-      message: "Feedback recorded successfully",
+      message: 'Feedback recorded successfully',
       userId,
       recommendationId,
-      feedback
+      feedback,
     };
   },
 
   updateInterests(userId, interests) {
     return {
-      message: "User interests updated",
+      message: 'User interests updated',
       userId,
-      interests
+      interests,
     };
   },
 
@@ -92,9 +83,26 @@ const recommendationEngineService = {
       accepted: 1700,
       rejected: 350,
       ignored: 350,
-      accuracy: "88%"
+      accuracy: '88%',
     };
-  }
-};
+  },
 
-module.exports = recommendationEngineService;
+  getRecommendationExplanation(recommendationId) {
+    return {
+      recommendationId,
+      explanation: 'This was recommended because it is popular in your major.',
+    };
+  },
+
+  markNotInterested(userId, recommendationId) {
+    return {
+      userId,
+      recommendationId,
+      hidden: true,
+    };
+  },
+
+  refreshRecommendations(userId) {
+    return this.getRecommendations(userId);
+  },
+};

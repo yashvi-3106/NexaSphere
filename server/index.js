@@ -30,7 +30,6 @@ import { slackIntegrationService } from './services/slackIntegrationService.js';
 import { initializeSocketIO } from './config/socket.js';
 import adminStreamRouter from './routes/adminStream.js';
 import faqRouter from './routes/faqRoutes.js';
-import { setupAuditContext } from './middleware/adminAuditMiddleware.js';
 import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
 import healthRouter from './routes/health.js';
@@ -42,6 +41,7 @@ import recoveryRouter from './routes/recovery.js';
 import portfolioExportRouter from './routes/portfolioExport.js';
 import userGroupsRouter from './routes/userGroups.js';
 import notificationsRouter from './routes/notifications.js';
+import notificationPreferenceRoutes from './routes/notificationPreference.js';
 import adminRouter from './routes/admin.js';
 import portfolioAnalyticsRouter from './routes/portfolioAnalytics.js';
 import announcementsRouter from './routes/announcements.js';
@@ -55,10 +55,7 @@ import { notificationAnalyticsRepository } from './repositories/notificationAnal
 import { notificationPreferencesRepository } from './repositories/notificationPreferencesRepository.js';
 import notificationsService from './services/notificationsService.js';
 import { initializeSentry, addSentryErrorHandler } from './utils/sentry.js';
-import morgan from 'morgan';
 import { recordCompressionRatio } from './observability/metrics.js';
-import { logEvent } from './controllers/analyticsController.js';
-import healthDashboardRouter from './routes/healthDashboard.js';
 import {
   apiRateLimiter,
   formRateLimiter,
@@ -101,6 +98,7 @@ import { loadPersistedPushSubscriptions } from './routes/notifications.js';
 import * as mentorshipController from './controllers/mentorshipController.js';
 import { xssSanitizer } from './middleware/xssSanitizer.js';
 import { tierRateLimiter } from './middleware/tierRateLimiter.js';
+import { readOnlyGuard } from './services/readOnlyService.js';
 import { startWebhookRetryProcessor } from './services/webhookRetryProcessor.js';
 import { csrfProtection } from './middleware/csrfMiddleware.js';
 import compression from 'compression';
@@ -111,12 +109,12 @@ import { learningPathService } from './services/learningPathService.js';
 import * as resourcesController from './controllers/resourcesController.js';
 import * as backupController from './controllers/backupController.js';
 import scheduledTasksRouter from './routes/scheduledTasks.js';
+import emailTemplateRouter from './routes/emailTemplateRoutes.js';
 import financialsRouter from './routes/financials.js';
 import { schedulerService } from './services/schedulerService.js';
 import feedbackRouter from './routes/feedbackRoutes.js';
 import * as slackController from './controllers/slackController.js';
-import activityTimelineRoutes from "./routes/activityTimeline.js";
-app.use("/api/activity-timeline", activityTimelineRoutes);
+import activityTimelineRoutes from './routes/activityTimeline.js';
 
 import { initializeTypesenseCollections } from './config/typesense.js';
 import moderationRouter from './routes/moderation.js';
@@ -153,8 +151,6 @@ const ADMIN_EVENT_PASSWORD = requiredStrongPassword('ADMIN_EVENT_PASSWORD');
 const SESSION_SECRET = requiredStrongPassword('SESSION_SECRET');
 const ADMIN_PASSWORD = requiredStrongPassword('ADMIN_PASSWORD');
 
-
-
 const app = express();
 
 const useStructuredHttpLog = (process.env.LOG_FORMAT || '').toLowerCase() === 'json';
@@ -164,10 +160,8 @@ app.set('trust proxy', 1);
 
 initializeSentry(app);
 app.use(compression());
-app.use(
-  "/api/notification-preferences",
-  notificationPreferenceRoutes
-);
+app.use('/api/notification-preferences', notificationPreferenceRoutes);
+app.use('/api/activity-timeline', activityTimelineRoutes);
 
 // Use compression with fallback (Brotli supported by default in compression v1.8 if zlib supports it)
 // Skip compression for responses smaller than 1KB (1024 bytes)
@@ -257,16 +251,6 @@ app.use(
             preload: true,
           }
         : false,
-
-fix/search-clear-button-1487
- HEAD
-    // Strict Content Security Policy with ALL directives
-
-    // ✅ FIXED: Strict Content Security Policy with ALL directives
- 921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
-
-    // ✅ FIXED: Strict Content Security Policy with ALL directives
- main
     contentSecurityPolicy: {
       useDefaults: false,
 
@@ -298,53 +282,16 @@ fix/search-clear-button-1487
 
         objectSrc: ["'none'"],
 
- fix/search-clear-button-1487
-
- feat/i18n-localization-1397
- feat/i18n-localization-1397
-
- fix/csp-helmet-config-1475
- main
- main
         // ✅ CRITICAL FIX: Missing directives added below
-        baseUri: ["'self'"],                                    // Prevents <base> tag injection
-        frameAncestors: ["'none'"],                             // Prevents clickjacking
-        formAction: ["'self'"],                                 // Prevents form submission to external sites
-        workerSrc: ["'self'", 'blob:'],                         // Restricts web worker sources
-        manifestSrc: ["'self'"],                                // Restricts manifest sources
-        mediaSrc: ["'self'"],                                   // Restricts media sources
-fix/search-clear-button-1487
- HEAD
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
-
+        baseUri: ["'self'"], // Prevents <base> tag injection
+        frameAncestors: ["'none'"], // Prevents clickjacking
+        formAction: ["'self'"], // Prevents form submission to external sites
+        workerSrc: ["'self'", 'blob:'], // Restricts web worker sources
+        manifestSrc: ["'self'"], // Restricts manifest sources
+        mediaSrc: ["'self'"], // Restricts media sources
         frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'], // Restricts iframe sources
- 921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
-        childSrc: ["'none'"],                                   // Restricts child browsing contexts
-        upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
-
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'], // Restricts iframe sources
-        childSrc: ["'none'"],                                   // Restricts child browsing contexts
-        upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
-
-        baseUri: ["'self'"],
-
-        frameAncestors: ["'none'"],
-
-        formAction: ["'self'"],
-
-        upgradeInsecureRequests: [],
-
-        workerSrc: ["'self'", 'blob:'],
-
-        manifestSrc: ["'self'"],
-
-        mediaSrc: ["'self'"],
-
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
-
-        childSrc: ["'none'"],
- main
- main
+        childSrc: ["'none'"], // Restricts child browsing contexts
+        upgradeInsecureRequests: [], // Upgrades HTTP to HTTPS
 
         reportUri: '/api/v1/csp-violation',
       },
@@ -380,12 +327,7 @@ fix/search-clear-button-1487
     },
   })
 );
- fix/search-clear-button-1487
- HEAD feat/i18n-localization-1397
- feat/i18n-localization-1397
 
-
- main
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -415,11 +357,7 @@ app.use(
     maxAge: 86400,
   })
 );
-fix/search-clear-button-1487
- 921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
 
- main
- main
 app.options('*', cors());
 
 app.use(enhancedTracingMiddleware);
@@ -513,8 +451,6 @@ const defaultContent = {
   activityEvents: {},
   coreTeam: [],
 };
-
-
 
 // â”€â”€ File Upload Configuration â”€â”€
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
@@ -1533,8 +1469,6 @@ app.put('/api/notifications/preferences/bulk', adminAuth, async (req, res) => {
   }
 });
 
- fix/search-clear-button-1487
-
 // Notification analytics (lightweight collector)
 app.post('/api/notifications/analytics', async (req, res) => {
   try {
@@ -1546,7 +1480,6 @@ app.post('/api/notifications/analytics', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
- main
 
 app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
   try {

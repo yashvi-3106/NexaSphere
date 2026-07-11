@@ -200,4 +200,10 @@ export function setWithDbOverride(fn) {
   withDbOverride = fn;
 }
 
+export async function query(text, params) {
+  return withDb(async (client) => {
+    return client.query(text, params);
+  });
+}
+
 export { pg };
