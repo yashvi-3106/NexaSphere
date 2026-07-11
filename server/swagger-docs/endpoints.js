@@ -473,4 +473,214 @@
  *                       format: float
  */
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Maintenance
+ *     description: Platform-Wide Scheduled Maintenance Management
+ */
+
+/**
+ * @swagger
+ * /api/maintenance:
+ *   get:
+ *     summary: Get all maintenance schedules
+ *     tags: [Maintenance]
+ *     responses:
+ *       200:
+ *         description: Maintenance schedules retrieved successfully
+ *
+ *   post:
+ *     summary: Create maintenance schedule
+ *     tags: [Maintenance]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Maintenance created successfully
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/{id}:
+ *   get:
+ *     summary: Get maintenance by ID
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Maintenance retrieved successfully
+ *
+ *   put:
+ *     summary: Update maintenance
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Maintenance updated successfully
+ *
+ *   delete:
+ *     summary: Delete maintenance
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Maintenance deleted successfully
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/{id}/start:
+ *   post:
+ *     summary: Start maintenance
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Maintenance started successfully
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/{id}/complete:
+ *   post:
+ *     summary: Complete maintenance
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Maintenance completed successfully
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/emergency:
+ *   post:
+ *     summary: Activate emergency maintenance
+ *     tags: [Maintenance]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Emergency maintenance activated
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/public:
+ *   get:
+ *     summary: Get public maintenance status
+ *     tags: [Maintenance]
+ *     responses:
+ *       200:
+ *         description: Public maintenance status retrieved
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/history:
+ *   get:
+ *     summary: Get maintenance history
+ *     tags: [Maintenance]
+ *     responses:
+ *       200:
+ *         description: Maintenance history retrieved
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/countdown/{id}:
+ *   get:
+ *     summary: Get maintenance countdown
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Countdown retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/notify:
+ *   post:
+ *     summary: Send maintenance notifications
+ *     tags: [Maintenance]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Notifications sent successfully
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/approve/{id}:
+ *   post:
+ *     summary: Approve maintenance schedule
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Maintenance approved successfully
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/banner:
+ *   get:
+ *     summary: Get maintenance status banner
+ *     tags: [Maintenance]
+ *     responses:
+ *       200:
+ *         description: Status banner retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/services:
+ *   get:
+ *     summary: Get affected services
+ *     tags: [Maintenance]
+ *     responses:
+ *       200:
+ *         description: Service impact information retrieved successfully
+ */
+
 export default {};
