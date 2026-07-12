@@ -205,6 +205,7 @@ class NotificationsService {
   async processDigests(frequency) {
     const digests = await supabaseRequest(`pending_digests?frequency=eq.${frequency}`);
     if (!digests || digests.length === 0) return;
+    const digestIds = digests.map((digest) => digest.id).filter(Boolean);
 
     const userGroups = digests.reduce((acc, d) => {
       acc[d.user_id] = acc[d.user_id] || [];
@@ -227,7 +228,11 @@ class NotificationsService {
       }
     }
     // Cleanup processed digests
-    await supabaseRequest(`pending_digests?frequency=eq.${frequency}`, { method: 'DELETE' });
+    if (digestIds.length > 0) {
+      await supabaseRequest(`pending_digests?id=in.(${digestIds.join(',')})`, {
+        method: 'DELETE',
+      });
+    }
   }
 
   computePriority({ type, title, message, richData }) {
