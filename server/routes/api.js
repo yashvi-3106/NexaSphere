@@ -43,6 +43,7 @@ import * as gamificationController from '../controllers/gamificationController.j
 import multer from 'multer';
 import * as analyticsController from '../controllers/analyticsController.js';
 const router = Router();
+const apiAnalyticsRoutes = require("./apiAnalytics");
 
 router.use(rateLimitAdminRoutes);
 router.use(throttleMiddleware);
@@ -503,49 +504,6 @@ router.get(
 // Platform Analytics APIs
 router.use('/api/analytics', platformAnalyticsRoutes);
 
-// Analytics APIs (Public ingestion)
-router.post('/api/analytics/session', analyticsController.startSession);
-router.post('/api/analytics/session/:sessionId/end', analyticsController.endSession);
-router.post('/api/analytics/events', analyticsController.ingestEvents);
-router.post('/api/analytics/recordings', analyticsController.saveRecording);
-
-// Analytics APIs (Admin protected)
-router.get(
-  '/api/admin/analytics/recordings',
-  adminAuthMiddleware.requireAdmin,
-  analyticsController.adminGetRecordings
-);
-router.get(
-  '/api/admin/analytics/recordings/:sessionId',
-  adminAuthMiddleware.requireAdmin,
-  analyticsController.adminGetRecording
-);
-router.get(
-  '/api/admin/analytics/heatmap',
-  adminAuthMiddleware.requireAdmin,
-  analyticsController.adminGetHeatmap
-);
-router.get(
-  '/api/admin/analytics/segments',
-  adminAuthMiddleware.requireAdmin,
-  analyticsController.adminGetSegments
-);
-router.post(
-  '/api/admin/analytics/segments',
-  adminAuthMiddleware.requireAdmin,
-  adminAuditMiddleware,
-  analyticsController.adminCreateSegment
-);
-router.post(
-  '/api/admin/analytics/segments/:segmentId/action',
-  adminAuthMiddleware.requireAdmin,
-  adminAuditMiddleware,
-  analyticsController.adminPerformSegmentAction
-);
-router.get(
-  '/api/admin/analytics/cohorts',
-  adminAuthMiddleware.requireAdmin,
-  analyticsController.adminGetCohortAnalysis
-);
+router.use("/api-analytics", apiAnalyticsRoutes);
 
 export default router;

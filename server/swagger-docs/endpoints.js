@@ -820,6 +820,10 @@
  *         name: id
  *         required: true
  *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Budget deleted successfully
  *           type: string
  *     requestBody:
  *       required: true
@@ -837,6 +841,10 @@
 
 /**
  * @swagger
+ * /api/budgets/{id}/expenses:
+ *   get:
+ *     summary: Get budget expenses
+ *     tags: [Budget Management]
  * /api/announcements/{id}/read:
  *   post:
  *     summary: Mark announcement as read
@@ -847,6 +855,43 @@
  *         name: id
  *         required: true
  *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Expenses retrieved successfully
+ *
+ *   post:
+ *     summary: Add expense
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Expense added successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}/invoice:
+ *   post:
+ *     summary: Upload invoice
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Invoice uploaded successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}/approve:
+ *   post:
+ *     summary: Approve expense
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Expense approved successfully
  *           type: string
  *     requestBody:
  *       required: true
