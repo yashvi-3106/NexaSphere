@@ -12,9 +12,11 @@ const EventFeedbackForm = () => {
     bestParts: '',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError('');
     try {
       const response = await fetch('/api/feedback', {
         method: 'POST',
@@ -25,9 +27,14 @@ const EventFeedbackForm = () => {
       });
       if (response.ok) {
         setSubmitted(true);
+      } else {
+        setSubmitError('Failed to submit feedback. Please try again.');
       }
     } catch (err) {
-      console.error(err);
+      if (import.meta.env.DEV) {
+        console.error('[EventFeedbackForm] Submission error:', err);
+      }
+      setSubmitError('Something went wrong. Please check your connection and try again.');
     }
   };
 
@@ -51,6 +58,11 @@ const EventFeedbackForm = () => {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow rounded-lg mt-10">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Event Feedback</h1>
+      {submitError && (
+        <div role="alert" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          {submitError}
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
