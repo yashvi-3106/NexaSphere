@@ -1,10 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { PLATFORMS, addUtmParams, getQRUrl, copyToClipboard } from '../../utils/shareUtils';
 import './ShareHub.css';
 
 export default function ShareHub({ isOpen, onClose, data }) {
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const copiedTimeoutRef = useRef(null);
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -29,7 +35,8 @@ export default function ShareHub({ isOpen, onClose, data }) {
     const ok = await copyToClipboard(shareUrl);
     if (ok) {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+      copiedTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     }
   }, [shareUrl]);
 
