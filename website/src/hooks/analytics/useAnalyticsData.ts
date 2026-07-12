@@ -55,14 +55,35 @@ export const useAnalyticsData = () => {
     const token = localStorage.getItem('ns_student_token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    Promise.all([
+    Promise.allSettled([
       apiClient(`${base}/api/admin/analytics/stats`, { headers }),
       apiClient(`${base}/api/admin/analytics/growth`, { headers }),
       apiClient(`${base}/api/admin/analytics/events`, { headers }),
     ])
-      .then(([stats, growth, events]) => {
+      .then(([statsResult, growthResult, eventsResult]) => {
         if (!isMounted) return;
+        if (import.meta.env.DEV) {
+          if (statsResult.status === 'rejected') {
+            console.warn('[useAnalyticsData] Stats fetch failed:', statsResult.reason?.message);
+          }
+          if (growthResult.status === 'rejected') {
+            console.warn('[useAnalyticsData] Growth fetch failed:', growthResult.reason?.message);
+          }
+          if (eventsResult.status === 'rejected') {
+            console.warn('[useAnalyticsData] Events fetch failed:', eventsResult.reason?.message);
+          }
+        }
+        if (
+          statsResult.status === 'rejected' &&
+          growthResult.status === 'rejected' &&
+          eventsResult.status === 'rejected'
+        ) {
+          applyMockData();
+          return;
+        }
         setIsOffline(false);
+        const growth = growthResult.status === 'fulfilled' ? growthResult.value : null;
+        const events = eventsResult.status === 'fulfilled' ? eventsResult.value : null;
 
         // Map API responses to chart data shapes.
         // growth is expected to be an array of { name, users, activity, projects }
@@ -84,8 +105,7 @@ export const useAnalyticsData = () => {
         setLoading(false);
       })
       .catch(() => {
-        // API unreachable — fall back to mock data with a visible indicator
-        applyMockData();
+        if (isMounted) applyMockData();
       });
 
     return () => {

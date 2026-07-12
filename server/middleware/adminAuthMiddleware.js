@@ -30,7 +30,7 @@ import { getScopesForRole } from '../config/rbac.js';
 
 // lgtm[js/weak-cryptographic-algorithm]
 function safeEqual(a, b) {
-  if (!a || !b) return false;
+  if (a == null || b == null) return false;
   const hashA = crypto.createHash('sha256').update(String(a)).digest();
   const hashB = crypto.createHash('sha256').update(String(b)).digest();
 

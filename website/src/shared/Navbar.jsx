@@ -6,6 +6,8 @@ import { ThemeToggle } from '../components/common/ThemeToggle';
 import { useStudentAuth } from '../context/StudentAuthContext';
 import LanguageSelector from '../components/common/LanguageSelector';
 import { useTranslation } from 'react-i18next';
+import { useWalkthroughStep } from '../hooks/useWalkthroughStep';
+import { WalkthroughWrapper } from '../components/walkthrough/WalkthroughWrapper';
 
 const TABS = [
   'Home',
@@ -367,14 +369,16 @@ export default function Navbar({
                 >
                   ⚙️
                 </span>
-                <span
+                <WalkthroughWrapper
+                  stepId="profile"
+                  as="span"
                   className="ns-nav-user-badge"
                   onClick={() => navigate('/dashboard')}
                   style={{ cursor: 'pointer', fontSize: '0.9rem', color: 'var(--t1)' }}
                   title={user?.name || user?.email}
                 >
                   👤
-                </span>
+                </WalkthroughWrapper>
               </div>
             )}
 
