@@ -260,9 +260,10 @@ class BulkOperationsService {
               oldState.push({ type: 'insert', table: 'users', key: id, data: null });
               newState.push({ type: 'insert', table: 'users', key: id, data: insertedRows[0] });
             }
+            processed++;
+            this.updateJobProgress(jobId, processed, []);
           }
           await client.query('COMMIT');
-          processed = preview.length;
         } catch (err) {
           await client.query('ROLLBACK');
           throw err;
@@ -324,6 +325,20 @@ class BulkOperationsService {
             console.error(`Failed to send welcome email to ${item.email}:`, emailErr.message);
           }
         }, 0);
+      }
+    }
+
+    // Log to audit log
+    if (oldState.length > 0 || newState.length > 0) {
+      try {
+        await auditLogRepository.insertAuditLog({
+          adminId,
+          action: 'BULK_USER_IMPORT',
+          oldState: { operations: oldState },
+          newState: { operations: newState },
+        });
+      } catch (err) {
+        jobErrors.push(`Audit logging failed: ${err.message}`);
       }
     }
 
@@ -1097,4 +1112,3 @@ class BulkOperationsService {
 }
 
 export const bulkOperationsService = new BulkOperationsService();
-export { bulkOperationsQueue };

@@ -302,3 +302,40 @@ export const getRegistrations = async (req, res) => {
     return res.status(500).json({ error: 'Server error', detail: err.message });
   }
 };
+
+export const deleteAccount = async (req, res) => {
+  if (!req.studentUser) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  try {
+    const email = req.studentUser.email;
+    const user = await studentUsersRepository.findByEmail(email);
+    if (user && user.id) {
+      await withDb(async (client) => {
+        await client.query('DELETE FROM student_users WHERE id = $1', [user.id]);
+      });
+    }
+    res.clearCookie('ns_student_token');
+    return res.json({ success: true, message: 'Account deleted' });
+  } catch (err) {
+    console.error('deleteAccount error:', err);
+    return res.status(500).json({ error: 'Server error', detail: err.message });
+  }
+};
+
+export const exportData = async (req, res) => {
+  if (!req.studentUser) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  try {
+    const email = req.studentUser.email;
+    const user = await studentUsersRepository.findByEmail(email);
+    return res.json({
+      profile: user,
+      exportedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('exportData error:', err);
+    return res.status(500).json({ error: 'Server error', detail: err.message });
+  }
+};

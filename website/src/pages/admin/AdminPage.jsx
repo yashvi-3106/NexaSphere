@@ -5,6 +5,10 @@ import EventAttendanceChart from '../../components/admin/analytics/EventAttendan
 import useLocalStorage from '../../hooks/useLocalStorage';
 import '../../components/admin/analytics/analytics.css';
 
+import HeatmapView from './analytics/HeatmapView';
+import SessionPlayer from './analytics/SessionPlayer';
+import SegmentationDashboard from './analytics/SegmentationDashboard';
+
 export default function AdminPage({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -155,6 +159,8 @@ export default function AdminPage({ onBack }) {
     );
   }
 
+  const [activeTab, setActiveTab] = useState('overview');
+
   return (
     <div className="analytics-dashboard">
       <header
@@ -192,14 +198,49 @@ export default function AdminPage({ onBack }) {
         </div>
       </header>
 
+      {/* Tabs */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '1rem',
+          marginBottom: '2rem',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+        }}
+      >
+        {['overview', 'heatmaps', 'recordings', 'segments'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: '0.5rem 1rem',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === tab ? '2px solid var(--c1)' : '2px solid transparent',
+              color: activeTab === tab ? 'var(--c1)' : 'var(--t2)',
+              cursor: 'pointer',
+              textTransform: 'capitalize',
+            }}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
       {loading && <div className="loader-overlay">Loading...</div>}
 
-      <DashboardStats stats={data.stats} />
+      {activeTab === 'overview' && (
+        <>
+          <DashboardStats stats={data.stats} />
+          <div className="charts-grid">
+            <UserGrowthChart data={data.growth} />
+            <EventAttendanceChart data={data.events} />
+          </div>
+        </>
+      )}
 
-      <div className="charts-grid">
-        <UserGrowthChart data={data.growth} />
-        <EventAttendanceChart data={data.events} />
-      </div>
+      {activeTab === 'heatmaps' && <HeatmapView />}
+      {activeTab === 'recordings' && <SessionPlayer />}
+      {activeTab === 'segments' && <SegmentationDashboard />}
     </div>
   );
 }
