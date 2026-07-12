@@ -35,11 +35,13 @@ import recommendationEngine from './recommendationEngine.js';
 import platformAnalyticsRoutes from './platformAnalytics.js';
 import * as localAuthController from '../controllers/localAuthController.js';
 import * as whiteboardController from '../controllers/whiteboardController.js';
+import bookmarkRoutes from './bookmark.js';
+import operationalInsightsRoutes from './operationalInsights.js';
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
 import multer from 'multer';
-
+import * as analyticsController from '../controllers/analyticsController.js';
 const router = Router();
 const apiAnalyticsRoutes = require("./apiAnalytics");
 

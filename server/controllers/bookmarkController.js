@@ -1,82 +1,53 @@
-const bookmarkService = require("../services/bookmarkService");
+import bookmarkService from '../services/bookmarkService.js';
 
-exports.createBookmark = (req, res) => {
-  res.status(201).json(
-    bookmarkService.createBookmark(req.body)
-  );
+export const createBookmark = (req, res) => {
+  res.status(201).json(bookmarkService.createBookmark(req.body));
 };
 
-exports.getBookmarks = (req, res) => {
-  res.json(
-    bookmarkService.getBookmarks()
-  );
+export const getBookmarks = (req, res) => {
+  res.json(bookmarkService.getBookmarks());
 };
 
-exports.deleteBookmark = (req, res) => {
-  res.json(
-    bookmarkService.deleteBookmark(req.params.id)
-  );
+export const deleteBookmark = (req, res) => {
+  res.json(bookmarkService.deleteBookmark(req.params.id));
 };
 
-exports.searchBookmarks = (req, res) => {
-  res.json(
-    bookmarkService.searchBookmarks(req.query.q || "")
-  );
+export const searchBookmarks = (req, res) => {
+  res.json(bookmarkService.searchBookmarks(req.query.q || ''));
 };
 
-exports.getRecentBookmarks = (req, res) => {
-  res.json(
-    bookmarkService.getRecentBookmarks()
-  );
+export const getRecentBookmarks = (req, res) => {
+  res.json(bookmarkService.getRecentBookmarks());
 };
 
-exports.createFolder = (req, res) => {
-  res.status(201).json(
-    bookmarkService.createFolder(req.body.name)
-  );
+export const createFolder = (req, res) => {
+  res.status(201).json(bookmarkService.createFolder(req.body.name));
 };
 
-exports.getFolders = (req, res) => {
-  res.json(
-    bookmarkService.getFolders()
-  );
+export const getFolders = (req, res) => {
+  res.json(bookmarkService.getFolders());
 };
 
-exports.updateFolder = (req, res) => {
-  res.json(
-    bookmarkService.updateFolder(
-      req.params.id,
-      req.body.name
-    )
-  );
+export const updateFolder = (req, res) => {
+  res.json(bookmarkService.updateFolder(req.params.id, req.body.name));
 };
 
-exports.deleteFolder = (req, res) => {
-  res.json(
-    bookmarkService.deleteFolder(req.params.id)
-  );
+export const deleteFolder = (req, res) => {
+  res.json(bookmarkService.deleteFolder(req.params.id));
 };
 
-exports.shareCollection = (req, res) => {
-  res.json(
-    bookmarkService.shareCollection(req.params.id)
-  );
+export const shareCollection = (req, res) => {
+  res.json(bookmarkService.shareCollection(req.params.id));
 };
 
-exports.syncBookmarks = (req, res) => {
-  res.json(
-    bookmarkService.syncBookmarks()
-  );
+export const syncBookmarks = (req, res) => {
+  res.json(bookmarkService.syncBookmarks());
 };
 
-exports.exportBookmarks = (req, res) => {
-  res.json(
-    bookmarkService.exportBookmarks()
-  );
+export const exportBookmarks = (req, res) => {
+  res.json(bookmarkService.exportBookmarks());
 };
 
-exports.getBookmarkAnalytics = (req, res) => {
-  res.json(
-    bookmarkService.getBookmarkAnalytics()
-  );
+export const getBookmarkAnalytics = (req, res) => {
+  res.json(bookmarkService.getBookmarkAnalytics());
 };

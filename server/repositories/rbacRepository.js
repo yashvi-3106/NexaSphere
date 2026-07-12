@@ -1,5 +1,11 @@
-import { query } from './db.js';
+import { withDb } from './db.js';
 import { DEFAULT_ROLES } from '../config/rbac.js';
+
+async function query(text, params) {
+  return withDb(async (client) => {
+    return client.query(text, params);
+  });
+}
 
 const CUSTOM_ROLES_TABLE = 'custom_roles';
 const USER_ROLES_TABLE = 'user_roles';
