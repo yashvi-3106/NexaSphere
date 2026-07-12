@@ -50,6 +50,10 @@ const isPlaywright =
 import { BookmarkProvider } from './context/BookmarkContext';
 import { StudentAuthProvider, useStudentAuth } from './context/StudentAuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import { WalkthroughOverlay } from './components/walkthrough/WalkthroughOverlay';
+import { useWalkthroughStore } from './store/useWalkthroughStore';
+import { useAnalytics } from './hooks/useAnalytics';
+import { SessionRecordingProvider } from './context/SessionRecordingProvider';
 
 // Lazy-loaded heavy pages
 const RecruitmentPage = lazy(() => import('./pages/recruitment/RecruitmentPage'));
@@ -173,7 +177,14 @@ const PageIn = memo(function PageIn({ children, k }) {
 /* --   Root App â€” wraps everything in BrowserRouter
 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const router = createBrowserRouter([
-  { path: '*', element: <AppProviders><AppShell /></AppProviders> }
+  {
+    path: '*',
+    element: (
+      <AppProviders>
+        <AppShell />
+      </AppProviders>
+    ),
+  },
 ]);
 
 export default function App() {
