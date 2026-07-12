@@ -100,7 +100,9 @@ export const searchController = {
                   id: doc.id,
                   type: 'activity',
                   title: getHighlight('title', doc.title),
-                  description: getHighlight('description', doc.description) || getHighlight('subtitle', doc.subtitle),
+                  description:
+                    getHighlight('description', doc.description) ||
+                    getHighlight('subtitle', doc.subtitle),
                   tags: doc.tags,
                   url: `/activities/${encodeURIComponent(doc.id)}`,
                   score: hit.text_match || 0,
@@ -189,7 +191,7 @@ export const searchController = {
           threshold: 0.4, // typo tolerance
         });
 
-        results = fuse.search(q).map(r => ({ ...r.item, score: r.score }));
+        results = fuse.search(q).map((r) => ({ ...r.item, score: r.score }));
         trueTotal = results.length;
         results = results.slice(skip, skip + limit);
       }
@@ -387,7 +389,7 @@ export const searchController = {
         }
       }
 
-      const trueTotal = results.length;
+      trueTotal = results.length;
       results = results.slice(0, limit);
 
       return res.json({ results, total: trueTotal, query: q });
@@ -428,7 +430,9 @@ export const searchController = {
       return res.json({ trending: sorted, popularSearches });
     } catch (err) {
       console.error('Trending error:', err);
-      return res.status(500).json({ error: 'Failed to fetch trending', trending: [], popularSearches: [] });
+      return res
+        .status(500)
+        .json({ error: 'Failed to fetch trending', trending: [], popularSearches: [] });
     }
   },
 

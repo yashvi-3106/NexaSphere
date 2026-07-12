@@ -1,71 +1,32 @@
-const express = require("express");
+import express from 'express';
 const router = express.Router();
 
-const controller = require("../controllers/operationalInsightsController");
+import * as controller from '../controllers/operationalInsightsController.js';
 
-router.get(
-  "/overview",
-  controller.getDashboardOverview
-);
+router.get('/overview', controller.getDashboardOverview);
 
-router.get(
-  "/health",
-  controller.getSystemHealth
-);
+router.get('/health', controller.getSystemHealth);
 
-router.get(
-  "/users",
-  controller.getActiveUsers
-);
+router.get('/users', controller.getActiveUsers);
 
-router.get(
-  "/traffic",
-  controller.getApiTraffic
-);
+router.get('/traffic', controller.getApiTraffic);
 
-router.get(
-  "/database",
-  controller.getDatabasePerformance
-);
+router.get('/database', controller.getDatabasePerformance);
 
-router.get(
-  "/jobs",
-  controller.getBackgroundJobs
-);
+router.get('/jobs', controller.getBackgroundJobs);
 
-router.get(
-  "/storage",
-  controller.getStorageUsage
-);
+router.get('/storage', controller.getStorageUsage);
 
-router.get(
-  "/notifications",
-  controller.getNotificationStats
-);
+router.get('/notifications', controller.getNotificationStats);
 
-router.get(
-  "/errors",
-  controller.getErrorLogs
-);
+router.get('/errors', controller.getErrorLogs);
 
-router.get(
-  "/maintenance",
-  controller.getMaintenanceSchedule
-);
+router.get('/maintenance', controller.getMaintenanceSchedule);
 
-router.get(
-  "/dependencies",
-  controller.getDependencies
-);
+router.get('/dependencies', controller.getDependencies);
 
-router.get(
-  "/resources",
-  controller.getResourceUsage
-);
+router.get('/resources', controller.getResourceUsage);
 
-router.get(
-  "/reports",
-  controller.getOperationalReports
-);
+router.get('/reports', controller.getOperationalReports);
 
-module.exports = router;
+export default router;
