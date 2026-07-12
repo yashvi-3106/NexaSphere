@@ -14,9 +14,7 @@ import { requireNotificationPrefAuth } from '../middleware/auth/customAuth.js';
 import notificationsService from '../services/notificationsService.js';
 import { pushSubscriptionsRepository } from '../repositories/pushSubscriptionsRepository.js';
 import { notificationPreferencesRepository } from '../repositories/notificationPreferencesRepository.js';
-import { studentAuthService } from '../services/studentAuthService.js';
 import { notificationSchema } from '../validators/notificationSchemas.js';
-import { requireNotificationPrefAuth } from '../middleware/auth/customAuth.js';
 
 const router = Router();
 
