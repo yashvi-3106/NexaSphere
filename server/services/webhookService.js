@@ -33,7 +33,7 @@ export const webhookService = {
       secret,
       events: data.events,
       isActive: data.isActive !== false,
-      createdBy: user.id,
+      createdBy: user?.username || 'unknown',
     });
   },
 

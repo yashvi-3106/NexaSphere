@@ -17,7 +17,7 @@ router.get('/events', protectedActionRateLimiter, adminAuthMiddleware.requireAdm
 
 router.post('/', protectedActionRateLimiter, adminAuthMiddleware.requireAdmin, async (req, res) => {
   try {
-    const webhook = await webhookService.createWebhook(req.body, req.user);
+    const webhook = await webhookService.createWebhook(req.body, req.adminSession);
     res.status(201).json({ success: true, data: webhook });
   } catch (error) {
     const status = error.message.includes('HTTPS') || error.message.includes('event') ? 400 : 500;
@@ -47,7 +47,7 @@ router.get('/:webhookId', protectedActionRateLimiter, adminAuthMiddleware.requir
 
 router.put('/:webhookId', protectedActionRateLimiter, adminAuthMiddleware.requireAdmin, async (req, res) => {
   try {
-    const webhook = await webhookService.updateWebhook(req.params.webhookId, req.body, req.user);
+    const webhook = await webhookService.updateWebhook(req.params.webhookId, req.body, req.adminSession);
     res.json({ success: true, data: webhook });
   } catch (error) {
     const status = error.message.includes('not found')
