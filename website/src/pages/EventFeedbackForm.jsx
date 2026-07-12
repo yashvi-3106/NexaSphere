@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { buildUrl } from '../utils/runtimeConfig';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const EventFeedbackForm = () => {
@@ -16,7 +17,7 @@ const EventFeedbackForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/feedback', {
+      const response = await fetch(buildUrl('/api/feedback'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
