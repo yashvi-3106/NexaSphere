@@ -150,3 +150,19 @@ export function clearCache(keyPattern) {
     });
   });
 }
+
+const redisMock = {
+  get: async (key) => {
+    const client = getRedisClient();
+    return client ? client.get(key) : null;
+  },
+  set: async (key, val, mode, ttl) => {
+    const client = getRedisClient();
+    return client ? client.set(key, val, mode, ttl) : null;
+  },
+  del: async (key) => {
+    const client = getRedisClient();
+    return client ? client.del(key) : null;
+  },
+};
+export default redisMock;

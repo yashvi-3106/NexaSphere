@@ -24,6 +24,7 @@ import { studentAuthService } from '../services/studentAuthService.js';
 import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
 import * as sponsorshipsController from '../controllers/sponsorshipsController.js';
 import * as subscriptionsController from '../controllers/subscriptionsController.js';
+import * as followsController from '../controllers/followsController.js';
 import * as portfolioAnalyticsController from '../controllers/portfolioAnalyticsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
@@ -37,6 +38,7 @@ import multer from 'multer';
 const workflowAutomationRoutes = require("./workflowAutomation"); 
 
 const router = Router();
+const apiAnalyticsRoutes = require("./apiAnalytics");
 
 router.use(rateLimitAdminRoutes);
 router.use(throttleMiddleware);
@@ -44,6 +46,8 @@ router.use(throttleMiddleware);
 const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
+const budgetRoutes = require("./budget");
+const router = Router();
 
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
@@ -253,10 +257,22 @@ router.post(
 );
 
 // Banners Admin
-router.get('/api/admin/banners', adminAuthMiddleware.requireAdmin, bannersController.listAllBanners);
+router.get(
+  '/api/admin/banners',
+  adminAuthMiddleware.requireAdmin,
+  bannersController.listAllBanners
+);
 router.post('/api/admin/banners', adminAuthMiddleware.requireAdmin, bannersController.createBanner);
-router.put('/api/admin/banners/:id', adminAuthMiddleware.requireAdmin, bannersController.updateBanner);
-router.delete('/api/admin/banners/:id', adminAuthMiddleware.requireAdmin, bannersController.deleteBanner);
+router.put(
+  '/api/admin/banners/:id',
+  adminAuthMiddleware.requireAdmin,
+  bannersController.updateBanner
+);
+router.delete(
+  '/api/admin/banners/:id',
+  adminAuthMiddleware.requireAdmin,
+  bannersController.deleteBanner
+);
 
 router.post(
   '/api/admin/subscriptions/:userId/cancel',
@@ -412,12 +428,9 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   const active = impersonationService.getActive(req.adminSession.token);
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
-router.use(
-"/api/announcements",
-announcementPriorityRouter
-);
 
-router.use("/api/events", eventConflictRouter);
+router.use("/budgets", budgetRoutes);
+router.use('/api/announcements', announcementPriorityRouter);
 
 router.use(
   "/api/admin/waitlist",
@@ -427,6 +440,7 @@ router.use(
   "/recommendations",
   recommendationEngine
 );
+router.use('/recommendations', recommendationEngine);
 
 // Follows/User Following System APIs
 // Follow/Unfollow operations

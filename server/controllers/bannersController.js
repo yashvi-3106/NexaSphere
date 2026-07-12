@@ -1,4 +1,4 @@
-import { wrapAsync } from '../utils/async.js';
+import { wrapAsync } from '../middleware/asyncHandler.js';
 import { bannersService } from '../services/bannersService.js';
 
 export const listAllBanners = wrapAsync(async (req, res) => {

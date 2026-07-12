@@ -475,6 +475,50 @@
 
 /**
  * @swagger
+ * tags:
+ *   - name: Budget Management
+ *     description: Intelligent Event Budget Planning & Expense Management APIs
+ */
+
+/**
+ * @swagger
+ * /api/budgets:
+ *   get:
+ *     summary: Get all budgets
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Budgets retrieved successfully
+ *
+ *   post:
+ *     summary: Create budget
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Budget created successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}:
+ *   get:
+ *     summary: Get budget by ID
+ *     tags: [Budget Management]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Budget retrieved successfully
+ *
+ *   put:
+ *     summary: Update budget
+ *     tags: [Budget Management]
  * /api/notification-preferences/{userId}:
  *   get:
  *     summary: Get notification preferences
@@ -588,8 +632,6 @@
  *       200:
  *         description: Notification history returned successfully
  */
- * ...
- */
 
 /**
  * @swagger
@@ -649,6 +691,16 @@
  *         name: id
  *         required: true
  *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Budget updated successfully
+ *
+ *   delete:
+ *     summary: Delete budget
+ *     tags: [Budget Management]
  *           type: string
  *     requestBody:
  *       required: true
@@ -677,6 +729,10 @@
  *         name: id
  *         required: true
  *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Budget deleted successfully
  *           type: string
  *     requestBody:
  *       required: true
@@ -694,6 +750,10 @@
 
 /**
  * @swagger
+ * /api/budgets/{id}/expenses:
+ *   get:
+ *     summary: Get budget expenses
+ *     tags: [Budget Management]
  * /api/announcements/{id}/read:
  *   post:
  *     summary: Mark announcement as read
@@ -704,6 +764,43 @@
  *         name: id
  *         required: true
  *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Expenses retrieved successfully
+ *
+ *   post:
+ *     summary: Add expense
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Expense added successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}/invoice:
+ *   post:
+ *     summary: Upload invoice
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Invoice uploaded successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}/approve:
+ *   post:
+ *     summary: Approve expense
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Expense approved successfully
  *           type: string
  *     requestBody:
  *       required: true

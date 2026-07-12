@@ -4,7 +4,6 @@ import { eventsRepository } from '../repositories/eventsRepository.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import { parseCSV, generateCSV } from '../utils/csvParser.js';
 import { sendEmail } from './emailService.js';
-import { bulkOperationsQueue } from './queueService.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { Queue } from 'bullmq';
@@ -20,9 +19,7 @@ if (process.env.REDIS_URL) {
 
 export const bulkOperationsQueueName = 'bulk-operations';
 
-export const bulkOperationsQueue = connection
-  ? new Queue(bulkOperationsQueueName, { connection })
-  : null;
+const bulkOperationsQueue = connection ? new Queue(bulkOperationsQueueName, { connection }) : null;
 
 class BulkOperationsService {
   constructor() {
@@ -147,7 +144,13 @@ class BulkOperationsService {
         '[bulkOperationsService] Redis not configured, falling back to setTimeout processing'
       );
       // Fallback if Redis is not available
-      setTimeout(() => this.processImportUsersJob(job.id, csvText, adminId).catch(err => logger.error('[bulkOperationsService] Fallback import job failed:', err.message)), 0);
+      setTimeout(
+        () =>
+          this.processImportUsersJob(job.id, csvText, adminId).catch((err) =>
+            logger.error('[bulkOperationsService] Fallback import job failed:', err.message)
+          ),
+        0
+      );
     }
 
     return job;
@@ -230,7 +233,7 @@ class BulkOperationsService {
               const updatedTags = JSON.stringify(user.tags);
               const plainPassword = crypto.randomBytes(4).toString('hex'); // 8 char temp password
               const passwordHash = await bcrypt.hash(plainPassword, 10);
-              
+
               const { rows: insertedRows } = await client.query(
                 `INSERT INTO users (id, username, display_name, email, role, admin_roles, status, major, year, tags, password_hash, created_at, updated_at)
                  VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9, $10, NOW(), NOW()) RETURNING *`,
@@ -247,32 +250,25 @@ class BulkOperationsService {
                   passwordHash,
                 ]
               );
-              
-              // Email the user their temporary password
-              try {
-                await sendEmail({
-                  to: user.email,
-                  subject: 'Welcome to NexaSphere!',
-                  templateName: 'generic',
-                  data: {
-                    name: user.display_name || 'Student',
-                    message: `Your account has been created. You can log in using your email and this temporary password: ${plainPassword} \nPlease change it after your first login.`,
-                  },
-                });
-              } catch (emailErr) {
-                console.error(`Failed to send welcome email to ${user.email}:`, emailErr.message);
-              }
-              
+
+              emailsToSend.push({
+                email: user.email,
+                displayName: user.display_name,
+                plainPassword,
+              });
+
               oldState.push({ type: 'insert', table: 'users', key: id, data: null });
               newState.push({ type: 'insert', table: 'users', key: id, data: insertedRows[0] });
             }
-          });
-          processed++;
-          this.updateJobProgress(jobId, processed, []);
+            processed++;
+            this.updateJobProgress(jobId, processed, []);
+          }
+          await client.query('COMMIT');
         } catch (err) {
-          jobErrors.push(`Row ${user.row}: Database error - ${err.message}`);
+          await client.query('ROLLBACK');
+          throw err;
         }
-      }
+      });
 
       // Log to audit log
       if (oldState.length > 0 || newState.length > 0) {
@@ -283,12 +279,12 @@ class BulkOperationsService {
             oldState: { operations: oldState },
             newState: { operations: newState },
           });
-          processed++;
-          this.updateJobProgress(jobId, processed, []);
         } catch (err) {
-          jobErrors.push(`Row ${user.row}: Database error - ${err.message}`);
+          jobErrors.push(`Audit log error - ${err.message}`);
         }
       }
+    } catch (err) {
+      jobErrors.push(`Database error - ${err.message}`);
     }
 
     // Queue / send welcome emails in the background
@@ -308,7 +304,9 @@ class BulkOperationsService {
             }
           );
         } catch (emailErr) {
-          logger.error(`[bulkOperationsService] Failed to queue welcome email for ${item.email}: ${emailErr.message}`);
+          logger.error(
+            `[bulkOperationsService] Failed to queue welcome email for ${item.email}: ${emailErr.message}`
+          );
         }
       } else {
         // Fallback to sending in background via setTimeout
@@ -327,6 +325,20 @@ class BulkOperationsService {
             console.error(`Failed to send welcome email to ${item.email}:`, emailErr.message);
           }
         }, 0);
+      }
+    }
+
+    // Log to audit log
+    if (oldState.length > 0 || newState.length > 0) {
+      try {
+        await auditLogRepository.insertAuditLog({
+          adminId,
+          action: 'BULK_USER_IMPORT',
+          oldState: { operations: oldState },
+          newState: { operations: newState },
+        });
+      } catch (err) {
+        jobErrors.push(`Audit logging failed: ${err.message}`);
       }
     }
 
@@ -1100,4 +1112,3 @@ class BulkOperationsService {
 }
 
 export const bulkOperationsService = new BulkOperationsService();
-export { bulkOperationsQueue };
