@@ -106,3 +106,5 @@ export const recommendationEngineService = {
     return this.getRecommendations(userId);
   },
 };
+
+export default recommendationEngineService;
