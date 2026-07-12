@@ -405,7 +405,7 @@ export const NodeModal: React.FC<NodeModalProps> = ({ theme }) => {
               >
                 {resources.map((res, index) => (
                   <div
-                    key={index}
+                    key={res.url || `resource-${index}`}
                     className="resource-item-edit-row glassmorphic-panel flex justify-between items-center text-xs"
                     style={{ padding: '8px 14px', borderRadius: '8px' }}
                   >
