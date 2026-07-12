@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ResumeUpload from './ResumeUpload';
 import RecommendationCard from './RecommendationCard';
 import RecommendationSkeleton from './RecommendationSkeleton';
@@ -10,6 +10,15 @@ export default function ProjectRecommendations({ onBack }) {
   const [recommendations, setRecommendations] = useState([]);
   const [isDemo, setIsDemo] = useState(false);
   const [error, setError] = useState('');
+  const isMountedRef = useRef(true);
+  const fallbackTimeoutRef = useRef(null);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (fallbackTimeoutRef.current) clearTimeout(fallbackTimeoutRef.current);
+    };
+  }, []);
 
   const handleUpload = async (file) => {
     setStep('analyzing');
@@ -44,7 +53,8 @@ export default function ProjectRecommendations({ onBack }) {
     }
 
     // Backend unavailable, fallback to demo mode
-    setTimeout(() => {
+    fallbackTimeoutRef.current = setTimeout(() => {
+      if (!isMountedRef.current) return;
       setIsDemo(true);
       // Hardcoded fallback recommendations matching our mock projects list
       setRecommendations([
