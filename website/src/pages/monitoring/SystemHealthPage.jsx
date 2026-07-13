@@ -352,7 +352,7 @@ export default function SystemHealthPage() {
               }}
             >
               {system.cpu.perCore.map((usage, i) => (
-                <div key={i} style={{ textAlign: 'center' }}>
+                <div key={`core-${i}`} style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '4px' }}>
                     Core {i}
                   </div>
