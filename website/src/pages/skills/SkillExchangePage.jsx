@@ -1,4 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
+
+// Validates a date value before formatting — avoids rendering literal
+// "Invalid Date" text when the API returns a null or malformed timestamp.
+function formatScheduledDate(value) {
+  if (!value) return 'Unknown date';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'Unknown date';
+  return d.toLocaleDateString();
+}
 import apiClient from '../../utils/apiClient';
 import { getApiBase, buildUrl } from '../../utils/runtimeConfig';
 
@@ -460,7 +469,7 @@ export default function SkillExchangePage({ onBack }) {
                     </div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--t2)' }}>
                       Status: <strong>{s.status}</strong> · Scheduled:{' '}
-                      {new Date(s.scheduledAt).toLocaleDateString()}
+                      {formatScheduledDate(s.scheduledAt)}
                     </div>
                     {s.notes && (
                       <div style={{ fontSize: '0.85rem', color: 'var(--t3)' }}>
