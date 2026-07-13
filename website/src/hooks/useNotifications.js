@@ -75,16 +75,35 @@ export function useNotifications() {
           fetchUrls.push(buildUrl(getApiBase(), `/api/notifications?userId=${resolvedUserId}`));
         }
 
-        const responses = await Promise.all(
-          fetchUrls.map((url) =>
-            fetch(url, { headers: getAuthHeaders() }).then((res) =>
-              res.ok ? res.json() : { notifications: [] }
-            )
-          )
+        const responses = await Promise.allSettled(
+          fetchUrls.map(async (url) => {
+            const res = await fetch(url, { headers: getAuthHeaders() });
+            if (!res.ok) {
+              const error = new Error(`Failed to load notifications (${res.status})`);
+              error.status = res.status;
+              error.url = url;
+              throw error;
+            }
+            return res.json();
+          })
         );
 
         if (isMounted) {
-          const allNotifications = responses.flatMap((r) => r.notifications || []);
+          const allNotifications = responses.flatMap((result) =>
+            result.status === 'fulfilled' ? result.value.notifications || [] : []
+          );
+
+          if (import.meta.env.DEV) {
+            responses
+              .filter((result) => result.status === 'rejected')
+              .forEach((result) => {
+                console.warn(
+                  '[useNotifications] Partial notification fetch failed:',
+                  result.reason?.message || result.reason
+                );
+              });
+          }
+
           // De-duplicate by unique id
           const seen = new Set();
           const uniqueNotifications = [];
@@ -261,9 +280,10 @@ export function useNotifications() {
         id: `new-comment-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
         type: 'message',
         title: 'New Reply on Forum! 💬',
-        message: data.authorName && data.threadTitle
-          ? `${data.authorName} replied to "${data.threadTitle}"`
-          : 'Someone replied to your thread.',
+        message:
+          data.authorName && data.threadTitle
+            ? `${data.authorName} replied to "${data.threadTitle}"`
+            : 'Someone replied to your thread.',
         isRead: false,
         createdAt: new Date().toISOString(),
         link: data.threadId ? `/forum/thread/${data.threadId}` : '/forum',
