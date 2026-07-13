@@ -74,8 +74,9 @@ export default function WaitingRoom({ eventId, fullName, email, onJoinEvent }) {
   }, [eventId, fullName, email, onJoinEvent, position]);
 
   const estimateWait = (pos) => {
-    if (pos == null) return;
-    const mins = Math.max(1, Math.round(pos * 2));
+    if (pos === null || pos === undefined) return;
+    // Position 0 means front of queue — wait time is 0, not forced to 1
+    const mins = pos === 0 ? 0 : Math.max(1, Math.round(pos * 2));
     setWaitTime(mins);
   };
 
