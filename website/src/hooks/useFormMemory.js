@@ -39,7 +39,10 @@ function readStorage(key) {
   try {
     const raw = sessionStorage.getItem(STORAGE_PREFIX + key);
     return raw ? JSON.parse(raw) : {};
-  } catch {
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.warn('[useFormMemory] Failed to read from sessionStorage:', err.message);
+    }
     return {};
   }
 }
@@ -47,15 +50,21 @@ function readStorage(key) {
 function writeStorage(key, data) {
   try {
     sessionStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(data));
-  } catch {
-    // sessionStorage unavailable — degrade silently
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.warn('[useFormMemory] Failed to write to sessionStorage:', err.message);
+    }
   }
 }
 
 function clearStorage(key) {
   try {
     sessionStorage.removeItem(STORAGE_PREFIX + key);
-  } catch {}
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.warn('[useFormMemory] Failed to clear sessionStorage:', err.message);
+    }
+  }
 }
 
 /* ── Main Hook ── */
