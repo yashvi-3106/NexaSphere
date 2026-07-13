@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { createBrowserRouter, RouterProvider, useLocation, useNavigate } from 'react-router-dom';
 
 import './styles/themes.css';
@@ -49,7 +49,7 @@ const isPlaywright =
 
 import { BookmarkProvider } from './context/BookmarkContext';
 import { StudentAuthProvider, useStudentAuth } from './context/StudentAuthContext';
-import ErrorBoundary from './components/ErrorBoundary';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import { WalkthroughOverlay } from './components/walkthrough/WalkthroughOverlay';
 import { useWalkthroughStore } from './store/useWalkthroughStore';
 import { useAnalytics } from './hooks/useAnalytics';

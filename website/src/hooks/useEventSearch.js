@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getApiBase } from '../utils/runtimeConfig';
 
 function matchesText(value, query) {
@@ -98,7 +98,7 @@ export function useEventSearch(activities, events) {
 
     const doSearch = async () => {
       try {
-        const apiResults = await searchApi(debouncedQuery, filter === 'all' ? 'all' : filter);
+        const apiResults = await searchApi(query, filter === 'all' ? 'all' : filter);
         if (apiResults && apiResults.results) {
           setResults(apiResults.results);
           setLoading(false);
