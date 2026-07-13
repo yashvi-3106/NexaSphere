@@ -24,6 +24,15 @@ jobs:
         with:
           script: |
             const daysLeft = parseInt(process.env.days_left);
+            const existing = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open in:title "SSL Certificate Expiring in"`,
+            });
+
+            if (existing.data.total_count > 0) {
+              core.info(`SSL expiry issue already exists: #${existing.data.items[0].number}`);
+              return;
+            }
+
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
