@@ -13,11 +13,12 @@ import {
   Folder,
   MessageSquare,
 } from 'lucide-react';
-import { useSearch } from '../hooks/useSearch';
+// TODO: useSearch hook not implemented yet
+// import { useSearch } from '../hooks/useSearch';
 
 function Highlight({ text, query }) {
   if (!text) return null;
-  
+
   // If the text contains Typesense highlight <mark> tags, render it as HTML safely
   if (String(text).includes('<mark>')) {
     return <span dangerouslySetInnerHTML={{ __html: text }} />;
@@ -128,20 +129,35 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
   const inputRef = useRef(null);
   const listRef = useRef(null);
   const [focusIdx, setFocusIdx] = useState(-1);
-  const {
-    query,
-    setQuery,
-    filter,
-    setFilter,
-    results,
-    groupedResults,
-    loading,
-    error,
-    clearSearch,
-    recentSearches,
-    addRecentSearch,
-    removeRecentSearch,
-  } = useSearch(activities, events);
+  // TODO: useSearch hook not implemented yet
+  // const {
+  //   query,
+  //   setQuery,
+  //   filter,
+  //   setFilter,
+  //   results,
+  //   groupedResults,
+  //   loading,
+  //   error,
+  //   clearSearch,
+  //   recentSearches,
+  //   addRecentSearch,
+  //   removeRecentSearch,
+  // } = useSearch(activities, events);
+
+  // Placeholder values for now
+  const query = '';
+  const setQuery = () => {};
+  const filter = null;
+  const setFilter = () => {};
+  const results = [];
+  const groupedResults = {};
+  const loading = false;
+  const error = null;
+  const clearSearch = () => {};
+  const recentSearches = [];
+  const addRecentSearch = () => {};
+  const removeRecentSearch = () => {};
 
   const [localQuery, setLocalQuery] = useState('');
   const timeoutRef = useRef(null);
