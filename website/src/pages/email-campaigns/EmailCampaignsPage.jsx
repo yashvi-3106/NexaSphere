@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { buildUrl } from '../../utils/runtimeConfig';
 
 // Validates a date value before formatting — avoids rendering literal
 // "Invalid Date" text when the API returns a null or malformed timestamp.
@@ -8,7 +9,6 @@ function formatCampaignDate(value) {
   if (Number.isNaN(d.getTime())) return 'Unknown';
   return d.toLocaleDateString();
 }
-import { buildUrl, getApiBase } from '../../utils/runtimeConfig';
 
 const pageStyle = {
   minHeight: '100vh',
@@ -175,6 +175,10 @@ export default function EmailCampaignsPage() {
   const [campaigns, setCampaigns] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [triggers, setTriggers] = useState([]);
+  const [selectedCampaignStats, setSelectedCampaignStats] = useState(null);
+  const [selectedCampaignAnalytics, setSelectedCampaignAnalytics] = useState([]);
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -203,8 +207,6 @@ export default function EmailCampaignsPage() {
     campaignId: '',
     conditions: {},
   });
-
-  const apiBase = getApiBase();
 
   const fetchCampaigns = async () => {
     setLoading(true);
@@ -299,6 +301,43 @@ export default function EmailCampaignsPage() {
       fetchCampaigns();
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const handleViewPerformance = async (campaign) => {
+    setShowStatsModal(true);
+    setStatsLoading(true);
+    setSelectedCampaignStats({
+      ...campaign,
+      totalSent: 0,
+      totalOpened: 0,
+      totalClicked: 0,
+      totalUnsubscribed: 0,
+      openRate: 0,
+      clickRate: 0,
+    });
+    setSelectedCampaignAnalytics([]);
+    setError(null);
+
+    try {
+      const [statsRes, analyticsRes] = await Promise.all([
+        fetch(buildUrl(`/api/campaigns/${campaign.id}/stats`)),
+        fetch(buildUrl(`/api/campaigns/${campaign.id}/analytics`)),
+      ]);
+
+      if (!statsRes.ok) throw new Error('Failed to fetch campaign stats');
+      if (!analyticsRes.ok) throw new Error('Failed to fetch campaign analytics');
+
+      const statsData = await statsRes.json();
+      const analyticsData = await analyticsRes.json();
+
+      setSelectedCampaignStats({ ...campaign, ...statsData });
+      setSelectedCampaignAnalytics(analyticsData.analytics || []);
+    } catch (err) {
+      setError(err.message);
+      setShowStatsModal(false);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -473,6 +512,12 @@ export default function EmailCampaignsPage() {
                           onClick={() => handleDeleteCampaign(campaign.id)}
                         >
                           Delete
+                        </button>
+                        <button
+                          style={buttonStyle('ghost')}
+                          onClick={() => handleViewPerformance(campaign)}
+                        >
+                          Performance
                         </button>
                       </div>
                     </td>
@@ -827,6 +872,99 @@ export default function EmailCampaignsPage() {
                 Create Trigger
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showStatsModal && (
+        <div style={modalOverlayStyle} onClick={() => setShowStatsModal(false)}>
+          <div style={{ ...modalStyle, maxWidth: '720px' }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600' }}>
+              Campaign Performance
+            </h3>
+            <p style={{ margin: '0 0 20px 0', color: 'var(--text-secondary, #94a3b8)' }}>
+              {selectedCampaignStats?.name || 'Campaign'}
+            </p>
+
+            {statsLoading ? (
+              <div style={{ color: 'var(--text-secondary, #94a3b8)' }}>Loading stats...</div>
+            ) : (
+              <>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                    gap: '12px',
+                    marginBottom: '20px',
+                  }}
+                >
+                  {[
+                    ['Sent', selectedCampaignStats?.totalSent ?? 0],
+                    ['Opened', selectedCampaignStats?.totalOpened ?? 0],
+                    ['Clicked', selectedCampaignStats?.totalClicked ?? 0],
+                    ['Unsubscribed', selectedCampaignStats?.totalUnsubscribed ?? 0],
+                    ['Open Rate', `${selectedCampaignStats?.openRate ?? 0}%`],
+                    ['Click Rate', `${selectedCampaignStats?.clickRate ?? 0}%`],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      style={{
+                        ...cardStyle,
+                        marginBottom: 0,
+                        padding: '16px',
+                      }}
+                    >
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary, #94a3b8)' }}>
+                        {label}
+                      </div>
+                      <div style={{ fontSize: '24px', fontWeight: '700', marginTop: '6px' }}>
+                        {value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '16px' }}>Recipient Activity</h4>
+                  {selectedCampaignAnalytics.length === 0 ? (
+                    <div style={{ color: 'var(--text-secondary, #94a3b8)' }}>
+                      No analytics yet for this campaign.
+                    </div>
+                  ) : (
+                    <div style={{ maxHeight: '240px', overflow: 'auto', borderRadius: '12px' }}>
+                      <table style={tableStyle}>
+                        <thead>
+                          <tr>
+                            <th style={thStyle}>Recipient</th>
+                            <th style={thStyle}>Status</th>
+                            <th style={thStyle}>Opened</th>
+                            <th style={thStyle}>Clicked</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedCampaignAnalytics.slice(0, 10).map((row) => (
+                            <tr key={row.id}>
+                              <td style={tdStyle}>{row.recipientName || row.recipientEmail}</td>
+                              <td style={tdStyle}>
+                                <span style={statusBadgeStyle(row.status)}>{row.status}</span>
+                              </td>
+                              <td style={tdStyle}>{formatCampaignDate(row.openedAt)}</td>
+                              <td style={tdStyle}>{formatCampaignDate(row.clickedAt)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button style={buttonStyle('ghost')} onClick={() => setShowStatsModal(false)}>
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
