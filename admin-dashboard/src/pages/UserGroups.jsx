@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { Skeleton, SkeletonText } from '../components/Skeleton';
 
 export default function UserGroups() {
   const [groups, setGroups] = useState([]);
@@ -143,7 +143,67 @@ export default function UserGroups() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div style={{ padding: 20 }}>
+        <Skeleton height={32} width="32%" />
+        <div style={{ margin: '12px 0 20px' }}>
+          <Skeleton height={36} width={160} />
+        </div>
+
+        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+          <div style={{ flex: 1 }}>
+            <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #444' }}>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Members</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 4 }).map((_, rowIndex) => (
+                  <tr key={rowIndex} style={{ borderBottom: '1px solid #333' }}>
+                    <td style={{ padding: 8 }}>
+                      <Skeleton height={16} width="78%" />
+                    </td>
+                    <td style={{ padding: 8 }}>
+                      <Skeleton height={16} width="88%" />
+                    </td>
+                    <td style={{ padding: 8 }}>
+                      <Skeleton height={16} width="36%" />
+                    </td>
+                    <td style={{ padding: 8 }}>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <Skeleton height={28} width={112} />
+                        <Skeleton height={28} width={72} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              padding: 20,
+              borderRadius: 8,
+            }}
+          >
+            <Skeleton height={24} width="62%" />
+            <div style={{ display: 'flex', gap: 10, margin: '18px 0 20px' }}>
+              <Skeleton height={34} width={140} />
+            </div>
+            <SkeletonText lines={4} width="100%" />
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (error) return <div>Error: {error}</div>;
 
   return (

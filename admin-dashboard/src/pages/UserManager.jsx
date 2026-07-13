@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import UserTimelineModal from '../components/UserTimelineModal';
+import { Skeleton } from '../components/Skeleton';
 
 const ROLES = ['member', 'moderator', 'admin'];
 const PASSWORD_REQUIREMENTS = [
@@ -71,7 +72,9 @@ export default function UserManager() {
     if (importJobId && importProgress !== 100) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch(`/api/admin/bulk/jobs/${importJobId}`, { credentials: 'include' });
+          const res = await fetch(`/api/admin/bulk/jobs/${importJobId}`, {
+            credentials: 'include',
+          });
           if (res.ok) {
             const job = await res.json();
             setImportProgress(job.progress);
@@ -90,7 +93,8 @@ export default function UserManager() {
   }, [importJobId, importProgress]);
 
   function downloadCsvTemplate() {
-    const template = 'email,username,displayname,role,major,year,tags\njohn@college.edu,johndoe,John Doe,user,Computer Science,2028,tech;sports\n';
+    const template =
+      'email,username,displayname,role,major,year,tags\njohn@college.edu,johndoe,John Doe,user,Computer Science,2028,tech;sports\n';
     const blob = new Blob([template], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -301,7 +305,73 @@ export default function UserManager() {
     });
   }
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) {
+    return (
+      <div style={{ padding: '24px' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '16px',
+            gap: '16px',
+          }}
+        >
+          <div style={{ flex: 1, maxWidth: '320px' }}>
+            <Skeleton height={28} width="45%" />
+            <div style={{ marginTop: '8px' }}>
+              <Skeleton height={16} width="70%" />
+            </div>
+          </div>
+          <Skeleton height={36} width={120} />
+        </div>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Username', 'Display Name', 'Email', 'Role', 'Joined', 'Actions'].map((h) => (
+                <th
+                  key={h}
+                  style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: '8px' }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 5 }).map((_, rowIndex) => (
+              <tr key={rowIndex}>
+                <td style={{ padding: '8px' }}>
+                  <Skeleton height={16} width="72%" />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <Skeleton height={16} width="68%" />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <Skeleton height={16} width="84%" />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <Skeleton height={16} width="58%" />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <Skeleton height={16} width="52%" />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <Skeleton height={28} width={58} />
+                    <Skeleton height={28} width={86} />
+                    <Skeleton height={28} width={64} />
+                    <Skeleton height={28} width={108} />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
   if (error) return <p>{error}</p>;
 
   return (
