@@ -1,15 +1,58 @@
 import { CopyButton } from '../components/CopyButton';
 import { DashboardCardSkeleton } from '../components/DashboardCardSkeleton';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { api, auth } from '../services/api';
 import { Skeleton } from '../components/Skeleton';
 import { AdminIcon } from '../components/AdminIcon';
 import { PermissionGuard } from '../components/PermissionGuard';
+import { useNavigate } from 'react-router-dom';
+
+const QUICK_ACTIONS = [
+  {
+    label: 'Create Event',
+    description: 'Jump to the event workspace',
+    icon: 'Calendar',
+    to: '/dashboard/events',
+    requiredScope: 'events:write',
+  },
+  {
+    label: 'Send Email',
+    description: 'Open SSO invites for email outreach',
+    icon: 'UserPlus',
+    to: '/dashboard/sso-invites',
+    requiredScope: 'settings:admin',
+  },
+  {
+    label: 'Create Announcement',
+    description: 'Publish a new announcement',
+    icon: 'Megaphone',
+    to: '/dashboard/announcements',
+    requiredScope: 'settings:admin',
+  },
+  {
+    label: 'Export Data',
+    description: 'Review backups and exports',
+    icon: 'FileText',
+    to: '/dashboard/backups',
+    requiredScope: 'settings:admin',
+  },
+];
 
 export function DashboardHome() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const navigate = useNavigate();
   const isOffline = auth.isOfflineMode();
+  const scopes = auth.getScopes();
+
+  const quickActions = useMemo(
+    () =>
+      QUICK_ACTIONS.filter(
+        (action) => !action.requiredScope || scopes.includes(action.requiredScope)
+      ),
+    [scopes]
+  );
 
   useEffect(() => {
     Promise.all([
@@ -28,6 +71,21 @@ export function DashboardHome() {
       });
       setLoading(false);
     });
+  }, []);
+
+  useEffect(() => {
+    function handleShortcut(event) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setQuickActionsOpen((open) => !open);
+      }
+      if (event.key === 'Escape') {
+        setQuickActionsOpen(false);
+      }
+    }
+
+    document.addEventListener('keydown', handleShortcut);
+    return () => document.removeEventListener('keydown', handleShortcut);
   }, []);
 
   return (
@@ -159,6 +217,150 @@ export function DashboardHome() {
         >
           <CopyButton text={window.location.origin + '/dashboard'} label="Copy Dashboard Link" />
         </div>
+      </div>
+
+      <div
+        style={{
+          position: 'fixed',
+          right: '24px',
+          bottom: '24px',
+          zIndex: 40,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: '12px',
+        }}
+      >
+        {quickActionsOpen && (
+          <div
+            role="menu"
+            aria-label="Quick actions"
+            style={{
+              width: '280px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              boxShadow: '0 18px 36px rgba(0, 0, 0, 0.35)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                padding: '14px 16px 12px',
+                borderBottom: '1px solid var(--border)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                <AdminIcon name="Wrench" size={18} aria-hidden="true" />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 700 }}>Quick Actions</div>
+                  <div style={{ color: 'var(--text2)', fontSize: '0.78rem' }}>
+                    Ctrl/Cmd+K to toggle
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setQuickActionsOpen(false)}
+                aria-label="Close quick actions"
+                style={{ padding: '6px 10px', flexShrink: 0 }}
+              >
+                <AdminIcon name="X" size={16} aria-hidden="true" />
+              </button>
+            </div>
+
+            <div style={{ padding: '10px' }}>
+              {quickActions.map((action) => (
+                <button
+                  key={action.to}
+                  type="button"
+                  onClick={() => {
+                    navigate(action.to);
+                    setQuickActionsOpen(false);
+                  }}
+                  role="menuitem"
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px 14px',
+                    border: '1px solid transparent',
+                    borderRadius: '8px',
+                    background: 'transparent',
+                    color: 'var(--text)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--surface2)';
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderColor = 'transparent';
+                  }}
+                >
+                  <span
+                    style={{
+                      width: '34px',
+                      height: '34px',
+                      borderRadius: '8px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'rgba(255,255,255,0.04)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <AdminIcon name={action.icon} size={18} aria-hidden="true" />
+                  </span>
+                  <span style={{ minWidth: 0, flex: 1 }}>
+                    <span style={{ display: 'block', fontWeight: 600 }}>{action.label}</span>
+                    <span
+                      style={{
+                        display: 'block',
+                        color: 'var(--text2)',
+                        fontSize: '0.78rem',
+                        marginTop: '2px',
+                      }}
+                    >
+                      {action.description}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setQuickActionsOpen((open) => !open)}
+          aria-expanded={quickActionsOpen}
+          aria-label="Toggle quick actions menu"
+          title="Quick actions (Ctrl/Cmd+K)"
+          style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            border: '1px solid rgba(255,255,255,0.14)',
+            background: 'var(--red)',
+            color: '#fff',
+            boxShadow: '0 18px 30px rgba(0, 0, 0, 0.35)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          <AdminIcon name={quickActionsOpen ? 'X' : 'Wrench'} size={22} aria-hidden="true" />
+        </button>
       </div>
     </div>
   );
