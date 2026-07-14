@@ -22,11 +22,14 @@ export const eventsRepository = {
     return withDb(async (client) => {
       const offset = (page - 1) * limit;
       const { rows } = await client.query(
-        'select * from events order by created_at desc limit $1 offset $2',
+        `select *, count(*) over()::int as total 
+         from events 
+         order by created_at desc 
+         limit $1 offset $2`,
         [limit, offset],
       );
-      const countResult = await client.query('select count(*)::int as total from events');
-      const total = countResult.rows[0]?.total ?? 0;
+      
+      const total = rows.length > 0 ? rows[0].total : 0;
       return { rows: rows.map(mapRow), total };
     });
   },
