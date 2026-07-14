@@ -1,17 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { STORAGE_KEYS } from '../utils/storageKeys.js';
-
-/**
- * Lightweight native debounce — replaces lodash/debounce to remove the
- * unlisted transitive dependency on lodash.
- */
-function debounce(fn, delay) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
-  };
-}
 
 /**
  * Hook for managing advanced search state and API interaction
@@ -23,6 +11,10 @@ export const useGlobalSearch = () => {
   const [facets, setFacets] = useState({});
   const [activeFilters, setActiveFilters] = useState({});
   const [suggestions, setSuggestions] = useState([]);
+
+  // Track the latest request + allow aborting.
+  // eslint/react-hooks/refs cannot be satisfied if we access .current inside a memoized
+  // callback created during render; so we keep the debounced function out of render-time memo.
   const activeRequestRef = useRef(null);
   const requestIdRef = useRef(0);
 
@@ -40,79 +32,12 @@ export const useGlobalSearch = () => {
     }
   });
 
-  const fetchResults = useMemo(
-    () =>
-      debounce(async (searchQuery, filters) => {
-        activeRequestRef.current?.abort();
-
-        if (searchQuery.length < 2) {
-          setResults([]);
-          setSuggestions([]);
-          setFacets({});
-          setLoading(false);
-          return;
-        }
-
-        const requestId = requestIdRef.current + 1;
-        requestIdRef.current = requestId;
-        const controller = new AbortController();
-        activeRequestRef.current = controller;
-        setLoading(true);
-        try {
-          // Build query string with facets
-          const filterParams = new URLSearchParams({
-            q: searchQuery,
-            ...filters,
-          }).toString();
-
-          const response = await fetch(`/api/search?${filterParams}`, {
-            signal: controller.signal,
-          });
-          const data = await response.json();
-          if (requestId !== requestIdRef.current || controller.signal.aborted) {
-            return;
-          }
-
-          const nextResults = Array.isArray(data.results) ? data.results : [];
-          setResults(nextResults);
-          setFacets(data.facets || {});
-          if (data.suggestions) setSuggestions([data.suggestions]);
-
-          // Update recent searches if results found
-          if (nextResults.length > 0) {
-            updateRecentSearches(searchQuery);
-          }
-        } catch (error) {
-          if (error?.name === 'AbortError') return;
-          console.error('Search API Error:', error);
-        } finally {
-          if (requestId === requestIdRef.current) {
-            activeRequestRef.current = null;
-            setLoading(false);
-          }
-        }
-      }, 300),
-    []
-  );
-
-  useEffect(() => {
-    activeRequestRef.current?.abort();
-    fetchResults(query, activeFilters);
-  }, [query, activeFilters, fetchResults]);
-
-  useEffect(() => {
-    return () => {
-      activeRequestRef.current?.abort();
-    };
-  }, []);
-
-  // Combined tracking tracking mechanism with functional updates and protection
-  const updateRecentSearches = (q) => {
+  const updateRecentSearches = useCallback((q) => {
     if (!q || q.trim() === '') return;
 
     setRecentSearches((prev) => {
       const filtered = prev.filter((item) => item !== q);
-      const updated = [q, ...filtered].slice(0, 5); // Kept the incoming 5-item clamp limit
+      const updated = [q, ...filtered].slice(0, 5);
 
       try {
         localStorage.setItem(STORAGE_KEYS.RECENT_SEARCHES, JSON.stringify(updated));
@@ -122,7 +47,82 @@ export const useGlobalSearch = () => {
 
       return updated;
     });
-  };
+  }, []);
+
+  const fetchResults = useCallback(
+    async (searchQuery, filters) => {
+      // Abort any in-flight request when a new one is triggered.
+      if (activeRequestRef.current) {
+        activeRequestRef.current.abort();
+      }
+
+      if (searchQuery.length < 2) {
+        setResults([]);
+        setSuggestions([]);
+        setFacets({});
+        setLoading(false);
+        return;
+      }
+
+      const requestId = requestIdRef.current + 1;
+      requestIdRef.current = requestId;
+
+      const controller = new AbortController();
+      activeRequestRef.current = controller;
+
+      setLoading(true);
+      try {
+        const filterParams = new URLSearchParams({
+          q: searchQuery,
+          ...filters,
+        }).toString();
+
+        const response = await fetch(`/api/search?${filterParams}`, {
+          signal: controller.signal,
+        });
+
+        const data = await response.json();
+
+        if (requestId !== requestIdRef.current || controller.signal.aborted) {
+          return;
+        }
+
+        const nextResults = Array.isArray(data.results) ? data.results : [];
+        setResults(nextResults);
+        setFacets(data.facets || {});
+        if (data.suggestions) setSuggestions([data.suggestions]);
+
+        if (nextResults.length > 0) {
+          updateRecentSearches(searchQuery);
+        }
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
+        console.error('Search API Error:', error);
+      } finally {
+        if (requestId === requestIdRef.current) {
+          activeRequestRef.current = null;
+          setLoading(false);
+        }
+      }
+    },
+    [updateRecentSearches]
+  );
+
+  // Debounce outside render-time closures that eslint associates with ref access.
+  // We'll debounce the trigger in the effect that responds to (query, filters).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fetchResults(query, activeFilters);
+    }, 300);
+
+    return () => clearTimeout(t);
+  }, [query, activeFilters, fetchResults]);
+
+  useEffect(() => {
+    return () => {
+      if (activeRequestRef.current) activeRequestRef.current.abort();
+    };
+  }, []);
 
   const toggleFilter = (category, value) => {
     setActiveFilters((prev) => {
@@ -137,7 +137,6 @@ export const useGlobalSearch = () => {
 
   const clearFilters = () => setActiveFilters({});
 
-  // Error safety expanded to include saved_searches parser
   const saveSearch = () => {
     let saved;
     try {

@@ -33,6 +33,7 @@ import CinematicOpening from './shared/CinematicOpening';
 import OfflineBanner from './components/pwa/OfflineBanner.jsx';
 import InstallPrompt from './components/pwa/InstallPrompt.jsx';
 import UpdatePrompt from './components/pwa/UpdatePrompt.jsx';
+import EnablePushPrompt from './components/pwa/EnablePushPrompt.jsx';
 
 import {
   AmbientOrbs,
@@ -49,7 +50,7 @@ const isPlaywright =
 
 import { BookmarkProvider } from './context/BookmarkContext';
 import { StudentAuthProvider, useStudentAuth } from './context/StudentAuthContext';
-import ErrorBoundary from './components/ErrorBoundary';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import { WalkthroughOverlay } from './components/walkthrough/WalkthroughOverlay';
 import { useWalkthroughStore } from './store/useWalkthroughStore';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -238,8 +239,10 @@ function AppShell() {
       <OfflineBanner />
       <InstallPrompt />
       {swUpdateFn && <UpdatePrompt updateSW={swUpdateFn} />}
+      <EnablePushPrompt />
 
       <Chatbot />
+
       <WalkthroughOverlay />
 
       {/* Loading cover to prevent flash during intro sequence */}

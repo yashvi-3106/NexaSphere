@@ -11,18 +11,19 @@ if (!sessionId) {
 
 export function useAnalytics() {
   const location = useLocation();
-  const { isAuthenticated, user } = useStudentAuth();
+  const { isAuthenticated: _isAuthenticated, user: _user } = useStudentAuth();
 
   const logEvent = useCallback((eventType, metadata = {}) => {
     // Only send if consent is given or tracking is enabled (omitted for brevity, assume true)
+    const selector = metadata?.selector;
+
     const event = {
       type: eventType,
       url: window.location.pathname,
-      selector: metadata.selector,
+      selector,
       metadata,
     };
 
-    // Buffer or send immediately
     apiClient('/api/analytics/events', {
       method: 'POST',
       body: JSON.stringify({
@@ -52,7 +53,7 @@ export function useAnalytics() {
       }
 
       logEvent('click', {
-        selector,
+        ...(selector ? { selector } : {}),
         x: e.clientX,
         y: e.clientY,
       });
