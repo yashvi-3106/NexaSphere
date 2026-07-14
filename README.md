@@ -307,9 +307,9 @@ Minimum values needed in `server/.env`:
 PORT=8787
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:5175,http://localhost:5001
-ADMIN_USERNAME=your-admin
-ADMIN_PASSWORD=YourPass123!
-ADMIN_EVENT_PASSWORD=EventPass456!
+ADMIN_USERNAME=your-admin-username
+ADMIN_PASSWORD=YourSecurePassword123!
+ADMIN_EVENT_PASSWORD=YourEventPass456!
 ```
 
 ### 3. Run Development Servers
