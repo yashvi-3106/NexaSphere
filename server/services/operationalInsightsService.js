@@ -4,11 +4,11 @@ const dashboard = {
   totalApiRequests: 85321,
   successfulRequests: 84110,
   failedRequests: 1211,
-  uptime: "99.98%",
-  cpuUsage: "42%",
-  memoryUsage: "61%",
-  storageUsage: "72%",
-  databaseStatus: "Healthy",
+  uptime: '99.98%',
+  cpuUsage: '42%',
+  memoryUsage: '61%',
+  storageUsage: '72%',
+  databaseStatus: 'Healthy',
   notificationQueue: 42,
   runningJobs: 8,
 };
@@ -16,96 +16,96 @@ const dashboard = {
 const services = [
   {
     id: 1,
-    name: "Authentication Service",
-    status: "Healthy",
-    latency: "21ms",
+    name: 'Authentication Service',
+    status: 'Healthy',
+    latency: '21ms',
   },
   {
     id: 2,
-    name: "Event Service",
-    status: "Healthy",
-    latency: "35ms",
+    name: 'Event Service',
+    status: 'Healthy',
+    latency: '35ms',
   },
   {
     id: 3,
-    name: "Portfolio Service",
-    status: "Healthy",
-    latency: "28ms",
+    name: 'Portfolio Service',
+    status: 'Healthy',
+    latency: '28ms',
   },
   {
     id: 4,
-    name: "Media Service",
-    status: "Warning",
-    latency: "112ms",
+    name: 'Media Service',
+    status: 'Warning',
+    latency: '112ms',
   },
   {
     id: 5,
-    name: "Notification Service",
-    status: "Healthy",
-    latency: "19ms",
+    name: 'Notification Service',
+    status: 'Healthy',
+    latency: '19ms',
   },
 ];
 
 const apiTraffic = [
   {
-    endpoint: "/api/events",
+    endpoint: '/api/events',
     requests: 2451,
-    avgResponse: "28ms",
+    avgResponse: '28ms',
   },
   {
-    endpoint: "/api/auth/login",
+    endpoint: '/api/auth/login',
     requests: 1876,
-    avgResponse: "18ms",
+    avgResponse: '18ms',
   },
   {
-    endpoint: "/api/portfolios",
+    endpoint: '/api/portfolios',
     requests: 1342,
-    avgResponse: "36ms",
+    avgResponse: '36ms',
   },
   {
-    endpoint: "/api/announcements",
+    endpoint: '/api/announcements',
     requests: 964,
-    avgResponse: "31ms",
+    avgResponse: '31ms',
   },
 ];
 
 const databasePerformance = {
   connections: 41,
   maxConnections: 100,
-  averageQueryTime: "17ms",
+  averageQueryTime: '17ms',
   slowQueries: 2,
-  cacheHitRate: "96%",
-  storageEngine: "MongoDB",
+  cacheHitRate: '96%',
+  storageEngine: 'MongoDB',
 };
 
 const backgroundJobs = [
   {
     id: 1,
-    name: "Daily Backup",
-    status: "Running",
+    name: 'Daily Backup',
+    status: 'Running',
     progress: 63,
   },
   {
     id: 2,
-    name: "Notification Dispatcher",
-    status: "Running",
+    name: 'Notification Dispatcher',
+    status: 'Running',
     progress: 91,
   },
   {
     id: 3,
-    name: "Media Optimization",
-    status: "Queued",
+    name: 'Media Optimization',
+    status: 'Queued',
     progress: 0,
   },
 ];
 
 const storage = {
-  total: "500 GB",
-  used: "361 GB",
-  free: "139 GB",
-  images: "152 GB",
-  documents: "83 GB",
-  backups: "126 GB",
+  total: '500 GB',
+  used: '361 GB',
+  free: '139 GB',
+  images: '152 GB',
+  documents: '83 GB',
+  backups: '126 GB',
 };
 
 const notifications = {
@@ -121,20 +121,19 @@ const notifications = {
 const errorLogs = [
   {
     id: 1,
-    level: "Warning",
-    message: "High memory usage detected",
-    time: "10 mins ago",
+    level: 'Warning',
+    message: 'High memory usage detected',
+    time: '10 mins ago',
   },
   {
     id: 2,
-    level: "Error",
-    message: "Media upload timeout",
-    time: "32 mins ago",
+    level: 'Error',
+    message: 'Media upload timeout',
+    time: '32 mins ago',
   },
 ];
 
-module.exports = {
-
+const operationalInsightsService = {
   getDashboardOverview() {
     return {
       success: true,
@@ -145,7 +144,7 @@ module.exports = {
   getSystemHealth() {
     return {
       success: true,
-      overallStatus: "Healthy",
+      overallStatus: 'Healthy',
       uptime: dashboard.uptime,
       services,
     };
@@ -187,7 +186,7 @@ module.exports = {
     };
   },
 
-    getStorageUsage() {
+  getStorageUsage() {
     return {
       success: true,
       storage,
@@ -215,17 +214,17 @@ module.exports = {
       maintenance: [
         {
           id: 1,
-          service: "Database",
-          scheduledDate: "2026-07-10",
-          duration: "30 minutes",
-          status: "Scheduled",
+          service: 'Database',
+          scheduledDate: '2026-07-10',
+          duration: '30 minutes',
+          status: 'Scheduled',
         },
         {
           id: 2,
-          service: "Authentication",
-          scheduledDate: "2026-07-15",
-          duration: "15 minutes",
-          status: "Pending",
+          service: 'Authentication',
+          scheduledDate: '2026-07-15',
+          duration: '15 minutes',
+          status: 'Pending',
         },
       ],
     };
@@ -236,24 +235,24 @@ module.exports = {
       success: true,
       dependencies: [
         {
-          service: "MongoDB",
-          status: "Healthy",
+          service: 'MongoDB',
+          status: 'Healthy',
         },
         {
-          service: "Redis",
-          status: "Healthy",
+          service: 'Redis',
+          status: 'Healthy',
         },
         {
-          service: "Cloudinary",
-          status: "Healthy",
+          service: 'Cloudinary',
+          status: 'Healthy',
         },
         {
-          service: "Email Service",
-          status: "Warning",
+          service: 'Email Service',
+          status: 'Warning',
         },
         {
-          service: "Firebase",
-          status: "Healthy",
+          service: 'Firebase',
+          status: 'Healthy',
         },
       ],
     };
@@ -264,22 +263,22 @@ module.exports = {
       success: true,
       resources: {
         cpu: {
-          usage: "42%",
+          usage: '42%',
           cores: 8,
         },
         memory: {
-          usage: "61%",
-          total: "16 GB",
-          used: "9.8 GB",
+          usage: '61%',
+          total: '16 GB',
+          used: '9.8 GB',
         },
         disk: {
-          usage: "72%",
-          total: "500 GB",
-          used: "361 GB",
+          usage: '72%',
+          total: '500 GB',
+          used: '361 GB',
         },
         network: {
-          upload: "124 Mbps",
-          download: "256 Mbps",
+          upload: '124 Mbps',
+          download: '256 Mbps',
         },
       },
     };
@@ -291,30 +290,31 @@ module.exports = {
       reports: [
         {
           id: 1,
-          title: "Weekly System Health",
-          generatedAt: "2026-07-02",
-          format: "PDF",
+          title: 'Weekly System Health',
+          generatedAt: '2026-07-02',
+          format: 'PDF',
         },
         {
           id: 2,
-          title: "Monthly API Analytics",
-          generatedAt: "2026-07-01",
-          format: "Excel",
+          title: 'Monthly API Analytics',
+          generatedAt: '2026-07-01',
+          format: 'Excel',
         },
         {
           id: 3,
-          title: "Storage Utilization",
-          generatedAt: "2026-06-30",
-          format: "CSV",
+          title: 'Storage Utilization',
+          generatedAt: '2026-06-30',
+          format: 'CSV',
         },
         {
           id: 4,
-          title: "Notification Delivery Report",
-          generatedAt: "2026-07-02",
-          format: "PDF",
+          title: 'Notification Delivery Report',
+          generatedAt: '2026-07-02',
+          format: 'PDF',
         },
       ],
     };
   },
-
 };
+
+export default operationalInsightsService;

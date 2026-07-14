@@ -165,6 +165,8 @@ app.use(compression());
 app.use('/api/notification-preferences', notificationPreferenceRoutes);
 app.use('/api/activity-timeline', activityTimelineRoutes);
 
+app.use('/api/activity-timeline', activityTimelineRoutes);
+
 // Use compression with fallback (Brotli supported by default in compression v1.8 if zlib supports it)
 // Skip compression for responses smaller than 1KB (1024 bytes)
 app.use(
@@ -253,6 +255,7 @@ app.use(
             preload: true,
           }
         : false,
+    // ✅ FIXED: Strict Content Security Policy with ALL directives
     contentSecurityPolicy: {
       useDefaults: false,
 
@@ -408,7 +411,7 @@ app.use('/api', portfolioAnalyticsRouter);
 app.use('/api', portfolioRouter);
 app.use('/api', recoveryRouter);
 app.use('/api/faqs', faqRouter);
-app.use('/', notificationsRouter);
+app.use('/api', notificationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', learningPathRouter);
 app.use('/', syncRouter);
@@ -1480,7 +1483,7 @@ app.put('/api/notifications/preferences/bulk', adminAuth, async (req, res) => {
 app.post('/api/notifications/analytics', async (req, res) => {
   try {
     const event = req.body || {};
-    // Minimal validation â€” in future route can forward to analytics pipeline
+    // Minimal validation — in future route can forward to analytics pipeline
     console.log('[notification-analytics]', event.type || 'unknown', event);
     return res.json({ ok: true });
   } catch (err) {
