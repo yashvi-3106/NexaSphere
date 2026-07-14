@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+process.env.NODE_ENV = 'test';
+
 import {
   escapeHtml,
   sanitizeActivityEventRecord,
@@ -52,7 +54,10 @@ test('sanitizeCoreTeamMemberRecord escapes profile fields and optional links', (
   assert.equal(sanitized.branch, 'CSE &amp; IT');
   assert.equal(sanitized.linkedin, 'https://example.com/?q=&quot;x&quot;&amp;y=&lt;z&gt;');
   assert.equal(sanitized.instagram, 'https://instagram.com/&lt;handle&gt;');
-  assert.equal(sanitized.photoUrl, 'https://cdn.example.com/&quot;avatar&quot;.png?alt=&lt;img alt=&quot;&quot;&gt;');
+  assert.equal(
+    sanitized.photoUrl,
+    'https://cdn.example.com/&quot;avatar&quot;.png?alt=&lt;img alt=&quot;&quot;&gt;'
+  );
 });
 
 test('sanitizeActivityEventRecord strips createdBy PII', () => {

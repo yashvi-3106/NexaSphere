@@ -473,4 +473,964 @@
  *                       format: float
  */
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Budget Management
+ *     description: Intelligent Event Budget Planning & Expense Management APIs
+ */
+
+/**
+ * @swagger
+ * /api/budgets:
+ *   get:
+ *     summary: Get all budgets
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Budgets retrieved successfully
+ *
+ *   post:
+ *     summary: Create budget
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Budget created successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}:
+ *   get:
+ *     summary: Get budget by ID
+ *     tags: [Budget Management]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Budget retrieved successfully
+ *
+ *   put:
+ *     summary: Update budget
+ *     tags: [Budget Management]
+ * /api/notification-preferences/{userId}:
+ *   get:
+ *     summary: Get notification preferences
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ * /api/portfolio/{username}/analytics:
+ *   get:
+ *     summary: Get portfolio analytics
+ *     description: Retrieve portfolio performance analytics including profile visits, engagement, downloads, and project popularity.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Portfolio username
+ *     responses:
+ *       200:
+ *         description: Portfolio analytics retrieved successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/visit:
+ *   post:
+ *     summary: Record portfolio visit
+ *     description: Records a visit to a user's portfolio for analytics purposes.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification preferences returned successfully
+ *         description: Visit recorded successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/monthly-report:
+ *   get:
+ *     summary: Get monthly analytics report
+ *     description: Returns the monthly portfolio performance report.
+ *     tags:
+ *       - Portfolio
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Matching files returned
+ *         description: Monthly report retrieved successfully
+ *       404:
+ *         description: Portfolio not found
+ */
+/**
+ * @swagger
+ * /api/portfolio/{username}/monthly-report:
+ *   get:
+ *     ...
+ */
+
+/**
+ * @swagger
+ * /api/notification-preferences/{userId}:
+ *   put:
+ *     summary: Update notification preferences
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Preferences updated successfully
+ */
+
+/**
+ * @swagger
+ * /api/notification-preferences/{userId}/history:
+ *   get:
+ *     summary: Get notification history
+ *     tags:
+ *       - Notification Preferences
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification history returned successfully
+ */
+
+/**
+ * @swagger
+ * /api/announcements:
+ *   get:
+ *     summary: Get all announcements
+ *     description: Returns all announcements sorted by priority and pinned status.
+ *     tags:
+ *       - Announcements
+ *     responses:
+ *       200:
+ *         description: List of announcements retrieved successfully.
+ *
+ *   post:
+ *     summary: Create a new announcement
+ *     description: Creates a new announcement with priority, audience, and expiration.
+ *     tags:
+ *       - Announcements
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - message
+ *             properties:
+ *               title:
+ *                 type: string
+ *               message:
+ *                 type: string
+ *               priority:
+ *                 type: string
+ *                 enum: [Critical, High, Medium, Low]
+ *               pinned:
+ *                 type: boolean
+ *               expiresAt:
+ *                 type: string
+ *                 format: date-time
+ *               audience:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Announcement created successfully.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/{id}/priority:
+ *   patch:
+ *     summary: Update announcement priority
+ *     tags:
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Budget updated successfully
+ *
+ *   delete:
+ *     summary: Delete budget
+ *     tags: [Budget Management]
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               priority:
+ *                 type: string
+ *                 enum: [Critical, High, Medium, Low]
+ *     responses:
+ *       200:
+ *         description: Priority updated successfully.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/{id}/pin:
+ *   patch:
+ *     summary: Pin or unpin an announcement
+ *     tags:
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Budget deleted successfully
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pinned:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Announcement updated successfully.
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}/expenses:
+ *   get:
+ *     summary: Get budget expenses
+ *     tags: [Budget Management]
+ * /api/announcements/{id}/read:
+ *   post:
+ *     summary: Mark announcement as read
+ *     tags:
+ *       - Announcements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Expenses retrieved successfully
+ *
+ *   post:
+ *     summary: Add expense
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Expense added successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}/invoice:
+ *   post:
+ *     summary: Upload invoice
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Invoice uploaded successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}/approve:
+ *   post:
+ *     summary: Approve expense
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Expense approved successfully
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Announcement marked as read.
+ */
+
+/**
+ * @swagger
+ * /api/announcements/analytics:
+ *   get:
+ *     summary: Get announcement analytics
+ *     description: Returns announcement statistics including views, reads, and priority distribution.
+ *     tags:
+ *       - Announcements
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/conflicts:
+ *   get:
+ *     summary: Detect event scheduling conflicts
+ *     description: Returns events that overlap in time or venue.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Conflict list returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/venue:
+ *   get:
+ *     summary: Check venue availability
+ *     description: Verify whether a venue is available for a selected date.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: venue
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Venue availability returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/attendance-impact:
+ *   get:
+ *     summary: Attendance impact analysis
+ *     description: Analyze attendance impact caused by conflicting events.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Attendance analysis generated.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/recommendations:
+ *   get:
+ *     summary: Smart scheduling recommendations
+ *     description: Returns recommended schedules for events.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Scheduling recommendations returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/calendar:
+ *   get:
+ *     summary: Calendar integration
+ *     description: Returns event data formatted for calendar integration.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Calendar events returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/event-scheduling/alerts:
+ *   get:
+ *     summary: Organizer alerts
+ *     description: Returns scheduling alerts for organizers.
+ *     tags:
+ *       - Event Scheduling
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Organizer alerts returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/join:
+ *   post:
+ *     summary: Join an event waitlist
+ *     description: Adds a user to the waitlist when an event is full.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully added to waitlist.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/position:
+ *   get:
+ *     summary: Get waitlist position
+ *     description: Returns the user's current position in the event waitlist.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Waitlist position returned.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/auto-enroll:
+ *   post:
+ *     summary: Auto-enroll next waitlisted user
+ *     description: Automatically enrolls the first user from the waitlist when a seat becomes available.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User enrolled successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/notifications:
+ *   get:
+ *     summary: Get waitlist notifications
+ *     description: Returns notification history for waitlisted users.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Notifications retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/analytics:
+ *   get:
+ *     summary: Waitlist analytics
+ *     description: Returns statistics about waitlists and enrollments.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/waitlist/deadline:
+ *   post:
+ *     summary: Set registration deadline
+ *     description: Configure the registration deadline for an event.
+ *     tags:
+ *       - Waitlist Management
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Registration deadline updated successfully.
+ */
+
+/**
+ * @swagger
+ * /api/search:
+ *   get:
+ *     summary: Global Search
+ *     description: Search across events, team members, portfolios, and resources.
+ *     tags:
+ *       - Global Search
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Search keyword
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum:
+ *             - all
+ *             - events
+ *             - members
+ *             - portfolios
+ *             - resources
+ *         description: Filter search by category
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Maximum results
+ *     responses:
+ *       200:
+ *         description: Search results returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/search/trending:
+ *   get:
+ *     summary: Trending Searches
+ *     description: Returns the most popular search queries.
+ *     tags:
+ *       - Global Search
+ *     responses:
+ *       200:
+ *         description: Trending searches retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/search/recent:
+ *   get:
+ *     summary: Recent Searches
+ *     description: Returns the user's recent search history.
+ *     tags:
+ *       - Global Search
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Recent searches returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/search/suggestions:
+ *   get:
+ *     summary: Instant Search Suggestions
+ *     description: Returns autocomplete suggestions while typing.
+ *     tags:
+ *       - Global Search
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Suggestions returned successfully.
+ */
+
+/**
+ * @swagger
+ * /api/admin/search/analytics:
+ *   get:
+ *     summary: Search Analytics Dashboard
+ *     description: Returns analytics about search usage, popular keywords and categories.
+ *     tags:
+ *       - Global Search
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully.
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}:
+ *   get:
+ *     summary: Get user activity timeline
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User activity timeline
+ */
+
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}:
+ *   post:
+ *     summary: Add activity to timeline
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Activity added successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}/remaining:
+ *   get:
+ *     summary: Get remaining budget
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Remaining budget calculated successfully
+ * /api/activity-timeline/{userId}/summary:
+ *   get:
+ *     summary: Monthly activity summary
+ *     tags:
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Monthly summary
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}/categories:
+ *   get:
+ *     summary: Category-wise spending
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Category-wise spending retrieved
+ */
+
+/**
+ * @swagger
+ * /api/budgets/vendors:
+ *   get:
+ *     summary: Get vendors
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Vendors retrieved successfully
+ *
+ *   post:
+ *     summary: Add vendor
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Vendor added successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/reports:
+ *   get:
+ *     summary: Financial reports
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Financial reports retrieved
+ */
+
+/**
+ * @swagger
+ * /api/budgets/alerts:
+ *   get:
+ *     summary: Budget alerts
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Budget alerts retrieved
+ */
+
+/**
+ * @swagger
+ * /api/budgets/export:
+ *   get:
+ *     summary: Export expense statements
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Expense statements exported
+ */
+
+/**
+ * @swagger
+ * /api/budgets/history:
+ *   get:
+ *     summary: Historical budget comparison
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Historical comparison retrieved
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   - name: API Analytics
+ *     description: Platform-Wide API Usage Analytics & Developer Portal
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/dashboard:
+ *   get:
+ *     summary: Get API usage dashboard
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Dashboard retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/requests:
+ *   get:
+ *     summary: Get request analytics
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Request analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/response-times:
+ *   get:
+ *     summary: Get response time metrics
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Response time metrics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/errors:
+ *   get:
+ *     summary: Get API error analytics
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Error analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/docs:
+ *   get:
+ *     summary: Get interactive API documentation
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Documentation retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/sdk:
+ *   get:
+ *     summary: Get SDK documentation
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: SDK documentation retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/changelog:
+ *   get:
+ *     summary: Get API changelog
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Changelog retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/versions:
+ *   get:
+ *     summary: Get API versions
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: API versions retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/keys:
+ *   get:
+ *     summary: Get API keys
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: API keys retrieved successfully
+ *
+ *   post:
+ *     summary: Generate API key
+ *     tags: [API Analytics]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: API key generated successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/keys/{id}:
+ *   delete:
+ *     summary: Revoke API key
+ *     tags: [API Analytics]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: API key revoked successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/rate-limits:
+ *   get:
+ *     summary: Get rate limit usage
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Rate limit information retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/sandbox:
+ *   get:
+ *     summary: Get API testing sandbox
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Sandbox information retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/announcements:
+ *   get:
+ *     summary: Get developer announcements
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Developer announcements retrieved successfully
+ */
 export default {};
