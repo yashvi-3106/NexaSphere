@@ -8,6 +8,8 @@ import express from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
 import csrf from 'csurf';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger.js';
 import fs, { promises as fsp } from 'fs';
 import { body, validationResult } from 'express-validator';
 import { EventEmitter } from 'events';
@@ -115,8 +117,6 @@ import { schedulerService } from './services/schedulerService.js';
 import feedbackRouter from './routes/feedbackRoutes.js';
 import * as slackController from './controllers/slackController.js';
 import activityTimelineRoutes from './routes/activityTimeline.js';
-import notificationPreferenceRoutes from './routes/notificationPreference.js';
-import { readOnlyGuard } from './services/readOnlyService.js';
 
 import { initializeTypesenseCollections } from './config/typesense.js';
 import moderationRouter from './routes/moderation.js';
@@ -174,6 +174,22 @@ app.use(
     threshold: 1024,
   })
 );
+
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'NexaSphere API Docs',
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  })
+);
+
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 // Middleware to monitor compression ratio
 app.use((req, res, next) => {

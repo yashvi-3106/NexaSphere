@@ -11,8 +11,19 @@ import { HAS_SUPABASE } from '../storage/supabaseClient.js';
 const router = Router();
 
 /**
- * GET /health — Shallow liveness probe for container orchestrators
- * and load balancers (Render, Railway, etc.).
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: API health check
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Server is running
+ *         content:
+ *           application/json:
+ *             example:
+ *               status: ok
+ *               timestamp: "2026-07-14T10:00:00.000Z"
  */
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'nexasphere-api', timestamp: new Date().toISOString() });

@@ -43,7 +43,7 @@ import * as gamificationController from '../controllers/gamificationController.j
 import multer from 'multer';
 import * as analyticsController from '../controllers/analyticsController.js';
 const router = Router();
-const apiAnalyticsRoutes = require("./apiAnalytics");
+const apiAnalyticsRoutes = require('./apiAnalytics');
 
 router.use(rateLimitAdminRoutes);
 router.use(throttleMiddleware);
@@ -51,8 +51,7 @@ router.use(throttleMiddleware);
 const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
-const budgetRoutes = require("./budget");
-const router = Router();
+const budgetRoutes = require('./budget');
 
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
@@ -69,6 +68,33 @@ router.post(
 );
 router.get('/api/users', usersController.getPublicUsers);
 router.post('/api/whiteboard/export-pdf', whiteboardController.exportPDF);
+/**
+ * @swagger
+ * /api/events:
+ *   get:
+ *     summary: Get all events
+ *     description: Returns a list of all published events. No authentication required.
+ *     tags: [Events]
+ *     responses:
+ *       200:
+ *         description: List of events
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   title:
+ *                     type: string
+ *                   date:
+ *                     type: string
+ *                     format: date
+ *                   description:
+ *                     type: string
+ */
 router.get('/api/content/events', eventsController.listEvents);
 router.get('/api/content/banners', bannersController.listActiveBanners);
 router.post(
@@ -222,6 +248,35 @@ router.get(
   adminAuthMiddleware.requireScope('events:read'),
   eventAnalyticsController.getEventStats
 );
+/**
+ * @swagger
+ * /api/admin/events:
+ *   post:
+ *     summary: Create a new event (admin only)
+ *     tags: [Events]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [title, date, description]
+ *             properties:
+ *               title:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date
+ *               description:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Event created successfully
+ *       401:
+ *         description: Unauthorized — admin login required
+ */
 router.post(
   '/api/admin/events',
   adminAuthMiddleware.requireScope('events:write'),
@@ -431,7 +486,7 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
 
-router.use("/budgets", budgetRoutes);
+router.use('/budgets', budgetRoutes);
 router.use('/api/announcements', announcementPriorityRouter);
 
 router.use('/api/events', eventConflictRouter);
@@ -504,6 +559,6 @@ router.get(
 // Platform Analytics APIs
 router.use('/api/analytics', platformAnalyticsRoutes);
 
-router.use("/api-analytics", apiAnalyticsRoutes);
+router.use('/api-analytics', apiAnalyticsRoutes);
 
 export default router;

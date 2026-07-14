@@ -374,8 +374,12 @@ Deep-dive references live in the [`/docs`](docs/) directory:
 | [docs/deployment.md](docs/deployment.md)                   | Full deployment guide (Vercel / Render / Docker) |
 | [docs/database-backups.md](docs/database-backups.md)       | Database backup & restore procedures             |
 | [docs/DATABASE_MIGRATIONS.md](docs/DATABASE_MIGRATIONS.md) | Running & writing DB migrations                  |
+| [Swagger API Docs](http://localhost:8787/api-docs) | Interactive API documentation (run server first) |
 
 ---
+
+## Future Improvments
+- [x] API Swagger documentation — available at `/api-docs` when server is running
 
 ## 👥 Contributors
 
