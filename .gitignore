@@ -124,11 +124,13 @@ scratch/
 image.png
 test_output.txt
 
-
-issues*.json
-ci-logs.txt
-*_EXAMPLE*.js
-*_EXAMPLE*.jsx
-vault-secrets.json
-visual-tests/output/
-visual-tests/report/
+# ── Issue-specific working files (NEVER commit these) ─────────────
+# Files named after specific issue numbers are temporary working docs.
+# They belong in your local editor/notes, not in the repository.
+# Pattern: anything with .issue<N>, ISSUE_<N>, or _ISSUE<N> in the name.
+*.issue[0-9]*
+*_ISSUE[0-9]*.js
+*_ISSUE[0-9]*.jsx
+*_ISSUE[0-9]*.md
+PR_CONTENT_ISSUE_*.md
+PR_TEMPLATE_ISSUE_*.md
