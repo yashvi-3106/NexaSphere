@@ -5,6 +5,20 @@ import { api, auth } from '../services/api';
 import { Skeleton } from '../components/Skeleton';
 import { AdminIcon } from '../components/AdminIcon';
 import { PermissionGuard } from '../components/PermissionGuard';
+import { StatsGrid } from '../components/StatsGrid';
+
+function Dashboard() {
+  return (
+    <div className="admin-home">
+      <h1>NexaSphere Dashboard</h1>
+
+      {/* Stats overview — shows at-a-glance platform health */}
+      <StatsGrid />
+
+      {/* ...rest of the existing dashboard content... */}
+    </div>
+  );
+}
 
 export function DashboardHome() {
   const [stats, setStats] = useState(null);
