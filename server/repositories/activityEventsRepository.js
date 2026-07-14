@@ -17,17 +17,33 @@ export const activityEventsRepository = {
   // count for the given activityKey so callers can build pagination metadata.
   async listByActivityKey(activityKey, { page = 1, limit = 20 } = {}) {
     return withDb(async (client) => {
-      const offset = (page - 1) * limit;
-      const { rows } = await client.query(
-        'select * from activity_events where activity_key=$1 order by created_at desc limit $2 offset $3',
-        [activityKey, limit, offset],
-      );
-      const countResult = await client.query(
-        'select count(*)::int as total from activity_events where activity_key=$1',
-        [activityKey],
-      );
-      const total = countResult.rows[0]?.total ?? 0;
-      return { rows: rows.map(mapRow), total };
+      await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+
+      try {
+        const offset = (page - 1) * limit;
+
+        const { rows } = await client.query(
+          'select * from activity_events where activity_key=$1 order by created_at desc limit $2 offset $3',
+          [activityKey, limit, offset]
+        );
+
+        const countResult = await client.query(
+          'select count(*)::int as total from activity_events where activity_key=$1',
+          [activityKey]
+        );
+
+        const total = countResult.rows[0]?.total ?? 0;
+
+        await client.query('COMMIT');
+
+        return {
+          rows: rows.map(mapRow),
+          total,
+        };
+      } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+      }
     });
   },
 
@@ -52,7 +68,17 @@ export const activityEventsRepository = {
           event.createdBy?.phone || '',
         ]
       );
-      return mapRow(rows[0]);
+      const mapped = mapRow(rows[0]);
+      import('../services/searchIndexer.js')
+        .then(({ searchIndexer }) =>
+          searchIndexer.indexActivity(mapped.id, {
+            title: mapped.name,
+            description: mapped.description,
+            subtitle: mapped.tagline,
+          })
+        )
+        .catch(() => {});
+      return mapped;
     });
   },
 
@@ -62,6 +88,11 @@ export const activityEventsRepository = {
         'delete from activity_events where activity_key=$1 and id=$2',
         [activityKey, eventId]
       );
+      if (rowCount > 0) {
+        import('../services/searchIndexer.js')
+          .then(({ searchIndexer }) => searchIndexer.deleteDocument('activities', eventId))
+          .catch(() => {});
+      }
       return rowCount > 0;
     });
   },

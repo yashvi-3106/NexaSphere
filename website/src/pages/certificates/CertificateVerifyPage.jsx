@@ -12,15 +12,13 @@
  */
 
 import { useEffect, useState } from 'react';
+import { getApiBase } from '../../utils/runtimeConfig';
+import { isSafari } from '../../utils/deviceDetection';
+import apiClient from '../../utils/apiClient.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function getApiBase() {
-  const base = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
-  return base || 'http://localhost:8080';
-}
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
@@ -210,28 +208,24 @@ export default function CertificateVerifyPage({ certificateId, onGoHome }) {
 
     async function fetchVerification() {
       try {
-        const apiBase = getApiBase();
-        const res = await fetch(
-          `${apiBase}/api/public/certificates/verify/${encodeURIComponent(certificateId)}`,
-          {
-            signal: controller.signal,
-          }
+        const base = getApiBase();
+        // Use apiClient instead of raw fetch — provides Sentry error
+        // tracking, offline IndexedDB cache fallback, and standardised
+        // error handling via ApiError consistent with the rest of the codebase.
+        const json = await apiClient(
+          `${base}/api/public/certificates/verify/${encodeURIComponent(certificateId)}`,
+          { signal: controller.signal }
         );
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          setMessage(errData.message || 'Server error during verification.');
-          setStatus('error');
-          return;
-        }
-
-        const json = await res.json();
         setData(json);
         setMessage(json.message);
         setStatus(json.valid ? 'valid' : 'invalid');
       } catch (err) {
         if (err.name === 'AbortError') return;
-        setMessage('Unable to reach the verification server. Please try again later.');
+        setMessage(
+          err.message && err.message !== 'Network error' && err.message !== 'Failed to fetch'
+            ? err.message
+            : 'Unable to reach the verification server. Please try again later.'
+        );
         setStatus('error');
       }
     }
@@ -244,6 +238,36 @@ export default function CertificateVerifyPage({ certificateId, onGoHome }) {
   const downloadUrl = cert
     ? `${getApiBase()}/api/public/certificates/${encodeURIComponent(cert.certificate_id)}/download`
     : null;
+
+  const handleDownload = async (e) => {
+    e.preventDefault();
+    if (!downloadUrl || !cert) return;
+    try {
+      const res = await fetch(downloadUrl);
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const filename = `cert_${cert.certificate_id}.pdf`;
+      const blobUrl = URL.createObjectURL(blob);
+
+      if (isSafari()) {
+        // Safari (iOS & macOS) ignores the `download` attribute on
+        // cross-origin links, so open the blob in a new tab instead.
+        const newTab = window.open(blobUrl, '_blank');
+        if (!newTab) window.location.href = blobUrl;
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      } else {
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+      }
+    } catch (err) {
+      console.error('Certificate download failed:', err);
+    }
+  };
 
   return (
     <div
@@ -496,7 +520,7 @@ export default function CertificateVerifyPage({ certificateId, onGoHome }) {
           <div style={{ padding: '0 28px 28px', textAlign: 'center' }}>
             <a
               href={downloadUrl}
-              download
+              onClick={handleDownload}
               aria-label={`Download certificate for ${cert.student_name}`}
               style={{
                 display: 'inline-flex',

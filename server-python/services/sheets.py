@@ -1,8 +1,22 @@
+import asyncio
 import os
 from datetime import datetime
 from typing import Any, Dict
 import gspread
 from google.oauth2.service_account import Credentials
+
+FORMULA_TRIGGERS = ("=", "+", "-", "@", "\t", "\r")
+
+def _neutralize_formula(value: Any) -> Any:
+    """Prefix spreadsheet formula triggers with an apostrophe so the value is treated as text.
+
+    Mitigates CSV/spreadsheet formula injection (CWE-1236): a cell beginning with
+    =, +, -, @, tab, or CR would otherwise be evaluated as a live formula when the
+    sheet is opened.
+    """
+    if isinstance(value, str) and value and value[0] in FORMULA_TRIGGERS:
+        return "'" + value
+    return value
 
 class SheetsService:
     def __init__(self) -> None:
@@ -37,23 +51,26 @@ class SheetsService:
         sheet = self.client.open_by_key(self.sheet_id).worksheet(worksheet_name)
         row = [
             datetime.now().isoformat(),
-            form_data["name"],
-            form_data["email"],
-            form_data["whatsapp"],
-            form_data["year"],
-            form_data["branch"],
-            form_data["section"],
-            form_data.get("reason") or "",
+            _neutralize_formula(form_data["name"]),
+            _neutralize_formula(form_data["email"]),
+            _neutralize_formula(form_data["whatsapp"]),
+            _neutralize_formula(form_data["year"]),
+            _neutralize_formula(form_data["branch"]),
+            _neutralize_formula(form_data["section"]),
+            _neutralize_formula(form_data.get("reason") or ""),
         ]
         sheet.append_row(row)
 
     async def append_membership(self, form_data: Dict[str, Any]) -> None:
-        self._append_to_worksheet("Membership", form_data)
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self._append_to_worksheet, "Membership", form_data)
 
     async def append_recruitment(self, form_data: Dict[str, Any]) -> None:
-        self._append_to_worksheet("Recruitment", form_data)
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self._append_to_worksheet, "Recruitment", form_data)
 
     async def append_core_team_application(self, form_data: Dict[str, Any]) -> None:
-        self._append_to_worksheet("CoreTeamApplications", form_data)
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self._append_to_worksheet, "CoreTeamApplications", form_data)
 
 sheets_service = SheetsService()

@@ -1,14 +1,115 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { events as fallbackEvents } from '../../data/eventsData';
 import { BannerOrbs } from '../../shared/MotionLayer';
 import Footer from '../../shared/Footer';
 import { DynamicIcon } from '../../shared/Icons';
-import PersonalizedFeed from '../../components/recommendation/PersonalizedFeed';
+import PersonalizedFeed from '../../components/recommendations/PersonalizedFeed';
+import EventCountdown from '../../components/events/EventCountdown.jsx';
+import { useRecommendations } from '../../hooks/useRecommendations';
+import { getEventCountdownStatus, parseDate } from '../../hooks/useCountdown.js';
 import EventCalendarView from '../../components/calendar/EventCalendarView';
+import { useStudentAuth } from '../../context/StudentAuthContext';
+import { EventCardSkeleton } from '../../components/ui/skeleton/EventCardSkeleton';
 
-export default function EventsPage({ onBack, onEventClick, events = fallbackEvents }) {
+export default function EventsPage({
+  onBack,
+  onEventClick,
+  events = fallbackEvents,
+  loading = false,
+}) {
+  const { user } = useStudentAuth();
   const [view, setView] = useState('timeline');
   const [recommendationView, setRecommendationView] = useState(false);
+  const [now] = useState(() => Date.now());
+  const [filters, setFilters] = useState({
+    startDate: '',
+    endDate: '',
+    category: '',
+    location: '',
+    search: '',
+  });
+  const EVENTS_PER_PAGE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const getEffectiveStatus = (ev) => {
+    if (ev.status === 'completed') return 'completed';
+    const startDate = ev.startDate ?? ev.date;
+    const endDate = ev.endDate ?? ev.date;
+    return getEventCountdownStatus({ startDate, endDate });
+  };
+
+  const filteredEvents = useMemo(() => {
+    return events.filter((ev) => {
+      const eventDate = new Date(ev.startDate ?? ev.date);
+
+      if (filters.startDate && eventDate < new Date(filters.startDate)) {
+        return false;
+      }
+
+      if (filters.endDate && eventDate > new Date(filters.endDate)) {
+        return false;
+      }
+
+      if (
+        filters.category &&
+        !(ev.tags || []).join(' ').toLowerCase().includes(filters.category.toLowerCase())
+      ) {
+        return false;
+      }
+
+      if (
+        filters.location &&
+        !(ev.description || '').toLowerCase().includes(filters.location.toLowerCase())
+      ) {
+        return false;
+      }
+
+      if (
+        filters.search &&
+        !(
+          ev.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+          ev.description?.toLowerCase().includes(filters.search.toLowerCase())
+        )
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [events, filters]);
+
+  const sortedEvents = useMemo(() => {
+    return [...filteredEvents]
+      .map((ev) => ({
+        ...ev,
+        status: getEffectiveStatus(ev),
+      }))
+      .sort((a, b) => {
+        const da = parseDate(a.startDate ?? a.date)?.getTime() ?? 0;
+        const db = parseDate(b.startDate ?? b.date)?.getTime() ?? 0;
+
+        return da - db;
+      });
+  }, [filteredEvents]);
+
+  // Reset to page 1 when filters change. Adjusting state during render
+  // (rather than in a useEffect) avoids an extra cascading render pass —
+  // this is React's recommended pattern for 'resetting state when a prop
+  // changes' (https://react.dev/learn/you-might-not-need-an-effect).
+  const [prevFilters, setPrevFilters] = useState(filters);
+  if (filters !== prevFilters) {
+    setPrevFilters(filters);
+    setCurrentPage(1);
+  }
+
+  const totalPages = Math.max(1, Math.ceil(sortedEvents.length / EVENTS_PER_PAGE));
+
+  const paginatedEvents = useMemo(() => {
+    const start = (currentPage - 1) * EVENTS_PER_PAGE;
+    return sortedEvents.slice(start, start + EVENTS_PER_PAGE);
+  }, [sortedEvents, currentPage]);
+
+  const { recommendations, loading: recsLoading } = useRecommendations(user?.sub || user?.id || '');
 
   const buildGradient = (ev) => {
     if (ev.gradientColors?.length > 1) {
@@ -19,30 +120,6 @@ export default function EventsPage({ onBack, onEventClick, events = fallbackEven
     }
     return null;
   };
-
-  const now = Date.now();
-  const parseDate = (ev) => {
-    const raw = ev.dateText ?? ev.date ?? '';
-    const d = new Date(raw);
-    return isNaN(d) ? null : d;
-  };
-  const getEffectiveStatus = (ev) => {
-    if (ev.status === 'completed') return 'completed';
-    const d = parseDate(ev);
-    if (d && d.getTime() < now) return 'completed'; // date passed → auto-complete
-    return ev.status || 'upcoming';
-  };
-
-  const sortedEvents = [...events]
-    .map((ev) => ({ ...ev, status: getEffectiveStatus(ev) }))
-    .sort((a, b) => {
-      const aIsUpcoming = a.status !== 'completed';
-      const bIsUpcoming = b.status !== 'completed';
-      if (aIsUpcoming !== bIsUpcoming) return bIsUpcoming ? 1 : -1;
-      const da = parseDate(a)?.getTime() ?? 0;
-      const db = parseDate(b)?.getTime() ?? 0;
-      return aIsUpcoming ? da - db : db - da;
-    });
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -222,17 +299,24 @@ export default function EventsPage({ onBack, onEventClick, events = fallbackEven
       </div>
 
       <div className="container">
-        {recommendationView ? (
-          <PersonalizedFeed events={sortedEvents} onEventClick={onEventClick} />
+        {loading ? (
+          <EventCardSkeleton count={3} />
+        ) : recommendationView ? (
+          <PersonalizedFeed
+            events={recommendations}
+            loading={recsLoading}
+            onEventClick={onEventClick}
+          />
         ) : view === 'timeline' ? (
+          <>
           <div className="events-timeline ns-reveal">
-            {sortedEvents.map((ev, i) => {
-              const hasDetailPage = !!ev.hasDetailPage;
+            {paginatedEvents.map((ev, i) => {
+              const hasDetailPage = ev.hasDetailPage !== false;
               const dynamicGradient = buildGradient(ev);
               const glowColor = ev.gradientColors?.[0] || null;
               return (
                 <div className="timeline-item" key={ev.id}>
-                  <div className={`timeline-dot${ev.status === 'upcoming' ? ' upcoming' : ''}`} />
+                  <div className={`timeline-dot${ev.status !== 'completed' ? ' upcoming' : ''}`} />
                   <div
                     className={`timeline-card shimmer ${i % 2 === 0 ? 'pop-left' : 'pop-right'}`}
                     style={{
@@ -356,6 +440,7 @@ export default function EventsPage({ onBack, onEventClick, events = fallbackEven
                     >
                       {ev.description}
                     </p>
+                    <EventCountdown event={ev} />
                     <div
                       style={{
                         display: 'flex',
@@ -376,6 +461,20 @@ export default function EventsPage({ onBack, onEventClick, events = fallbackEven
                               style={{ marginRight: '4px' }}
                             />{' '}
                             Completed
+                          </>
+                        ) : ev.status === 'live' ? (
+                          <>
+                            <DynamicIcon
+                              name="PlayCircle"
+                              size={11}
+                              style={{ marginRight: '4px' }}
+                            />{' '}
+                            Live Now
+                          </>
+                        ) : ev.status === 'starting-soon' ? (
+                          <>
+                            <DynamicIcon name="Clock" size={11} style={{ marginRight: '4px' }} />{' '}
+                            Starting Soon
                           </>
                         ) : (
                           <>
@@ -406,32 +505,170 @@ export default function EventsPage({ onBack, onEventClick, events = fallbackEven
               );
             })}
 
-            <div className="timeline-item">
-              <div className="timeline-dot upcoming" />
-              <div
-                className="timeline-card pop-in fired"
+            {currentPage === totalPages && (
+              <div className="timeline-item">
+                <div className="timeline-dot upcoming" />
+                <div
+                  className="timeline-card pop-in fired"
+                  style={{
+                    textAlign: 'center',
+                    color: 'var(--t3)',
+                  }}
+                >
+                  <DynamicIcon
+                    name="Rocket"
+                    size={24}
+                    style={{ color: 'var(--c1)', marginBottom: '8px' }}
+                  />
+                  <p style={{ marginTop: '6px', fontSize: '.84rem' }}>
+                    More events coming soon. Watch this space!
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {totalPages > 1 && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '10px',
+                marginTop: '32px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <button
+                onClick={() => {
+                  setCurrentPage((p) => Math.max(1, p - 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={currentPage === 1}
                 style={{
-                  textAlign: 'center',
-                  color: 'var(--t3)',
-                  animationDelay: `${sortedEvents.length * 0.11}s`,
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--bdr)',
+                  background: 'var(--card)',
+                  color: currentPage === 1 ? 'var(--t3)' : 'var(--t1)',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  fontSize: '.82rem',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 600,
+                  opacity: currentPage === 1 ? 0.5 : 1,
                 }}
               >
-                <DynamicIcon
-                  name="Rocket"
-                  size={24}
-                  style={{ color: 'var(--c1)', marginBottom: '8px' }}
-                />
-                <p style={{ marginTop: '6px', fontSize: '.84rem' }}>
-                  More events coming soon. Watch this space!
-                </p>
-              </div>
+                ← Previous
+              </button>
+              <span
+                style={{
+                  fontSize: '.82rem',
+                  color: 'var(--t2)',
+                  fontFamily: "'Space Mono', monospace",
+                  padding: '0 8px',
+                }}
+              >
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => {
+                  setCurrentPage((p) => Math.min(totalPages, p + 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--bdr)',
+                  background: 'var(--card)',
+                  color: currentPage === totalPages ? 'var(--t3)' : 'var(--t1)',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  fontSize: '.82rem',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 600,
+                  opacity: currentPage === totalPages ? 0.5 : 1,
+                }}
+              >
+                Next →
+              </button>
             </div>
-          </div>
+          )}
+          </>
         ) : (
           <EventCalendarView events={sortedEvents} onEventClick={onEventClick} />
         )}
       </div>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '28px',
+          alignItems: 'center',
+        }}
+      >
+        <input
+          type="date"
+          value={filters.startDate}
+          onChange={(e) =>
+            setFilters((p) => ({
+              ...p,
+              startDate: e.target.value,
+            }))
+          }
+        />
 
+        <input
+          type="date"
+          value={filters.endDate}
+          onChange={(e) =>
+            setFilters((p) => ({
+              ...p,
+              endDate: e.target.value,
+            }))
+          }
+        />
+
+        <select
+          value={filters.category}
+          onChange={(e) =>
+            setFilters((p) => ({
+              ...p,
+              category: e.target.value,
+            }))
+          }
+        >
+          <option value="">All Categories</option>
+          <option value="workshop">Workshop</option>
+          <option value="hackathon">Hackathon</option>
+          <option value="seminar">Seminar</option>
+          <option value="competition">Competition</option>
+        </select>
+
+        <input
+          type="text"
+          placeholder="Location"
+          value={filters.location}
+          onChange={(e) =>
+            setFilters((p) => ({
+              ...p,
+              location: e.target.value,
+            }))
+          }
+        />
+
+        <input
+          type="text"
+          placeholder="Search events..."
+          value={filters.search}
+          onChange={(e) =>
+            setFilters((p) => ({
+              ...p,
+              search: e.target.value,
+            }))
+          }
+        />
+      </div>
       <Footer />
     </div>
   );

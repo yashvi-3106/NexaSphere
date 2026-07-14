@@ -1,5 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { DynamicIcon } from '../../shared/Icons';
+import EventCountdown from '../../components/events/EventCountdown.jsx';
+import { getEventCountdownStatus, parseDate } from '../../hooks/useCountdown.js';
+import { WalkthroughWrapper } from '../../components/walkthrough/WalkthroughWrapper.jsx';
+import './EventsSection.css';
 
 export default function EventsSection({ onEventClick, events = [] }) {
   const buildGradient = (ev) => {
@@ -12,21 +16,24 @@ export default function EventsSection({ onEventClick, events = [] }) {
     return null;
   };
 
+  const pendingAnimationListenersRef = useRef([]);
   useEffect(() => {
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
           if (e.isIntersecting && !e.target.classList.contains('fired')) {
             e.target.classList.add('fired');
-            e.target.addEventListener(
-              'animationend',
-              () => {
-                e.target.style.opacity = '1';
-                e.target.style.transform = 'none';
-              },
-              { once: true }
-            );
-            obs.unobserve(e.target);
+            const target = e.target;
+            const handler = () => {
+              target.style.opacity = '1';
+              target.style.transform = 'none';
+              pendingAnimationListenersRef.current = pendingAnimationListenersRef.current.filter(
+                (entry) => entry.target !== target
+              );
+            };
+            target.addEventListener('animationend', handler, { once: true });
+            pendingAnimationListenersRef.current.push({ target, handler });
+            obs.unobserve(target);
           }
         });
       },
@@ -37,21 +44,20 @@ export default function EventsSection({ onEventClick, events = [] }) {
         '#section-events .pop-in,#section-events .pop-left,#section-events .pop-right,#section-events .pop-word'
       )
       .forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
+    return () => {
+      obs.disconnect();
+      pendingAnimationListenersRef.current.forEach(({ target, handler }) => {
+        target.removeEventListener('animationend', handler);
+      });
+      pendingAnimationListenersRef.current = [];
+    };
   }, []);
 
-  // Auto-detect: if date has passed, treat as completed regardless of stored status
-  const now = Date.now();
-  const parseDate = (ev) => {
-    const raw = ev.dateText ?? ev.date ?? '';
-    const d = new Date(raw);
-    return isNaN(d) ? null : d;
-  };
   const getEffectiveStatus = (ev) => {
     if (ev.status === 'completed') return 'completed';
-    const d = parseDate(ev);
-    if (d && d.getTime() < now) return 'completed'; // date passed → auto-complete
-    return ev.status || 'upcoming';
+    const startDate = ev.startDate ?? ev.date;
+    const endDate = ev.endDate ?? ev.date;
+    return getEventCountdownStatus({ startDate, endDate });
   };
 
   // Sort: upcoming first (earliest date first), then completed (most recent first)
@@ -61,8 +67,8 @@ export default function EventsSection({ onEventClick, events = [] }) {
       const aIsUpcoming = a._effectiveStatus !== 'completed';
       const bIsUpcoming = b._effectiveStatus !== 'completed';
       if (aIsUpcoming !== bIsUpcoming) return bIsUpcoming ? 1 : -1;
-      const da = parseDate(a)?.getTime() ?? 0;
-      const db = parseDate(b)?.getTime() ?? 0;
+      const da = parseDate(a.startDate ?? a.date)?.getTime() ?? 0;
+      const db = parseDate(b.startDate ?? b.date)?.getTime() ?? 0;
       return aIsUpcoming ? da - db : db - da;
     });
 
@@ -77,15 +83,16 @@ export default function EventsSection({ onEventClick, events = [] }) {
         </div>
         <div className="events-timeline">
           {sortedEvents.map((ev, i) => {
-            const hasDetailPage = !!ev.hasDetailPage;
+            const hasDetailPage = ev.hasDetailPage !== false;
             const dynamicGradient = buildGradient(ev);
             const glowColor = ev.gradientColors?.[0] || null;
             return (
               <div className="timeline-item" key={ev.id}>
                 <div
-                  className={`timeline-dot${ev._effectiveStatus === 'upcoming' ? ' upcoming' : ''}`}
+                  className={`timeline-dot${ev._effectiveStatus !== 'completed' ? ' upcoming' : ''}`}
                 />
-                <div
+                <WalkthroughWrapper
+                  stepId={i === 0 ? 'register_event' : null}
                   className={`timeline-card shimmer ${i % 2 === 0 ? 'pop-left' : 'pop-right'}`}
                   style={{
                     animationDelay: `${i * 0.11}s`,
@@ -206,6 +213,7 @@ export default function EventsSection({ onEventClick, events = [] }) {
                   >
                     {ev.description}
                   </p>
+                  <EventCountdown event={ev} />
                   <div
                     style={{
                       display: 'flex',
@@ -226,6 +234,16 @@ export default function EventsSection({ onEventClick, events = [] }) {
                             style={{ marginRight: '4px' }}
                           />{' '}
                           Completed
+                        </>
+                      ) : ev._effectiveStatus === 'live' ? (
+                        <>
+                          <DynamicIcon name="PlayCircle" size={11} style={{ marginRight: '4px' }} />{' '}
+                          Live Now
+                        </>
+                      ) : ev._effectiveStatus === 'starting-soon' ? (
+                        <>
+                          <DynamicIcon name="Clock" size={11} style={{ marginRight: '4px' }} />{' '}
+                          Starting Soon
                         </>
                       ) : (
                         <>
@@ -251,7 +269,7 @@ export default function EventsSection({ onEventClick, events = [] }) {
                       </span>
                     ))}
                   </div>
-                </div>
+                </WalkthroughWrapper>
               </div>
             );
           })}

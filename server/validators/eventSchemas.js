@@ -34,7 +34,12 @@ const tagsSchema = z
       .map((t) => t.trim())
       .filter(Boolean);
   })
-  .transform((arr) => arr.map((t) => String(t).trim()).filter(Boolean).slice(0, 12))
+  .transform((arr) =>
+    arr
+      .map((t) => String(t).trim())
+      .filter(Boolean)
+      .slice(0, 12)
+  )
   .optional()
   .default([]);
 
@@ -48,6 +53,10 @@ export const eventSchema = z
     status: z.enum(['upcoming', 'completed']).optional().default('completed'),
     icon: z.string().trim().max(32).optional().default('Pin'),
     tags: tagsSchema,
+    seriesId: z.string().optional().nullable(),
+    recurrencePattern: z.enum(['daily', 'weekly', 'monthly', 'custom']).optional().nullable(),
+    recurrenceEndDate: z.string().optional().nullable(),
+    occurrenceIndex: z.number().int().optional().nullable(),
   })
   .transform((data) => {
     // Normalize fields to match DB expectations used previously.
@@ -57,8 +66,8 @@ export const eventSchema = z
       String(data.shortName || data.name)
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '') || generatePrefixedId('event');
-
+        .replace(/^-+|-+$/g, '') ||
+      generatePrefixedId('event');
 
     return {
       ...data,
@@ -70,6 +79,9 @@ export const eventSchema = z
       description: String(data.description),
       icon: String(data.icon || 'Pin').slice(0, 32),
       tags: Array.isArray(data.tags) ? data.tags : [],
+      seriesId: data.seriesId || null,
+      recurrencePattern: data.recurrencePattern || null,
+      recurrenceEndDate: data.recurrenceEndDate || null,
+      occurrenceIndex: data.occurrenceIndex || null,
     };
   });
-
