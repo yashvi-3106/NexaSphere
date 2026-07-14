@@ -1,5 +1,17 @@
 import { withDb } from './db.js';
 
+function parsePostgresArray(val) {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      const content = trimmed.slice(1, -1).trim();
+      return content ? content.split(',').map(item => item.trim().replace(/^"|"$/g, '')) : [];
+    }
+  }
+  return [];
+}
+
 function mapRow(row) {
   return {
     id: row.id,
@@ -9,7 +21,7 @@ function mapRow(row) {
     description: row.description,
     status: row.status,
     icon: row.icon,
-    tags: Array.isArray(row.tags) ? row.tags : row.tags ?? [],
+    tags: parsePostgresArray(row.tags),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -81,10 +93,18 @@ export const eventsRepository = {
       let paramIndex = 2;   // Dynamic parameters start at $2
 
       for (const key of keys) {
-        // Ensure the key exists in our map (prevents arbitrary injection of unmapped properties)
         if (fieldMap[key] !== undefined) {
           setClauses.push(`${fieldMap[key]} = $${paramIndex}`);
-          values.push(patch[key]); // This safely passes explicit nulls, strings, etc.
+          
+          // Ensure arrays are passed in a format pg-driver handles natively or as clean nulls
+          let val = patch[key];
+          if (key === 'tags' && Array.isArray(val)) {
+            // Converts JS array directly to PG array format if driver needs it, 
+            // or lets the driver serialize it safely.
+            val = val; 
+          }
+          
+          values.push(val);
           paramIndex++;
         }
       }
