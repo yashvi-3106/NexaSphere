@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -10,9 +11,9 @@ router.get('/', async (req, res) => {
     const forms = await prisma.form.findMany({
       include: { fields: true }
     });
-    res.json(forms);
+    sendSuccess(res, forms);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendError(req, res, error.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -34,9 +35,9 @@ router.post('/', async (req, res) => {
       },
       include: { fields: true, logic: true }
     });
-    res.status(201).json(form);
+    sendSuccess(res, form, 201);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendError(req, res, error.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -59,9 +60,9 @@ router.post('/:id/responses', async (req, res) => {
       },
       include: { answers: true }
     });
-    res.status(201).json(response);
+    sendSuccess(res, response, 201);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendError(req, res, error.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -73,9 +74,9 @@ router.get('/:id/responses', async (req, res) => {
       where: { formId: id },
       include: { answers: { include: { field: true } } }
     });
-    res.json(responses);
+    sendSuccess(res, responses);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendError(req, res, error.message, 500, 'INTERNAL_ERROR');
   }
 });
 

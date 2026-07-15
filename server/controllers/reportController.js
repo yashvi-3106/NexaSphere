@@ -11,6 +11,7 @@ import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 const prisma = new PrismaClient();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -184,13 +185,13 @@ export async function runReport(type) {
 export async function triggerReport(req, res) {
   const { type } = req.body;
   if (!['daily_attendance', 'weekly_analytics'].includes(type)) {
-    return res.status(400).json({ error: 'Invalid report type' });
+    return sendError(req, res, 'Invalid report type', 400, 'VALIDATION_ERROR');
   }
   try {
     const report = await runReport(type);
-    return res.json({ success: true, report });
+    return sendSuccess(res, { report });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -213,7 +214,7 @@ export async function getArchive(req, res) {
     prisma.archivedReport.count({ where }),
   ]);
 
-  return res.json({ reports, total, page: Number(page), pages: Math.ceil(total / take) });
+  return sendSuccess(res, { reports, total, page: Number(page), pages: Math.ceil(total / take) });
 }
 
 /**
@@ -221,12 +222,12 @@ export async function getArchive(req, res) {
  */
 export async function downloadReport(req, res) {
   const report = await prisma.archivedReport.findUnique({ where: { id: req.params.id } });
-  if (!report) return res.status(404).json({ error: 'Report not found' });
+  if (!report) return sendError(req, res, 'Report not found', 404, 'NOT_FOUND');
 
   try {
     await fs.access(report.filePath);
   } catch {
-    return res.status(404).json({ error: 'File not found on disk' });
+    return sendError(req, res, 'File not found on disk', 404, 'NOT_FOUND');
   }
 
   res.setHeader('Content-Disposition', `attachment; filename="${report.filename}"`);
@@ -239,7 +240,7 @@ export async function downloadReport(req, res) {
  */
 export async function getScheduleConfigs(req, res) {
   const configs = await prisma.reportScheduleConfig.findMany();
-  return res.json({ configs });
+  return sendSuccess(res, { configs });
 }
 
 /**
@@ -250,7 +251,7 @@ export async function upsertScheduleConfig(req, res) {
   const { reportType, cronExpression, recipients, format = 'csv', enabled = true } = req.body;
 
   if (!reportType || !cronExpression) {
-    return res.status(400).json({ error: 'reportType and cronExpression required' });
+    return sendError(req, res, 'reportType and cronExpression required', 400, 'VALIDATION_ERROR');
   }
 
   const config = await prisma.reportScheduleConfig.upsert({
@@ -274,5 +275,5 @@ export async function upsertScheduleConfig(req, res) {
   const { reloadJob } = await import('../jobs/reportScheduler.js');
   reloadJob(reportType, config);
 
-  return res.json({ success: true, config });
+  return sendSuccess(res, { config });
 }

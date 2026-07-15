@@ -1,4 +1,5 @@
 import { segmentationService } from '../services/segmentationService.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 function wrapAsync(fn) {
   return (req, res, next) => {
@@ -8,37 +9,37 @@ function wrapAsync(fn) {
 
 export const createSegment = wrapAsync(async (req, res) => {
   const segment = await segmentationService.createSegment(req.body);
-  res.status(201).json({ success: true, segment });
+  sendSuccess(res, { segment }, 201);
 });
 
 export const getSegments = wrapAsync(async (req, res) => {
   const segments = await segmentationService.getSegments();
-  res.json({ success: true, segments });
+  sendSuccess(res, { segments });
 });
 
 export const getSegmentById = wrapAsync(async (req, res) => {
   const segment = await segmentationService.getSegmentById(req.params.id);
-  if (!segment) return res.status(404).json({ error: 'Segment not found' });
-  res.json({ success: true, segment });
+  if (!segment) return sendError(req, res, 'Segment not found', 404, 'NOT_FOUND');
+  sendSuccess(res, { segment });
 });
 
 export const updateSegment = wrapAsync(async (req, res) => {
   const segment = await segmentationService.updateSegment(req.params.id, req.body);
-  res.json({ success: true, segment });
+  sendSuccess(res, { segment });
 });
 
 export const deleteSegment = wrapAsync(async (req, res) => {
   const success = await segmentationService.deleteSegment(req.params.id);
-  if (!success) return res.status(404).json({ error: 'Segment not found' });
-  res.json({ success: true });
+  if (!success) return sendError(req, res, 'Segment not found', 404, 'NOT_FOUND');
+  sendSuccess(res, { success: true });
 });
 
 export const getSegmentUsers = wrapAsync(async (req, res) => {
   const users = await segmentationService.getSegmentUsers(req.params.id);
-  res.json({ success: true, users, count: users.length });
+  sendSuccess(res, { users, count: users.length });
 });
 
 export const triggerAutoSegmentation = wrapAsync(async (req, res) => {
   await segmentationService.runAutoSegmentation();
-  res.json({ success: true, message: 'Auto-segmentation completed' });
+  sendSuccess(res, { message: 'Auto-segmentation completed' });
 });

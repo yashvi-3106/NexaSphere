@@ -4,6 +4,7 @@ import * as moderationController from '../controllers/moderationController.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { validate } from '../middleware/validate.js';
 import { apiRateLimiter } from '../middleware/rateLimiter.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 import {
   aiCheckSchema,
   createFlagSchema,
@@ -26,12 +27,12 @@ router.post('/ai-check', apiRateLimiter, validate(aiCheckSchema), requireStudent
   try {
     const { content } = req.body || {};
     if (!content || typeof content !== 'string') {
-      return res.status(400).json({ error: 'content string is required' });
+      return sendError(req, res, 'content string is required', 400, 'VALIDATION_ERROR');
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.json({ flags: [], confidence: 0, explanation: 'AI moderation not configured' });
+      return sendSuccess(res, { flags: [], confidence: 0, explanation: 'AI moderation not configured' });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -56,14 +57,14 @@ router.post('/ai-check', apiRateLimiter, validate(aiCheckSchema), requireStudent
     const text = response.text();
     const parsed = JSON.parse(text);
 
-    return res.json({
+    return sendSuccess(res, {
       flags: parsed.categories?.map((cat) => ({ type: cat, confidence: parsed.confidence })) || [],
       confidence: parsed.confidence || 0.7,
       explanation: parsed.explanation,
     });
   } catch (error) {
     console.error('[AI Moderation] Error:', error.message);
-    return res.json({ flags: [], confidence: 0, explanation: 'AI moderation unavailable' });
+    return sendSuccess(res, { flags: [], confidence: 0, explanation: 'AI moderation unavailable' });
   }
 });
 

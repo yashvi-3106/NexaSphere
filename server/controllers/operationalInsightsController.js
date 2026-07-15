@@ -1,79 +1,80 @@
 const operationalInsightsService = require("../services/operationalInsightsService");
+const { sendSuccess } = require("../utils/responseHelper.js");
 
 exports.getDashboardOverview = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getDashboardOverview()
   );
 };
 
 exports.getSystemHealth = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getSystemHealth()
   );
 };
 
 exports.getActiveUsers = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getActiveUsers()
   );
 };
 
 exports.getApiTraffic = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getApiTraffic()
   );
 };
 
 exports.getDatabasePerformance = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getDatabasePerformance()
   );
 };
 
 exports.getBackgroundJobs = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getBackgroundJobs()
   );
 };
 
 exports.getStorageUsage = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getStorageUsage()
   );
 };
 
 exports.getNotificationStats = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getNotificationStats()
   );
 };
 
 exports.getErrorLogs = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getErrorLogs()
   );
 };
 
 exports.getMaintenanceSchedule = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getMaintenanceSchedule()
   );
 };
 
 exports.getDependencies = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getDependencies()
   );
 };
 
 exports.getResourceUsage = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getResourceUsage()
   );
 };
 
 exports.getOperationalReports = (req, res) => {
-  res.status(200).json(
+  sendSuccess(res,
     operationalInsightsService.getOperationalReports()
   );
 };

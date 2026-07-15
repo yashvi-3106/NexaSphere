@@ -55,10 +55,7 @@ import { notificationAnalyticsRepository } from './repositories/notificationAnal
 import { notificationPreferencesRepository } from './repositories/notificationPreferencesRepository.js';
 import notificationsService from './services/notificationsService.js';
 import { initializeSentry, addSentryErrorHandler } from './utils/sentry.js';
-import morgan from 'morgan';
 import { recordCompressionRatio } from './observability/metrics.js';
-import { logEvent } from './controllers/analyticsController.js';
-import healthDashboardRouter from './routes/healthDashboard.js';
 import {
   apiRateLimiter,
   formRateLimiter,
@@ -123,6 +120,7 @@ import moderationRouter from './routes/moderation.js';
 import rbacRouter from './routes/rbac.js';
 import { validate } from './middleware/validate.js';
 import * as indexSchemas from './validators/routes/indexSchemas.js';
+import { sendSuccess, sendError, sendNoContent } from './utils/responseHelper.js';
 
 validateLimiters();
 
@@ -260,15 +258,7 @@ app.use(
           }
         : false,
 
-fix/search-clear-button-1487
- HEAD
     // Strict Content Security Policy with ALL directives
-
-    // ✅ FIXED: Strict Content Security Policy with ALL directives
- 921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
-
-    // ✅ FIXED: Strict Content Security Policy with ALL directives
- main
     contentSecurityPolicy: {
       useDefaults: false,
 
@@ -300,14 +290,6 @@ fix/search-clear-button-1487
 
         objectSrc: ["'none'"],
 
- fix/search-clear-button-1487
-
- feat/i18n-localization-1397
- feat/i18n-localization-1397
-
- fix/csp-helmet-config-1475
- main
- main
         // ✅ CRITICAL FIX: Missing directives added below
         baseUri: ["'self'"],                                    // Prevents <base> tag injection
         frameAncestors: ["'none'"],                             // Prevents clickjacking
@@ -315,38 +297,10 @@ fix/search-clear-button-1487
         workerSrc: ["'self'", 'blob:'],                         // Restricts web worker sources
         manifestSrc: ["'self'"],                                // Restricts manifest sources
         mediaSrc: ["'self'"],                                   // Restricts media sources
-fix/search-clear-button-1487
- HEAD
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
-
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'], // Restricts iframe sources
- 921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
-        childSrc: ["'none'"],                                   // Restricts child browsing contexts
-        upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
 
         frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'], // Restricts iframe sources
         childSrc: ["'none'"],                                   // Restricts child browsing contexts
         upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
-
-        baseUri: ["'self'"],
-
-        frameAncestors: ["'none'"],
-
-        formAction: ["'self'"],
-
-        upgradeInsecureRequests: [],
-
-        workerSrc: ["'self'", 'blob:'],
-
-        manifestSrc: ["'self'"],
-
-        mediaSrc: ["'self'"],
-
-        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
-
-        childSrc: ["'none'"],
- main
- main
 
         reportUri: '/api/v1/csp-violation',
       },
@@ -382,12 +336,7 @@ fix/search-clear-button-1487
     },
   })
 );
- fix/search-clear-button-1487
- HEAD feat/i18n-localization-1397
- feat/i18n-localization-1397
 
-
- main
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -417,11 +366,7 @@ app.use(
     maxAge: 86400,
   })
 );
-fix/search-clear-button-1487
- 921757a7 (fix(server): harden helmet CSP configuration with missing security directives)
 
- main
- main
 app.options('*', cors());
 
 app.use(enhancedTracingMiddleware);
@@ -591,13 +536,13 @@ const uploadWithMagicCheck = (req, res, next) => {
   upload.single('file')(req, res, (err) => {
     if (err) {
       if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(413).json({ error: 'File too large. Maximum size is 10MB.' });
+        return sendError(req, res, 'File too large. Maximum size is 10MB.', 413, 'INTERNAL_ERROR');
       }
-      return res.status(400).json({ error: err.message });
+      return sendError(req, res, err.message, 400, 'VALIDATION_ERROR');
     }
     if (req.file && !validateMagicBytes(req.file.path, req.file.mimetype)) {
       fs.unlink(req.file.path, () => {});
-      return res.status(400).json({ error: 'File content does not match its declared type.' });
+      return sendError(req, res, 'File content does not match its declared type.', 400, 'VALIDATION_ERROR');
     }
     next();
   });
@@ -1349,16 +1294,16 @@ app.get('/api/recommendations', searchRateLimiter, searchController.recommendati
 // Circuit Breaker Admin API
 app.get('/api/admin/circuit-breaker/metrics', adminAuth, async (req, res) => {
   const metrics = circuitBreakerRegistry.getAllMetrics();
-  return res.json({ circuitBreakers: metrics });
+  return sendSuccess(res, { circuitBreakers: metrics });
 });
 
 app.post('/api/admin/circuit-breaker/reset/:name', adminAuth, async (req, res) => {
   const { name } = req.params;
   const ok = circuitBreakerRegistry.reset(name);
   if (!ok) {
-    return res.status(404).json({ error: `No circuit breaker found: "${name}"` });
+    return sendError(req, res, `No circuit breaker found: "${name}"`, 404, 'NOT_FOUND');
   }
-  return res.json({ ok: true, message: `Circuit breaker "${name}" reset to CLOSED` });
+  return sendSuccess(res, { ok: true, message: `Circuit breaker "${name}" reset to CLOSED` });
 });
 
 app.post('/api/admin/circuit-breaker/retry/:name', adminAuth, async (req, res) => {
@@ -1366,12 +1311,12 @@ app.post('/api/admin/circuit-breaker/retry/:name', adminAuth, async (req, res) =
   try {
     const breaker = circuitBreakerRegistry.get(name);
     if (!breaker) {
-      return res.status(404).json({ error: `No circuit breaker found: "${name}"` });
+      return sendError(req, res, `No circuit breaker found: "${name}"`, 404, 'NOT_FOUND');
     }
     const result = await breaker.manualRetry();
-    return res.json({ ok: true, state: breaker.state, result });
+    return sendSuccess(res, { ok: true, state: breaker.state, result });
   } catch (err) {
-    return res.json({ ok: false, error: err.message });
+    return sendSuccess(res, { ok: false, error: err.message });
   }
 });
 
@@ -1484,9 +1429,9 @@ app.get('/api/notifications', adminAuth, async (req, res) => {
     const offset = parseInt(req.query.offset, 10) || 0;
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
     const list = await notificationsService.getNotifications(userId, offset, limit);
-    return res.json({ notifications: list });
+    return sendSuccess(res, { notifications: list });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -1494,9 +1439,9 @@ app.get('/api/notifications/preferences', adminAuth, async (req, res) => {
   try {
     const userId = req.query.userId || 'global';
     const prefs = await notificationPreferencesRepository.list(userId);
-    return res.json({ preferences: prefs });
+    return sendSuccess(res, { preferences: prefs });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 // Notification analytics (lightweight collector)
@@ -1504,7 +1449,7 @@ app.put('/api/notifications/preferences', validate(indexSchemas.notificationPref
   try {
     const userId = req.body.userId || 'global';
     const { category, email, push, in_app, sms, frequency, quiet_start, quiet_end, dnd } = req.body;
-    if (!category) return res.status(400).json({ error: 'category is required' });
+    if (!category) return sendError(req, res, 'category is required', 400, 'VALIDATION_ERROR');
     const pref = await notificationPreferencesRepository.set(userId, category, {
       email,
       push,
@@ -1515,9 +1460,9 @@ app.put('/api/notifications/preferences', validate(indexSchemas.notificationPref
       quiet_end,
       dnd,
     });
-    return res.json({ preference: pref });
+    return sendSuccess(res, { preference: pref });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -1526,16 +1471,14 @@ app.put('/api/notifications/preferences/bulk', validate(indexSchemas.bulkNotific
     const userId = req.body.userId || 'global';
     const { preferences } = req.body;
     if (!Array.isArray(preferences) || !preferences.length) {
-      return res.status(400).json({ error: 'preferences array is required' });
+      return sendError(req, res, 'preferences array is required', 400, 'VALIDATION_ERROR');
     }
     const results = await notificationPreferencesRepository.setBulk(userId, preferences);
-    return res.json({ preferences: results });
+    return sendSuccess(res, { preferences: results });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
-
- fix/search-clear-button-1487
 
 // Notification analytics (lightweight collector)
 app.post('/api/notifications/analytics', async (req, res) => {
@@ -1543,12 +1486,11 @@ app.post('/api/notifications/analytics', async (req, res) => {
     const event = req.body || {};
     // Minimal validation â€” in future route can forward to analytics pipeline
     console.log('[notification-analytics]', event.type || 'unknown', event);
-    return res.json({ ok: true });
+    return sendSuccess(res, { ok: true });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
-});
- main
+  });
 
 app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
   try {
@@ -1563,7 +1505,7 @@ app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
     });
     if (!credentials.success) {
       const firstIssue = credentials.error.issues[0];
-      return res.status(400).json({ error: firstIssue?.message || 'Invalid request body' });
+      return sendError(req, res, firstIssue?.message || 'Invalid request body', 400, 'VALIDATION_ERROR');
     }
     const { username, passkey } = credentials.data;
 
@@ -1574,10 +1516,7 @@ app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
     const content = portfolioContentSchema.safeParse(body);
     if (!content.success) {
       const firstIssue = content.error.issues[0];
-      return res.status(400).json({
-        error:
-          `Invalid portfolio content: ${firstIssue?.path?.join('.') || ''} ${firstIssue?.message || ''}`.trim(),
-      });
+      return sendError(req, res, `Invalid portfolio content: ${firstIssue?.path?.join('.') || ''} ${firstIssue?.message || ''}`.trim(), 400, 'VALIDATION_ERROR');
     }
 
     const existingPortfolio = await portfolioRepository.getByUsername(username);
@@ -1585,9 +1524,7 @@ app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
 
     const lockout = checkPasskeyLockout(username, ip);
     if (lockout) {
-      return res.status(429).json({
-        error: 'Too many failed passkey attempts. Please try again later.',
-      });
+      return sendError(req, res, 'Too many failed passkey attempts. Please try again later.', 429, 'RATE_LIMITED');
     }
 
     const isAuthorized = await portfolioRepository.verifyPasskey(username, passkey, {
@@ -1595,7 +1532,7 @@ app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
     });
     if (!isAuthorized) {
       recordFailedPasskeyAttempt(username, ip);
-      return res.status(401).json({ error: 'Incorrect passkey for this username' });
+      return sendError(req, res, 'Incorrect passkey for this username', 401, 'UNAUTHORIZED');
     }
 
     clearPasskeyAttempts(username, ip);
@@ -1605,15 +1542,13 @@ app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
       username,
       passkey,
     });
-    return res.json({ ok: true, portfolio: saved });
+    return sendSuccess(res, { ok: true, portfolio: saved });
   } catch (err) {
     if (err.code === '23505') {
-      return res
-        .status(409)
-        .json({ error: 'Username already exists. Another request may have just created it.' });
+      return sendError(req, res, 'Username already exists. Another request may have just created it.', 409, 'CONFLICT');
     }
     console.error('Error saving portfolio:', err);
-    return res.status(500).json({ error: err.message || 'Internal server error' });
+    return sendError(req, res, err.message || 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -1644,7 +1579,7 @@ function requireMentorshipAuth(req, res, next) {
       if (!err2 && req.studentUser) {
         return next();
       }
-      return res.status(401).json({ error: 'Unauthorized: Authentication required' });
+      return sendError(req, res, 'Unauthorized: Authentication required', 401, 'UNAUTHORIZED');
     });
   });
 }

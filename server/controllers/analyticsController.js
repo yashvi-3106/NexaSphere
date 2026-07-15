@@ -1,5 +1,6 @@
 import { analyticsService, FUNNEL_STEP_TYPES } from '../services/analyticsService.js';
 import { analyticsRepository } from '../repositories/analyticsRepository.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 function wrapAsync(fn) {
   return (req, res, next) => {
@@ -13,22 +14,22 @@ export const logEvent = wrapAsync(async (req, res) => {
   const sessionId = req.headers['x-session-id'] || req.ip;
 
   await analyticsService.logEvent({ type, userId, sessionId, path, metadata });
-  res.status(202).json({ success: true });
+  return sendSuccess(res, { success: true }, 202);
 });
 
 export const getDashboardSummary = wrapAsync(async (req, res) => {
   const summary = await analyticsService.getDashboardSummary();
-  res.json({ success: true, summary });
+  return sendSuccess(res, { summary });
 });
 
 export const getUserAnalytics = wrapAsync(async (req, res) => {
   const analytics = await analyticsService.getUserAnalytics();
-  res.json({ success: true, analytics });
+  return sendSuccess(res, { analytics });
 });
 
 export const getEngagementFunnel = wrapAsync(async (req, res) => {
   const funnel = await analyticsService.getEngagementFunnel();
-  res.json({ success: true, funnel });
+  return sendSuccess(res, { funnel });
 });
 
 /**
@@ -40,20 +41,17 @@ export const getCustomFunnel = wrapAsync(async (req, res) => {
   const { steps } = req.body;
 
   if (!Array.isArray(steps) || steps.length < 2) {
-    return res.status(400).json({ error: 'At least 2 funnel steps are required' });
+    return sendError(req, res, 'At least 2 funnel steps are required', 400, 'VALIDATION_ERROR');
   }
 
   // Validate step names against known types
   const invalid = steps.filter((s) => !FUNNEL_STEP_TYPES.includes(s));
   if (invalid.length > 0) {
-    return res.status(400).json({
-      error: `Invalid step type(s): ${invalid.join(', ')}`,
-      validTypes: FUNNEL_STEP_TYPES,
-    });
+    return sendError(req, res, `Invalid step type(s): ${invalid.join(', ')}`, 400, 'VALIDATION_ERROR', { validTypes: FUNNEL_STEP_TYPES });
   }
 
   const funnel = await analyticsService.getFunnelAnalysis(steps);
-  res.json({ success: true, funnel, validStepTypes: FUNNEL_STEP_TYPES });
+  return sendSuccess(res, { funnel, validStepTypes: FUNNEL_STEP_TYPES });
 });
 
 /**
@@ -61,13 +59,13 @@ export const getCustomFunnel = wrapAsync(async (req, res) => {
  * Returns the list of valid step types for the UI to build the step selector.
  */
 export const getFunnelStepTypes = wrapAsync(async (req, res) => {
-  res.json({ success: true, stepTypes: FUNNEL_STEP_TYPES });
+  return sendSuccess(res, { stepTypes: FUNNEL_STEP_TYPES });
 });
 
 export const executeCustomReport = wrapAsync(async (req, res) => {
   const { metric, timeRange } = req.body;
   const report = await analyticsService.executeCustomReport({ metric, timeRange });
-  res.json({ success: true, report });
+  return sendSuccess(res, { report });
 });
 
 export const saveCustomReport = wrapAsync(async (req, res) => {
@@ -78,77 +76,77 @@ export const saveCustomReport = wrapAsync(async (req, res) => {
     config,
     scheduleType,
   });
-  res.json({ success: true, report });
+  return sendSuccess(res, { report });
 });
 
 export const getCustomReports = wrapAsync(async (req, res) => {
   const reports = await analyticsService.getCustomReports();
-  res.json({ success: true, reports });
+  return sendSuccess(res, { reports });
 });
 
 export const startSession = wrapAsync(async (req, res) => {
   const sessionData = req.body; // { id, device, browser, os }
   sessionData.user_id = req.user?.id; // If authenticated
   const session = await analyticsRepository.createSession(sessionData);
-  res.status(201).json(session);
+  return sendSuccess(res, session, 201);
 });
 
 export const endSession = wrapAsync(async (req, res) => {
   const { sessionId } = req.params;
   const session = await analyticsRepository.endSession(sessionId);
-  res.json(session);
+  return sendSuccess(res, session);
 });
 
 export const ingestEvents = wrapAsync(async (req, res) => {
   const { sessionId, events } = req.body;
   const userId = req.user?.id;
   await analyticsService.processEventBatch(sessionId, userId, events);
-  res.status(201).json({ success: true });
+  return sendSuccess(res, { success: true }, 201);
 });
 
 export const saveRecording = wrapAsync(async (req, res) => {
   const { sessionId, eventsJson } = req.body;
   const rec = await analyticsRepository.saveRecording(sessionId, eventsJson);
-  res.status(201).json(rec);
+  return sendSuccess(res, rec, 201);
 });
 
 export const adminGetRecordings = wrapAsync(async (req, res) => {
   const recordings = await analyticsRepository.getRecordingsList();
-  res.json(recordings);
+  return sendSuccess(res, recordings);
 });
 
 export const adminGetRecording = wrapAsync(async (req, res) => {
   const { sessionId } = req.params;
   const events = await analyticsRepository.getRecording(sessionId);
-  res.json(events || []);
+  return sendSuccess(res, events || []);
 });
 
 export const adminGetHeatmap = wrapAsync(async (req, res) => {
   const { url } = req.query;
-  if (!url) return res.status(400).json({ error: 'url required' });
+  if (!url) return sendError(req, res, 'url required', 400, 'VALIDATION_ERROR');
   const data = await analyticsRepository.getHeatmapData(url);
-  res.json(data);
+  return sendSuccess(res, data);
 });
 
 export const adminGetSegments = wrapAsync(async (req, res) => {
   const segments = await analyticsRepository.getAllSegments();
-  res.json(segments);
+  return sendSuccess(res, segments);
 });
 
 export const adminCreateSegment = wrapAsync(async (req, res) => {
   const segment = await analyticsRepository.createSegment(req.body);
-  res.status(201).json(segment);
+  return sendSuccess(res, segment, 201);
 });
 
 export const adminPerformSegmentAction = wrapAsync(async (req, res) => {
   const { segmentId } = req.params;
   const result = await analyticsService.performSegmentAction(segmentId, req.body);
-  res.json(result);
+  return sendSuccess(res, result);
 });
 
 export const adminGetCohortAnalysis = wrapAsync(async (req, res) => {
   const { month } = req.query; // YYYY-MM
-  if (!month) return res.status(400).json({ error: 'month required' });
+  if (!month) return sendError(req, res, 'month required', 400, 'VALIDATION_ERROR');
   const data = await analyticsRepository.getCohortData(month);
-  res.json(data);
+  return sendSuccess(res, data);
 });

@@ -1,4 +1,5 @@
 import { studentUsersRepository } from '../repositories/studentUsersRepository.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 /**
  * Get Leaderboard lists sorted by XP score
@@ -29,10 +30,10 @@ export async function getLeaderboard(req, res, next) {
     });
 
     res.setHeader('X-Cache', hit ? 'HIT' : 'MISS');
-    return res.json(data);
+    return sendSuccess(res, data);
   } catch (error) {
     console.error('Failed to get leaderboard:', error);
-    return res.status(500).json({ error: 'Failed to retrieve leaderboard rankings.' });
+    return sendError(req, res, 'Failed to retrieve leaderboard rankings.', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -43,16 +44,16 @@ export async function awardXP(req, res, next) {
   try {
     const { userId, amount } = req.body;
     if (!userId) {
-      return res.status(400).json({ error: 'userId is required' });
+      return sendError(req, res, 'userId is required', 400, 'VALIDATION_ERROR');
     }
     const parsedAmount = parseInt(amount, 10);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      return res.status(400).json({ error: 'Valid positive amount is required' });
+      return sendError(req, res, 'Valid positive amount is required', 400, 'VALIDATION_ERROR');
     }
 
     const updatedUser = await studentUsersRepository.awardXP(userId, parsedAmount);
     if (!updatedUser) {
-      return res.status(404).json({ error: 'User not found' });
+      return sendError(req, res, 'User not found', 404, 'NOT_FOUND');
     }
 
     // Invalidate leaderboard cache (XP changed => ranking changed)
@@ -64,14 +65,13 @@ export async function awardXP(req, res, next) {
       // ignore cache invalidation failures
     }
 
-    return res.json({
-      success: true,
+    return sendSuccess(res, {
       xp: updatedUser.xp,
       level: updatedUser.level,
       badges: updatedUser.badges,
     });
   } catch (error) {
     console.error('Failed to award XP:', error);
-    return res.status(500).json({ error: 'Failed to award XP.' });
+    return sendError(req, res, 'Failed to award XP.', 500, 'INTERNAL_ERROR');
   }
 }

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { userGroupsRepository } from '../repositories/userGroupsRepository.js';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import { validate } from '../middleware/validate.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 import {
   groupIdParamsSchema,
   groupMemberParamsSchema,
@@ -19,10 +20,10 @@ router.use('/admin/groups', adminAuthMiddleware.requireAdmin);
 router.get('/admin/groups', async (req, res) => {
   try {
     const groups = await userGroupsRepository.listGroups();
-    res.json({ groups });
+    sendSuccess(res, { groups });
   } catch (err) {
     console.error('Error fetching groups:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -31,13 +32,13 @@ router.post('/admin/groups', validate(createGroupBodySchema), async (req, res) =
   try {
     const { name, description, permissions } = req.body;
     const group = await userGroupsRepository.createGroup({ name, description, permissions });
-    res.status(201).json({ group });
+    sendSuccess(res, { group }, 201);
   } catch (err) {
     if (err.code === '23505') {
-      return res.status(409).json({ error: 'Group name already exists' });
+      return sendError(req, res, 'Group name already exists', 409, 'CONFLICT');
     }
     console.error('Error creating group:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -45,11 +46,11 @@ router.post('/admin/groups', validate(createGroupBodySchema), async (req, res) =
 router.get('/admin/groups/:id', validate(groupIdParamsSchema, 'params'), async (req, res) => {
   try {
     const group = await userGroupsRepository.getGroupById(req.params.id);
-    if (!group) return res.status(404).json({ error: 'Group not found' });
-    res.json({ group });
+    if (!group) return sendError(req, res, 'Group not found', 404, 'NOT_FOUND');
+    sendSuccess(res, { group });
   } catch (err) {
     console.error('Error fetching group:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -57,11 +58,11 @@ router.get('/admin/groups/:id', validate(groupIdParamsSchema, 'params'), async (
 router.put('/admin/groups/:id', validate(groupIdParamsSchema, 'params'), validate(updateGroupBodySchema), async (req, res) => {
   try {
     const group = await userGroupsRepository.updateGroup(req.params.id, req.body);
-    if (!group) return res.status(404).json({ error: 'Group not found' });
-    res.json({ group });
+    if (!group) return sendError(req, res, 'Group not found', 404, 'NOT_FOUND');
+    sendSuccess(res, { group });
   } catch (err) {
     console.error('Error updating group:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -69,11 +70,11 @@ router.put('/admin/groups/:id', validate(groupIdParamsSchema, 'params'), validat
 router.delete('/admin/groups/:id', validate(groupIdParamsSchema, 'params'), async (req, res) => {
   try {
     const success = await userGroupsRepository.deleteGroup(req.params.id);
-    if (!success) return res.status(404).json({ error: 'Group not found' });
-    res.json({ success: true });
+    if (!success) return sendError(req, res, 'Group not found', 404, 'NOT_FOUND');
+    sendSuccess(res, { success: true });
   } catch (err) {
     console.error('Error deleting group:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -81,10 +82,10 @@ router.delete('/admin/groups/:id', validate(groupIdParamsSchema, 'params'), asyn
 router.get('/admin/groups/:id/members', validate(groupIdParamsSchema, 'params'), async (req, res) => {
   try {
     const members = await userGroupsRepository.getGroupMembers(req.params.id);
-    res.json({ members });
+    sendSuccess(res, { members });
   } catch (err) {
     console.error('Error fetching group members:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -93,10 +94,10 @@ router.post('/admin/groups/:id/members', validate(groupIdParamsSchema, 'params')
   try {
     const { studentIds } = req.body;
     const addedCount = await userGroupsRepository.addMembersToGroup(req.params.id, studentIds);
-    res.json({ addedCount });
+    sendSuccess(res, { addedCount });
   } catch (err) {
     console.error('Error adding members:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -107,11 +108,11 @@ router.delete('/admin/groups/:id/members/:studentId', validate(groupMemberParams
       req.params.id,
       req.params.studentId
     );
-    if (!success) return res.status(404).json({ error: 'Member not found in group' });
-    res.json({ success: true });
+    if (!success) return sendError(req, res, 'Member not found in group', 404, 'NOT_FOUND');
+    sendSuccess(res, { success: true });
   } catch (err) {
     console.error('Error removing member:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -136,10 +137,10 @@ router.post('/admin/groups/:id/email', validate(groupIdParamsSchema, 'params'), 
 
     // Send it immediately
     const stats = await emailCampaignService.sendCampaign(campaign.id);
-    res.json({ success: true, campaignId: campaign.id, stats });
+    sendSuccess(res, { success: true, campaignId: campaign.id, stats });
   } catch (err) {
     console.error('Error sending bulk email:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 

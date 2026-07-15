@@ -1,37 +1,38 @@
 import { subscriptionService } from '../services/subscriptionService.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 export async function listSubscriptions(req, res) {
   try {
     const subscriptions = subscriptionService.listAllSubscriptions();
-    res.json({ subscriptions });
+    sendSuccess(res, { subscriptions });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 }
 
 export async function getStats(req, res) {
   try {
     const subs = subscriptionService.listAllSubscriptions();
-    res.json({
+    sendSuccess(res, {
       total: subs.length,
       premium: subs.filter((s) => s.tier === 'premium').length,
       pro: subs.filter((s) => s.tier === 'pro').length,
       revenue: subs.reduce((sum, s) => sum + (s.price || 0), 0),
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 }
 
 export async function createSubscription(req, res) {
   try {
     const { userId, tierId } = req.body;
-    if (!userId || !tierId) return res.status(400).json({ error: 'userId and tierId required' });
+    if (!userId || !tierId) return sendError(req, res, 'userId and tierId required', 400, 'VALIDATION_ERROR');
     const result = subscriptionService.createSubscription(userId, tierId);
     subscriptionService.processPayment(userId, result.price);
-    res.status(201).json(result);
+    sendSuccess(res, result, 201);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -39,9 +40,9 @@ export async function cancelSubscription(req, res) {
   try {
     const { userId } = req.params;
     const result = subscriptionService.cancelSubscription(userId);
-    res.json(result);
+    sendSuccess(res, result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -49,8 +50,8 @@ export async function getBillingHistory(req, res) {
   try {
     const { userId } = req.params;
     const history = subscriptionService.getBillingHistory(userId);
-    res.json({ invoices: history });
+    sendSuccess(res, { invoices: history });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 }

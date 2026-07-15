@@ -1,3 +1,4 @@
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 import { withDb } from '../repositories/db.js';
 
 // NOTE: This domain does not use Prisma at runtime. Audit rows are written by
@@ -95,7 +96,7 @@ export const auditLogController = {
         };
       });
 
-      return res.json({
+      return sendSuccess(res, {
         logs,
         total,
         page,
@@ -104,7 +105,7 @@ export const auditLogController = {
       });
     } catch (error) {
       console.error('auditLogController.listLogs error:', error);
-      return res.status(500).json({ error: 'Failed to fetch audit logs' });
+      return sendError(req, res, 'Failed to fetch audit logs', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -146,10 +147,10 @@ export const auditLogController = {
         return { total, byAction, daily };
       });
 
-      return res.json(stats);
+      return sendSuccess(res, stats);
     } catch (error) {
       console.error('auditLogController.getStats error:', error);
-      return res.status(500).json({ error: 'Failed to fetch audit log stats' });
+      return sendError(req, res, 'Failed to fetch audit log stats', 500, 'INTERNAL_ERROR');
     }
   },
 };

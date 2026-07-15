@@ -3,6 +3,7 @@ import { portfolioExportService } from '../services/portfolioExportService.js';
 import { portfolioRepository } from '../repositories/portfolioRepository.js';
 import logger from '../utils/logger.js';
 import { validate } from '../middleware/validate.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 import {
   usernameParamsSchema,
   pdfQuerySchema,
@@ -28,7 +29,7 @@ router.get('/:username/pdf', validate(usernameParamsSchema, 'params'), validate(
   } catch (error) {
     logger.error('Error generating PDF', { error: error.message, username: req.params.username });
     const status = error.message.includes('not found') ? 404 : 500;
-    res.status(status).json({ success: false, error: error.message });
+    sendError(req, res, error.message, status, status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR');
   }
 });
 
@@ -44,8 +45,7 @@ router.get('/:username/website', validate(usernameParamsSchema, 'params'), valid
     });
 
     res.setHeader('Content-Type', 'application/json');
-    res.json({
-      success: true,
+    sendSuccess(res, {
       data: {
         html: result.html,
         css: result.css,
@@ -59,7 +59,7 @@ router.get('/:username/website', validate(usernameParamsSchema, 'params'), valid
       username: req.params.username,
     });
     const status = error.message.includes('not found') ? 404 : 500;
-    res.status(status).json({ success: false, error: error.message });
+    sendError(req, res, error.message, status, status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR');
   }
 });
 
@@ -70,16 +70,16 @@ router.get('/:username/qr-code', validate(usernameParamsSchema, 'params'), async
     const qrCode = await portfolioExportService.generateQRCode(portfolioUrl);
 
     if (!qrCode) {
-      return res.status(500).json({ success: false, error: 'Failed to generate QR code' });
+      return sendError(req, res, 'Failed to generate QR code', 500, 'INTERNAL_ERROR');
     }
 
-    res.json({ success: true, data: { qrCode, url: portfolioUrl } });
+    sendSuccess(res, { data: { qrCode, url: portfolioUrl } });
   } catch (error) {
     logger.error('Error generating QR code', {
       error: error.message,
       username: req.params.username,
     });
-    res.status(500).json({ success: false, error: error.message });
+    sendError(req, res, error.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -103,7 +103,7 @@ router.get('/:username/website/html', validate(usernameParamsSchema, 'params'), 
       username: req.params.username,
     });
     const status = error.message.includes('not found') ? 404 : 500;
-    res.status(status).json({ success: false, error: error.message });
+    sendError(req, res, error.message, status, status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR');
   }
 });
 
@@ -120,7 +120,7 @@ router.get('/:username/website/css', validate(usernameParamsSchema, 'params'), a
       error: error.message,
       username: req.params.username,
     });
-    res.status(500).json({ success: false, error: error.message });
+    sendError(req, res, error.message, 500, 'INTERNAL_ERROR');
   }
 });
 

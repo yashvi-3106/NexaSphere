@@ -1,4 +1,5 @@
 import { faqRepository } from '../repositories/faqRepository.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 export const faqController = {
   // Public endpoint
@@ -7,10 +8,10 @@ export const faqController = {
       const search = req.query.search || '';
       const category = req.query.category || null;
       const faqs = await faqRepository.getAll(search, category);
-      return res.json({ faqs });
+      return sendSuccess(res, { faqs });
     } catch (err) {
       console.error('Error fetching FAQs:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -19,10 +20,10 @@ export const faqController = {
     try {
       const { id } = req.params;
       await faqRepository.incrementViews(id);
-      return res.json({ success: true });
+      return sendSuccess(res, { success: true });
     } catch (err) {
       console.error('Error tracking FAQ view:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -30,10 +31,10 @@ export const faqController = {
   async adminGetFAQs(req, res) {
     try {
       const faqs = await faqRepository.getAdminAll();
-      return res.json({ faqs });
+      return sendSuccess(res, { faqs });
     } catch (err) {
       console.error('Error fetching Admin FAQs:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -42,13 +43,13 @@ export const faqController = {
     try {
       const { question, answer, category, is_active } = req.body;
       if (!question || !answer) {
-        return res.status(400).json({ error: 'Question and answer are required' });
+        return sendError(req, res, 'Question and answer are required', 400, 'VALIDATION_ERROR');
       }
       const faq = await faqRepository.create({ question, answer, category, is_active });
-      return res.status(201).json({ faq });
+      return sendSuccess(res, { faq }, 201);
     } catch (err) {
       console.error('Error creating FAQ:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -58,11 +59,11 @@ export const faqController = {
       const { id } = req.params;
       const { question, answer, category, is_active } = req.body;
       const updated = await faqRepository.update(id, { question, answer, category, is_active });
-      if (!updated) return res.status(404).json({ error: 'FAQ not found' });
-      return res.json({ faq: updated });
+      if (!updated) return sendError(req, res, 'FAQ not found', 404, 'NOT_FOUND');
+      return sendSuccess(res, { faq: updated });
     } catch (err) {
       console.error('Error updating FAQ:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -71,11 +72,11 @@ export const faqController = {
     try {
       const { id } = req.params;
       const deleted = await faqRepository.delete(id);
-      if (!deleted) return res.status(404).json({ error: 'FAQ not found' });
-      return res.json({ success: true });
+      if (!deleted) return sendError(req, res, 'FAQ not found', 404, 'NOT_FOUND');
+      return sendSuccess(res, { success: true });
     } catch (err) {
       console.error('Error deleting FAQ:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 };

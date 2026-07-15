@@ -177,18 +177,6 @@ export const activityAuthRateLimiter = rateLimit({
     });
   },
 });
-// Sync rate limiter — 10 requests per IP per 15 minutes
-export const syncRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: true,
-  handler: createLimiterHandler(
-    'Sync rate limit exceeded',
-    'Too many sync requests from this IP, please try again later.'
-  ),
-});
-
 // Portfolio update rate limiter — 10 requests per IP per 15 minutes
 export const portfolioRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

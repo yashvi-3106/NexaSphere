@@ -28,6 +28,7 @@ import * as portfolioAnalyticsController from '../controllers/portfolioAnalytics
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import { validate } from '../middleware/validate.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 import {
   awardXPSchema,
   exportPDFSchema,
@@ -48,13 +49,10 @@ import {
   createSubscriptionSchema,
   adminBannerBodySchema,
 } from '../validators/routes/apiSchemas.js';
-<<<<<<< HEAD
 import announcementPriorityRouter from "./announcementPriority.js";
 import eventConflictRouter from "./eventConflict.js";
 import waitlistRoutes from "./waitlist.js";
-=======
 import * as localAuthController from '../controllers/localAuthController.js';
->>>>>>> upstream/main
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
@@ -138,7 +136,7 @@ router.post('/account-recovery/request', authRateLimiter, validate(accountRecove
 
   await studentAuthService.createRecoveryRequest(email);
 
-  return res.json({
+  return sendSuccess(res, {
     success: true,
     message: 'If an account with that email exists, a recovery code has been sent.',
   });
@@ -148,7 +146,7 @@ router.post('/account-recovery/verify', authRateLimiter, validate(accountRecover
 
   const valid = await studentAuthService.verifyRecoveryCode(email, enteredCode);
 
-  return res.json({
+  return sendSuccess(res, {
     success: valid,
   });
 });
@@ -217,7 +215,7 @@ router.post(
 );
 router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, async (req, res) => {
   const logs = await auditLogRepository.searchAuditLogs(req.query);
-  return res.json({ logs });
+  return sendSuccess(res, { logs });
 });
 router.get('/api/admin/audit-logs/export', adminAuthMiddleware.requireAdmin, async (req, res) => {
   const csv = await auditLogRepository.exportAuditLogsCsv(req.query);
@@ -320,14 +318,14 @@ router.get(
       const username = String(req.query.username || '').trim();
       if (username) {
         const portfolio = await portfolioService.getByUsername(username);
-        return res.json(portfolio ? { portfolios: [portfolio] } : { portfolios: [] });
+        return sendSuccess(res, portfolio ? { portfolios: [portfolio] } : { portfolios: [] });
       }
       const portfolios = (await portfolioRepository.listAll)
         ? await portfolioRepository.listAll()
         : [];
-      return res.json({ portfolios });
+      return sendSuccess(res, { portfolios });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -340,11 +338,11 @@ router.delete(
       const username = String(req.params.username || '')
         .trim()
         .toLowerCase();
-      if (!username) return res.status(400).json({ error: 'Username required' });
+      if (!username) return sendError(req, res, 'Username required', 400, 'VALIDATION_ERROR');
       await portfolioRepository.delete(username);
-      return res.json({ ok: true });
+      return sendSuccess(res, { ok: true });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -356,14 +354,10 @@ router.get(
   portfolioAnalyticsController.getPortfolioAnalytics
 );
 
-<<<<<<< HEAD
 router.post(
   '/api/portfolio/:username/visit',
   portfolioAnalyticsController.recordPortfolioVisit
 );
-=======
-router.post('/api/portfolio/:username/visit', portfolioAnalyticsController.recordPortfolioVisit);
->>>>>>> upstream/main
 
 router.get(
   '/api/portfolio/:username/monthly-report',
@@ -380,9 +374,9 @@ router.get(
         .trim()
         .toLowerCase();
       const achievements = await achievementsRepository.getByUsername(username);
-      return res.json({ achievements });
+      return sendSuccess(res, { achievements });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -398,9 +392,9 @@ router.post(
         .toLowerCase();
 
       const achievement = await portfolioService.awardAchievement(username, req.body);
-      return res.status(201).json({ achievement });
+      return sendSuccess(res, { achievement }, 201);
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -423,9 +417,9 @@ router.delete(
         .toLowerCase();
       const name = String(req.params.name || '').trim();
       await portfolioService.removeAchievement(username, name);
-      return res.json({ ok: true });
+      return sendSuccess(res, { ok: true });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -439,41 +433,36 @@ router.get(
     try {
       const eventId = String(req.params.eventId || '').trim();
       const queue = waitingRoomService.getQueue(eventId);
-      return res.json({ queue, total: queue.length });
+      return sendSuccess(res, { queue, total: queue.length });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
 router.use('/api/admin/settings', adminAuthMiddleware.requireAdmin, settingsRouter);
 router.post('/api/admin/impersonate/stop', adminAuthMiddleware.requireAdmin, (req, res) => {
   impersonationService.stop(req.adminSession.token);
-  return res.json({ impersonating: false });
+  return sendSuccess(res, { impersonating: false });
 });
 router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (req, res) => {
   const active = impersonationService.getActive(req.adminSession.token);
-  return res.json({ impersonating: !!active, user: active?.targetUser || null });
-<<<<<<< HEAD
+  return sendSuccess(res, { impersonating: !!active, user: active?.targetUser || null });
 });
 router.use(
-"/api/announcements",
-announcementPriorityRouter
+  "/api/announcements",
+  announcementPriorityRouter
 );
-
 router.use("/api/events", eventConflictRouter);
-
 router.use(
   "/api/admin/waitlist",
   waitlistRoutes
-=======
-}); // Audit Log Viewer APIs
+);
+// Audit Log Viewer APIs
 router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
-
 router.get(
   '/api/admin/audit-logs/stats',
   adminAuthMiddleware.requireAdmin,
   auditLogController.getStats
->>>>>>> upstream/main
 );
 router.use(
   "/recommendations",

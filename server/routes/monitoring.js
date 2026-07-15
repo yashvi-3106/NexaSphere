@@ -24,18 +24,19 @@ import encryptionManager from '../utils/encryptionManager.js';
 import { databaseFailoverManager } from '../utils/databaseFailoverManager.js';
 import { apiSecurityManager } from '../utils/apiSecurityManager.js';
 import { deploymentStatus } from '../utils/serviceStatus.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 function requireMonitoringAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return sendError(req, res, 'Unauthorized', 401, 'UNAUTHORIZED');
   }
 
   const token = authHeader.slice(7).trim();
   const expectedToken = process.env.MONITORING_API_TOKEN;
 
   if (!expectedToken || token !== expectedToken) {
-    return res.status(403).json({ error: 'Forbidden' });
+    return sendError(req, res, 'Forbidden', 403, 'FORBIDDEN');
   }
 
   next();
@@ -77,7 +78,7 @@ router.get('/health', async (req, res) => {
   }
 
   const statusCode = health.status === 'healthy' ? 200 : 503;
-  res.status(statusCode).json(health);
+  sendSuccess(res, health, statusCode);
 });
 
 /**
@@ -101,18 +102,14 @@ router.get('/status-history', async (req, res) => {
     const downtimeEventsCount = incidents.filter((i) => i.status !== 'resolved').length;
     const uptimePercentage = downtimeEventsCount > 0 ? 99.85 : 100.0;
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       status: systemStatus,
       uptimePercentage,
       incidents: incidents.slice(-20).reverse(),
       timestamp: new Date(),
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch status history',
-    });
+    sendError(req, res, 'Failed to fetch status history', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -124,17 +121,13 @@ router.get('/metrics', requireMonitoringAuth, (req, res) => {
   try {
     const metrics = getMetrics();
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: metrics,
       timestamp: new Date(),
     });
   } catch (error) {
     logger.error('Error fetching metrics', { error: error.message });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch metrics',
-    });
+    sendError(req, res, 'Failed to fetch metrics', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -146,17 +139,13 @@ router.get('/errors/stats', requireMonitoringAuth, (req, res) => {
   try {
     const stats = getErrorStats();
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: stats,
       timestamp: new Date(),
     });
   } catch (error) {
     logger.error('Error fetching error stats', { error: error.message });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch error statistics',
-    });
+    sendError(req, res, 'Failed to fetch error statistics', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -170,18 +159,14 @@ router.get('/errors/recent', requireMonitoringAuth, (req, res) => {
     const limit = Math.min(parseInt(req.query.limit) || 50, 1000);
     const errors = getRecentErrors(limit);
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: errors,
       count: errors.length,
       timestamp: new Date(),
     });
   } catch (error) {
     logger.error('Error fetching recent errors', { error: error.message });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch recent errors',
-    });
+    sendError(req, res, 'Failed to fetch recent errors', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -194,17 +179,13 @@ router.get('/errors/endpoint', requireMonitoringAuth, (req, res) => {
     const endpoint = req.query.url;
 
     if (!endpoint) {
-      return res.status(400).json({
-        success: false,
-        error: 'URL query parameter is required',
-      });
+      return sendError(req, res, 'URL query parameter is required', 400, 'VALIDATION_ERROR');
     }
 
     const limit = Math.min(parseInt(req.query.limit) || 20, 1000);
     const errors = getEndpointErrors(endpoint, limit);
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: errors,
       count: errors.length,
       endpoint,
@@ -212,10 +193,7 @@ router.get('/errors/endpoint', requireMonitoringAuth, (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching endpoint errors', { error: error.message });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch endpoint errors',
-    });
+    sendError(req, res, 'Failed to fetch endpoint errors', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -229,8 +207,7 @@ router.get('/errors/user/:userId', requireMonitoringAuth, (req, res) => {
     const limit = Math.min(parseInt(req.query.limit) || 20, 1000);
     const errors = getUserErrors(userId, limit);
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: errors,
       count: errors.length,
       userId,
@@ -238,10 +215,7 @@ router.get('/errors/user/:userId', requireMonitoringAuth, (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching user errors', { error: error.message });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch user errors',
-    });
+    sendError(req, res, 'Failed to fetch user errors', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -255,8 +229,7 @@ router.get('/logs', requireMonitoringAuth, (req, res) => {
     const level = req.query.level || 'all';
     const limit = Math.min(parseInt(req.query.limit) || 100, 1000);
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       message: 'Logs are available in server/logs/combined.log',
       locations: {
         error: 'server/logs/error.log',
@@ -267,10 +240,7 @@ router.get('/logs', requireMonitoringAuth, (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching logs', { error: error.message });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch logs',
-    });
+    sendError(req, res, 'Failed to fetch logs', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -281,10 +251,7 @@ router.get('/logs', requireMonitoringAuth, (req, res) => {
  */
 router.post('/test-error', validate(testErrorSchema), requireMonitoringAuth, (req, res, next) => {
   if (process.env.NODE_ENV === 'production') {
-    return res.status(403).json({
-      success: false,
-      error: 'Test endpoint not available in production',
-    });
+    return sendError(req, res, 'Test endpoint not available in production', 403, 'FORBIDDEN');
   }
 
   logger.info('Test error triggered');
@@ -303,20 +270,19 @@ router.post('/rum', validate(rumMetricSchema), requireMonitoringAuth, (req, res)
   try {
     const duration = parseFloat(req.body?.durationSeconds);
     if (!Number.isFinite(duration) || duration < 0) {
-      return res.status(400).json({ success: false, error: 'durationSeconds required' });
+      return sendError(req, res, 'durationSeconds required', 400, 'VALIDATION_ERROR');
     }
     recordPageLoad(duration);
-    res.status(204).end();
+    sendNoContent(res);
   } catch (error) {
     logger.error('Error recording RUM metric', { error: error.message });
-    res.status(500).json({ success: false, error: 'Failed to record RUM metric' });
+    sendError(req, res, 'Failed to record RUM metric', 500, 'INTERNAL_ERROR');
   }
 });
 
 router.get('/backup-status', requireMonitoringAuth, (req, res) => {
   try {
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: {
         status: 'unknown',
         message: 'Backup probe not configured. Wire to your backup provider API.',
@@ -328,10 +294,7 @@ router.get('/backup-status', requireMonitoringAuth, (req, res) => {
       error: error.message,
     });
 
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch backup status',
-    });
+    sendError(req, res, 'Failed to fetch backup status', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -346,18 +309,14 @@ router.get('/traces', requireMonitoringAuth, async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit) || 100, 500);
     const paginatedTraces = tracesArray.slice(0, limit);
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: paginatedTraces,
       count: paginatedTraces.length,
       timestamp: new Date(),
     });
   } catch (error) {
     logger.error('Error fetching traces', { error: error.message });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch traces',
-    });
+    sendError(req, res, 'Failed to fetch traces', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -367,8 +326,7 @@ router.get('/traces', requireMonitoringAuth, async (req, res) => {
  */
 router.get('/threat-status', requireMonitoringAuth, (req, res) => {
   try {
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: {
         suspiciousLogins: 0,
         blockedIPs: 0,
@@ -383,10 +341,7 @@ router.get('/threat-status', requireMonitoringAuth, (req, res) => {
       error: error.message,
     });
 
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch threat status',
-    });
+    sendError(req, res, 'Failed to fetch threat status', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -396,8 +351,7 @@ router.get('/threat-status', requireMonitoringAuth, (req, res) => {
  */
 router.get('/incident-alerts', requireMonitoringAuth, (req, res) => {
   try {
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: {
         activeIncidents: 0,
         criticalErrors: 0,
@@ -412,10 +366,7 @@ router.get('/incident-alerts', requireMonitoringAuth, (req, res) => {
       error: error.message,
     });
 
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch incident alerts',
-    });
+    sendError(req, res, 'Failed to fetch incident alerts', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -425,8 +376,7 @@ router.get('/incident-alerts', requireMonitoringAuth, (req, res) => {
  */
 router.get('/incidents', requireMonitoringAuth, (req, res) => {
   try {
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: {
         activeIncidents: [],
         scheduledMaintenance: [],
@@ -440,10 +390,7 @@ router.get('/incidents', requireMonitoringAuth, (req, res) => {
       error: error.message,
     });
 
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch incident information',
-    });
+    sendError(req, res, 'Failed to fetch incident information', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -452,8 +399,7 @@ router.get('/data-integrity', requireMonitoringAuth, (req, res) => {
 
   const report = validateDataIntegrity(sampleData);
 
-  res.status(200).json({
-    success: true,
+  sendSuccess(res, {
     data: report,
     timestamp: new Date(),
   });
@@ -463,16 +409,12 @@ router.get('/session-security', requireMonitoringAuth, (req, res) => {
   try {
     const data = getSessionSecurityData();
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data,
       timestamp: new Date(),
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch session security data',
-    });
+    sendError(req, res, 'Failed to fetch session security data', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -480,16 +422,12 @@ router.get('/migration-status', requireMonitoringAuth, (req, res) => {
   try {
     const data = getMigrationStatus();
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data,
       timestamp: new Date(),
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch migration status',
-    });
+    sendError(req, res, 'Failed to fetch migration status', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -525,15 +463,14 @@ router.get('/failover-status', requireMonitoringAuth, async (req, res) => {
     failoverStatus.secondaryRegionStatus = 'unconfigured_or_unhealthy';
   }
 
-  res.status(200).json({ success: true, data: failoverStatus });
+  sendSuccess(res, { data: failoverStatus });
 });
 
 // Get security patch scan result
 router.get('/security-patches', (req, res) => {
   const result = securityPatchManager.checkSecurityUpdates();
 
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
     data: result,
   });
 });
@@ -542,8 +479,7 @@ router.get('/security-patches', (req, res) => {
 router.get('/security-patches/report', (req, res) => {
   const report = securityPatchManager.generatePatchReport();
 
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
     data: report,
   });
 });
@@ -552,8 +488,7 @@ router.get('/security-patches/report', (req, res) => {
 router.get('/encryption-status', (req, res) => {
   const status = encryptionManager.getEncryptionStatus();
 
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
     data: status,
   });
 });
@@ -562,8 +497,7 @@ router.get('/encryption-status', (req, res) => {
 router.post('/key-rotation', validate(keyRotationSchema), (req, res) => {
   const result = encryptionManager.rotateEncryptionKey();
 
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
     message: result.message,
     rotatedAt: result.rotatedAt,
   });
@@ -573,15 +507,13 @@ router.post('/key-rotation', validate(keyRotationSchema), (req, res) => {
 router.get('/encryption-audit', (req, res) => {
   const logs = encryptionManager.getEncryptionAuditLogs();
 
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
     data: logs,
   });
 });
 
 router.get('/database/status', (req, res) => {
-  res.json({
-    success: true,
+  sendSuccess(res, {
     data: databaseFailoverManager.getFailoverReport(),
   });
 });
@@ -590,8 +522,7 @@ router.get('/database/status', (req, res) => {
 router.get('/security-patches', (req, res) => {
   const result = securityPatchManager.checkSecurityUpdates();
 
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
     data: result,
   });
 });
@@ -600,8 +531,7 @@ router.get('/security-patches', (req, res) => {
 router.get('/security-patches/report', (req, res) => {
   const report = securityPatchManager.generatePatchReport();
 
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
     data: report,
   });
 });
@@ -610,8 +540,7 @@ router.get('/security-patches/report', (req, res) => {
 router.get('/encryption-status', (req, res) => {
   const status = encryptionManager.getEncryptionStatus();
 
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
     data: status,
   });
 });
@@ -620,8 +549,7 @@ router.get('/encryption-status', (req, res) => {
 router.post('/key-rotation', validate(keyRotationSchema), (req, res) => {
   const result = encryptionManager.rotateEncryptionKey();
 
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
     message: result.message,
     rotatedAt: result.rotatedAt,
   });
@@ -631,28 +559,25 @@ router.post('/key-rotation', validate(keyRotationSchema), (req, res) => {
 router.get('/encryption-audit', (req, res) => {
   const logs = encryptionManager.getEncryptionAuditLogs();
 
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
     data: logs,
   });
 });
 
 router.get('/database/status', (req, res) => {
-  res.json({
-    success: true,
+  sendSuccess(res, {
     data: databaseFailoverManager.getFailoverReport(),
   });
 });
 
 router.get('/security/report', (req, res) => {
-  res.json({
-    success: true,
+  sendSuccess(res, {
     data: apiSecurityManager.getSecurityReport(),
   });
 });
 
 router.get('/deployment-status', (req, res) => {
-  res.json(deploymentStatus);
+  sendSuccess(res, deploymentStatus);
 });
 
 export default router;

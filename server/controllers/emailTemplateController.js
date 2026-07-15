@@ -1,5 +1,6 @@
 import { emailTemplateRepository } from '../repositories/emailTemplateRepository.js';
 import { sendEmail, renderTemplateHtml } from '../services/emailService.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -25,10 +26,10 @@ export const emailTemplateController = {
   async getTemplates(req, res) {
     try {
       const templates = await emailTemplateRepository.getAll();
-      return res.json({ templates });
+      return sendSuccess(res, { templates });
     } catch (error) {
       console.error('Error fetching email templates:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -41,15 +42,15 @@ export const emailTemplateController = {
         try {
           const templatePath = path.join(__dirname, '..', 'services', 'templates', `${name}.ejs`);
           const body = await fs.readFile(templatePath, 'utf-8');
-          return res.json({ template: { name, subject: 'Default Subject', body, is_default: true } });
+          return sendSuccess(res, { template: { name, subject: 'Default Subject', body, is_default: true } });
         } catch (err) {
-          return res.status(404).json({ error: 'Template not found' });
+          return sendError(req, res, 'Template not found', 404, 'NOT_FOUND');
         }
       }
-      return res.json({ template });
+      return sendSuccess(res, { template });
     } catch (error) {
       console.error('Error fetching template:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -59,14 +60,14 @@ export const emailTemplateController = {
       const { subject, body } = req.body;
 
       if (!subject || !body) {
-        return res.status(400).json({ error: 'Subject and body are required' });
+        return sendError(req, res, 'Subject and body are required', 400, 'VALIDATION_ERROR');
       }
 
       const updated = await emailTemplateRepository.upsertTemplate({ name, subject, body });
-      return res.json({ template: updated });
+      return sendSuccess(res, { template: updated });
     } catch (error) {
       console.error('Error updating template:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -74,10 +75,10 @@ export const emailTemplateController = {
     try {
       const { name } = req.params;
       await emailTemplateRepository.deleteTemplate(name);
-      return res.json({ success: true, message: 'Template reset to default' });
+      return sendSuccess(res, { message: 'Template reset to default' });
     } catch (error) {
       console.error('Error resetting template:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -94,10 +95,10 @@ export const emailTemplateController = {
         html = await renderTemplateHtml(name, mockData);
       }
 
-      return res.json({ html });
+      return sendSuccess(res, { html });
     } catch (error) {
       console.error('Error previewing template:', error);
-      return res.status(500).json({ error: error.message || 'Error rendering template' });
+      return sendError(req, res, error.message || 'Error rendering template', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -106,7 +107,7 @@ export const emailTemplateController = {
       const { name } = req.params;
       const { email, subject, body } = req.body;
 
-      if (!email) return res.status(400).json({ error: 'Email is required' });
+      if (!email) return sendError(req, res, 'Email is required', 400, 'VALIDATION_ERROR');
 
       const mockData = getMockDataForTemplate(name);
 
@@ -119,13 +120,13 @@ export const emailTemplateController = {
       });
 
       if (!result.success) {
-        return res.status(500).json({ error: 'Failed to send test email' });
+        return sendError(req, res, 'Failed to send test email', 500, 'INTERNAL_ERROR');
       }
 
-      return res.json({ success: true, messageId: result.messageId });
+      return sendSuccess(res, { messageId: result.messageId });
     } catch (error) {
       console.error('Error sending test email:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 };

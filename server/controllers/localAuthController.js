@@ -2,12 +2,13 @@ import bcrypt from 'bcryptjs';
 import { usersRepository } from '../repositories/usersRepository.js';
 import { studentAuthService } from '../services/studentAuthService.js';
 import { withDb } from '../repositories/db.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 export const localLogin = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+    return sendError(req, res, 'Email and password are required', 400, 'VALIDATION_ERROR');
   }
 
   try {
@@ -17,16 +18,16 @@ export const localLogin = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return sendError(req, res, 'Invalid email or password', 401, 'UNAUTHORIZED');
     }
 
     if (!user.password_hash) {
-      return res.status(401).json({ error: 'Local login is not enabled for this user' });
+      return sendError(req, res, 'Local login is not enabled for this user', 401, 'UNAUTHORIZED');
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return sendError(req, res, 'Invalid email or password', 401, 'UNAUTHORIZED');
     }
 
     // Map `users` table fields to the payload expected by studentAuthService
@@ -47,9 +48,9 @@ export const localLogin = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    return res.json({ ok: true, user: tokenPayload });
+    return sendSuccess(res, { user: tokenPayload });
   } catch (error) {
     console.error('Local login error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 };

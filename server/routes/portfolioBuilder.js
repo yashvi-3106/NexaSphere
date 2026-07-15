@@ -3,6 +3,7 @@ import { portfolioBuilderService } from '../services/portfolioBuilderService.js'
 import { auth } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 import { validate } from '../middleware/validate.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 import {
   usernameParamsSchema,
   sectionParamsSchema,
@@ -19,24 +20,24 @@ const router = Router();
 router.get('/:username/sections', validate(usernameParamsSchema, 'params'), async (req, res) => {
   try {
     const sections = await portfolioBuilderService.getSections(req.params.username);
-    res.json({ success: true, data: sections });
+    sendSuccess(res, { data: sections });
   } catch (error) {
     const status = error.message.includes('not found') ? 404 : 500;
-    res.status(status).json({ success: false, error: error.message });
+    sendError(req, res, error.message, status, status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR');
   }
 });
 
 router.post('/:username/sections', validate(usernameParamsSchema, 'params'), validate(addSectionBodySchema), auth('student'), async (req, res) => {
   try {
     const section = await portfolioBuilderService.addSection(req.params.username, req.body);
-    res.status(201).json({ success: true, data: section });
+    sendSuccess(res, { data: section }, 201);
   } catch (error) {
     const status = error.message.includes('not found')
       ? 404
       : error.message.includes('already exists')
         ? 409
         : 400;
-    res.status(status).json({ success: false, error: error.message });
+    sendError(req, res, error.message, status, status === 404 ? 'NOT_FOUND' : status === 409 ? 'CONFLICT' : 'VALIDATION_ERROR');
   }
 });
 
@@ -47,20 +48,20 @@ router.put('/:username/sections/:sectionKey', validate(sectionParamsSchema, 'par
       req.params.sectionKey,
       req.body
     );
-    res.json({ success: true, data: section });
+    sendSuccess(res, { data: section });
   } catch (error) {
     const status = error.message.includes('not found') ? 404 : 400;
-    res.status(status).json({ success: false, error: error.message });
+    sendError(req, res, error.message, status, status === 404 ? 'NOT_FOUND' : 'VALIDATION_ERROR');
   }
 });
 
 router.delete('/:username/sections/:sectionKey', validate(sectionParamsSchema, 'params'), auth('student'), async (req, res) => {
   try {
     await portfolioBuilderService.deleteSection(req.params.username, req.params.sectionKey);
-    res.json({ success: true, message: 'Section deleted successfully' });
+    sendSuccess(res, { message: 'Section deleted successfully' });
   } catch (error) {
     const status = error.message.includes('not found') ? 404 : 400;
-    res.status(status).json({ success: false, error: error.message });
+    sendError(req, res, error.message, status, status === 404 ? 'NOT_FOUND' : 'VALIDATION_ERROR');
   }
 });
 
@@ -70,9 +71,9 @@ router.put('/:username/sections/reorder', validate(usernameParamsSchema, 'params
       req.params.username,
       req.body.sections
     );
-    res.json({ success: true, data: sections });
+    sendSuccess(res, { data: sections });
   } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
+    sendError(req, res, error.message, 400, 'VALIDATION_ERROR');
   }
 });
 
@@ -82,10 +83,10 @@ router.put('/:username/sections/:sectionKey/visibility', validate(sectionParamsS
       req.params.username,
       req.params.sectionKey
     );
-    res.json({ success: true, data: section });
+    sendSuccess(res, { data: section });
   } catch (error) {
     const status = error.message.includes('not found') ? 404 : 400;
-    res.status(status).json({ success: false, error: error.message });
+    sendError(req, res, error.message, status, status === 404 ? 'NOT_FOUND' : 'VALIDATION_ERROR');
   }
 });
 
@@ -93,17 +94,17 @@ router.put('/:username/sections/:sectionKey/move/:direction', validate(sectionWi
   try {
     const { direction } = req.params;
     if (!['up', 'down'].includes(direction)) {
-      return res.status(400).json({ success: false, error: 'Direction must be up or down' });
+      return sendError(req, res, 'Direction must be up or down', 400, 'VALIDATION_ERROR');
     }
     const sections = await portfolioBuilderService.moveSection(
       req.params.username,
       req.params.sectionKey,
       direction
     );
-    res.json({ success: true, data: sections });
+    sendSuccess(res, { data: sections });
   } catch (error) {
     const status = error.message.includes('not found') ? 404 : 400;
-    res.status(status).json({ success: false, error: error.message });
+    sendError(req, res, error.message, status, status === 404 ? 'NOT_FOUND' : 'VALIDATION_ERROR');
   }
 });
 
@@ -114,19 +115,19 @@ router.put('/:username/sections/:sectionKey/content', validate(sectionParamsSche
       req.params.sectionKey,
       req.body
     );
-    res.json({ success: true, data: section });
+    sendSuccess(res, { data: section });
   } catch (error) {
     const status = error.message.includes('not found') ? 404 : 400;
-    res.status(status).json({ success: false, error: error.message });
+    sendError(req, res, error.message, status, status === 404 ? 'NOT_FOUND' : 'VALIDATION_ERROR');
   }
 });
 
 router.get('/templates', async (req, res) => {
   try {
     const templates = await portfolioBuilderService.getTemplates();
-    res.json({ success: true, data: templates });
+    sendSuccess(res, { data: templates });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    sendError(req, res, error.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -137,10 +138,10 @@ router.post('/:username/sections/template/:templateId', validate(templateParamsS
       req.params.templateId,
       req.body
     );
-    res.status(201).json({ success: true, data: section });
+    sendSuccess(res, { data: section }, 201);
   } catch (error) {
     const status = error.message.includes('not found') ? 404 : 400;
-    res.status(status).json({ success: false, error: error.message });
+    sendError(req, res, error.message, status, status === 404 ? 'NOT_FOUND' : 'VALIDATION_ERROR');
   }
 });
 

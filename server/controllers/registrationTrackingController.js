@@ -6,6 +6,7 @@
 import { analyticsService } from '../services/analyticsService.js';
 import { wrapAsync } from '../middleware/asyncHandler.js';
 import logger from '../utils/logger.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 /**
  * Register a user for an event
@@ -15,10 +16,7 @@ export const registerForEvent = wrapAsync(async (req, res) => {
   const { userId, email, name } = req.body;
 
   if (!email) {
-    return res.status(400).json({
-      ok: false,
-      error: 'Email is required',
-    });
+    return sendError(req, res, 'Email is required', 400, 'VALIDATION_ERROR');
   }
 
   try {
@@ -34,16 +32,10 @@ export const registerForEvent = wrapAsync(async (req, res) => {
       registrationId: registration.id,
     });
 
-    return res.status(201).json({
-      ok: true,
-      data: registration,
-    });
+    return sendSuccess(res, { data: registration }, 201);
   } catch (error) {
     logger.error('Registration failed', { eventId, email, error: error.message });
-    return res.status(500).json({
-      ok: false,
-      error: 'Registration failed',
-    });
+    return sendError(req, res, 'Registration failed', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -55,20 +47,14 @@ export const checkInUser = wrapAsync(async (req, res) => {
   const { registrationId, email } = req.body;
 
   if (!registrationId || !email) {
-    return res.status(400).json({
-      ok: false,
-      error: 'registrationId and email are required',
-    });
+    return sendError(req, res, 'registrationId and email are required', 400, 'VALIDATION_ERROR');
   }
 
   try {
     const updated = await analyticsService.checkInRegistration(eventId, registrationId, email);
 
     if (!updated) {
-      return res.status(404).json({
-        ok: false,
-        error: 'Registration not found',
-      });
+      return sendError(req, res, 'Registration not found', 404, 'NOT_FOUND');
     }
 
     logger.info('User checked in', {
@@ -77,16 +63,10 @@ export const checkInUser = wrapAsync(async (req, res) => {
       registrationId,
     });
 
-    return res.json({
-      ok: true,
-      data: updated,
-    });
+    return sendSuccess(res, { data: updated });
   } catch (error) {
     logger.error('Check-in failed', { eventId, email, error: error.message });
-    return res.status(500).json({
-      ok: false,
-      error: 'Check-in failed',
-    });
+    return sendError(req, res, 'Check-in failed', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -100,22 +80,13 @@ export const getEventMetrics = wrapAsync(async (req, res) => {
     const metrics = await analyticsService.getEventMetrics(eventId);
 
     if (!metrics) {
-      return res.status(404).json({
-        ok: false,
-        error: 'Event not found',
-      });
+      return sendError(req, res, 'Event not found', 404, 'NOT_FOUND');
     }
 
-    return res.json({
-      ok: true,
-      data: metrics,
-    });
+    return sendSuccess(res, { data: metrics });
   } catch (error) {
     logger.error('Failed to fetch metrics', { eventId, error: error.message });
-    return res.status(500).json({
-      ok: false,
-      error: 'Failed to fetch metrics',
-    });
+    return sendError(req, res, 'Failed to fetch metrics', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -129,17 +100,13 @@ export const getRegistrationTrends = wrapAsync(async (req, res) => {
   try {
     const trends = await analyticsService.getRegistrationTrends(eventId, timeWindow);
 
-    return res.json({
-      ok: true,
+    return sendSuccess(res, {
       data: trends,
       timeWindow,
     });
   } catch (error) {
     logger.error('Failed to fetch trends', { eventId, error: error.message });
-    return res.status(500).json({
-      ok: false,
-      error: 'Failed to fetch trends',
-    });
+    return sendError(req, res, 'Failed to fetch trends', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -151,10 +118,7 @@ export const bulkRegister = wrapAsync(async (req, res) => {
   const { registrations } = req.body;
 
   if (!Array.isArray(registrations) || registrations.length === 0) {
-    return res.status(400).json({
-      ok: false,
-      error: 'registrations array is required and must not be empty',
-    });
+    return sendError(req, res, 'registrations array is required and must not be empty', 400, 'VALIDATION_ERROR');
   }
 
   const results = [];
@@ -185,13 +149,12 @@ export const bulkRegister = wrapAsync(async (req, res) => {
     failed: errors.length,
   });
 
-  return res.status(201).json({
-    ok: true,
+  return sendSuccess(res, {
     data: {
       successful: results.length,
       failed: errors.length,
       registrations: results,
       errors: errors.length > 0 ? errors : undefined,
     },
-  });
+  }, 201);
 });

@@ -9,6 +9,7 @@ import { forumRepository } from '../repositories/forumRepository.js';
 import { resourcesRepository } from '../repositories/resourcesRepository.js';
 import { portfolioRepository } from '../repositories/portfolioRepository.js';
 import { withDb } from '../repositories/db.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,7 @@ export const searchController = {
       const skip = (page - 1) * limit;
 
       if (!q || q.length < 2) {
-        return res.json({ results: [], total: 0, page, limit });
+        return sendSuccess(res, { results: [], total: 0, page, limit });
       }
 
       const { isTypesenseEnabled, typesenseClient } = await import('../config/typesense.js');
@@ -115,7 +116,7 @@ export const searchController = {
           const trueTotal = results.length;
           const paginated = results.slice(skip, skip + limit);
 
-          return res.json({
+          return sendSuccess(res, {
             results: paginated,
             total: trueTotal,
             query: q,
@@ -390,10 +391,10 @@ export const searchController = {
       const trueTotal = results.length;
       results = results.slice(0, limit);
 
-      return res.json({ results, total: trueTotal, query: q });
+      return sendSuccess(res, { results, total: trueTotal, query: q });
     } catch (err) {
       console.error('Search error:', err);
-      return res.status(500).json({ error: 'Search failed', results: [], total: 0 });
+      return sendError(req, res, 'Search failed', 500, 'INTERNAL_ERROR', { results: [], total: 0 });
     }
   },
 
@@ -425,10 +426,10 @@ export const searchController = {
           url: `/events/${ev.id}`,
         }));
 
-      return res.json({ trending: sorted, popularSearches });
+      return sendSuccess(res, { trending: sorted, popularSearches });
     } catch (err) {
       console.error('Trending error:', err);
-      return res.status(500).json({ error: 'Failed to fetch trending', trending: [], popularSearches: [] });
+      return sendError(req, res, 'Failed to fetch trending', 500, 'INTERNAL_ERROR', { trending: [], popularSearches: [] });
     }
   },
 
@@ -486,12 +487,10 @@ export const searchController = {
           }));
       }
 
-      return res.json({ recommendations: recommended });
+      return sendSuccess(res, { recommendations: recommended });
     } catch (err) {
       console.error('Recommendations error:', err);
-      return res
-        .status(500)
-        .json({ error: 'Failed to fetch recommendations', recommendations: [] });
+      return sendError(req, res, 'Failed to fetch recommendations', 500, 'INTERNAL_ERROR', { recommendations: [] });
     }
   },
 };

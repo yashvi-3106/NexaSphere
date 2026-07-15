@@ -2,6 +2,7 @@
 // DB persistence + Prisma models are TODO.
 
 import crypto from 'crypto';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 // --- Helpers ---
 function buildCertificateCode({ userId, eventId }) {
@@ -20,8 +21,7 @@ export async function verifyCertificate(req, res) {
 
   // TODO: lookup certificate by code.
   // Placeholder response shape per acceptance criteria.
-  return res.json({
-    ok: true,
+  return sendSuccess(res, {
     certificate: {
       code,
       attendeeName: 'Demo Attendee',
@@ -38,22 +38,20 @@ export async function verifyCertificate(req, res) {
 
 export async function getMyCertificates(req, res) {
   // TODO: use req.studentUser / DB
-  return res.json({
+  return sendSuccess(res, {
     certificates: [],
   });
 }
 
 export async function downloadCertificatePdf(req, res) {
   // TODO: stream from S3
-  return res
-    .status(501)
-    .json({ error: 'PDF download not implemented yet (S3 + storage layer TODO).' });
+  return sendError(req, res, 'PDF download not implemented yet (S3 + storage layer TODO).', 501, 'NOT_IMPLEMENTED');
 }
 
 export async function getOpenBadge(req, res) {
   // TODO: return OpenBadges compliant JSON from stored badge assertion.
   const { id } = req.params;
-  return res.json({
+  return sendSuccess(res, {
     id,
     openBadges: {
       '@context': 'https://w3.org/2018/credentials/v1',
@@ -69,7 +67,7 @@ export async function getCertificateVerificationShare(req, res) {
   const { id } = req.params;
   const verifyUrl = `${process.env.PUBLIC_APP_URL || ''}/certificates/verify/${id}`;
 
-  return res.json({
+  return sendSuccess(res, {
     id,
     linkedin: {
       shareUrl: verifyUrl,
@@ -90,7 +88,7 @@ export async function issueCertificates(req, res) {
   const attendeeIds = Array.isArray(body.attendeeIds) ? body.attendeeIds : [];
 
   if (!eventId || attendeeIds.length === 0) {
-    return res.status(400).json({ error: 'eventId and attendeeIds[] are required' });
+    return sendError(req, res, 'eventId and attendeeIds[] are required', 400, 'VALIDATION_ERROR');
   }
 
   // TODO: generate PDF/QR/badge and persist
@@ -104,5 +102,5 @@ export async function issueCertificates(req, res) {
     };
   });
 
-  return res.json({ ok: true, issued });
+  return sendSuccess(res, { issued });
 }

@@ -23,6 +23,7 @@ import {
   updatePreferencesSchema,
   bulkPreferencesSchema,
 } from '../validators/routes/notificationsSchemas.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 const router = Router();
 
@@ -75,7 +76,7 @@ function requireNotificationAuth(req, res, next) {
       if (!err2 && req.studentUser) {
         return next();
       }
-      return res.status(401).json({ error: 'Unauthorized: Authentication required' });
+      return sendError(req, res, 'Unauthorized: Authentication required', 401, 'UNAUTHORIZED');
     });
   });
 }
@@ -99,9 +100,7 @@ const validatePushSubscription = [
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res
-        .status(400)
-        .json({ error: 'Invalid subscription payload', details: errors.array() });
+      return sendError(req, res, 'Invalid subscription payload', 400, 'VALIDATION_ERROR', errors.array());
     }
 
     // Strict sanitization: reconstruct object to drop malicious properties
@@ -137,9 +136,9 @@ router.post(
         }
         await persistPushSubscription(subscription);
       }
-      return res.json({ success: true });
+      return sendSuccess(res, { success: true });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -159,9 +158,9 @@ router.post(
         pushSubscriptions.delete(JSON.stringify(subscription));
         await removePersistedPushSubscription(subscription);
       }
-      return res.json({ success: true });
+      return sendSuccess(res, { success: true });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -179,21 +178,19 @@ router.post(
   async (req, res) => {
     try {
       const { id, userId } = req.body || {};
-      if (!id) return res.status(400).json({ error: 'id required' });
+      if (!id) return sendError(req, res, 'id required', 400, 'VALIDATION_ERROR');
       let uid = userId || 'global';
       if (req.studentUser) {
         const studentId = req.studentUser.sub || req.studentUser.id;
         if (userId && userId !== studentId) {
-          return res
-            .status(403)
-            .json({ error: 'Forbidden: Cannot modify other users notifications' });
+          return sendError(req, res, 'Forbidden: Cannot modify other users notifications', 403, 'FORBIDDEN');
         }
         uid = studentId;
       }
       const ok = await notificationsService.markAsRead(uid, id);
-      return res.json({ success: ok });
+      return sendSuccess(res, { success: ok });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -213,14 +210,14 @@ router.post(
       if (req.studentUser) {
         const studentId = req.studentUser.sub || req.studentUser.id;
         if (userId && userId !== studentId) {
-          return res.status(403).json({ error: 'Forbidden' });
+          return sendError(req, res, 'Forbidden', 403, 'FORBIDDEN');
         }
         uid = studentId;
       }
       await notificationsService.markAllAsRead(uid);
-      return res.json({ success: true });
+      return sendSuccess(res, { success: true });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -239,15 +236,15 @@ router.delete(
       if (req.studentUser) {
         const studentId = req.studentUser.sub || req.studentUser.id;
         if (req.query.userId && req.query.userId !== studentId) {
-          return res.status(403).json({ error: 'Forbidden' });
+          return sendError(req, res, 'Forbidden', 403, 'FORBIDDEN');
         }
         uid = studentId;
       }
       const removed = await notificationsService.removeNotification(uid, id);
-      if (!removed) return res.status(404).json({ error: 'Notification not found' });
-      return res.json({ success: true });
+      if (!removed) return sendError(req, res, 'Notification not found', 404, 'NOT_FOUND');
+      return sendSuccess(res, { success: true });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -265,14 +262,14 @@ router.delete(
       if (req.studentUser) {
         const studentId = req.studentUser.sub || req.studentUser.id;
         if (req.query.userId && req.query.userId !== studentId) {
-          return res.status(403).json({ error: 'Forbidden' });
+          return sendError(req, res, 'Forbidden', 403, 'FORBIDDEN');
         }
         uid = studentId;
       }
       await notificationsService.clearAll(uid);
-      return res.json({ success: true });
+      return sendSuccess(res, { success: true });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -289,7 +286,7 @@ router.post(
     try {
       const { userId, title, message, type, link } = req.body || {};
       if (!title || !message) {
-        return res.status(400).json({ error: 'title and message are required' });
+        return sendError(req, res, 'title and message are required', 400, 'VALIDATION_ERROR');
       }
       const note = await notificationsService.addNotification(userId || 'global', {
         title,
@@ -297,9 +294,9 @@ router.post(
         type,
         link,
       });
-      return res.json({ success: true, notification: note });
+      return sendSuccess(res, { success: true, notification: note });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -355,16 +352,16 @@ router.get('/notifications', async (req, res) => {
       }
 
       if (!authenticated) {
-        return res.status(401).json({ error: 'Unauthorized to view these notifications' });
+        return sendError(req, res, 'Unauthorized to view these notifications', 401, 'UNAUTHORIZED');
       }
     }
 
     const offset = parseInt(req.query.offset, 10) || 0;
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
     const list = await notificationsService.getNotifications({ userId, offset, limit, tab, q });
-    return res.json({ notifications: list });
+    return sendSuccess(res, { notifications: list });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -372,9 +369,9 @@ router.get('/notifications/preferences', requireNotificationPrefAuth, async (req
   try {
     const userId = req.query.userId || 'global';
     const prefs = await notificationPreferencesRepository.list(userId);
-    return res.json({ preferences: prefs });
+    return sendSuccess(res, { preferences: prefs });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -382,7 +379,7 @@ router.put('/notifications/preferences', validate(updatePreferencesSchema), requ
   try {
     const userId = req.body.userId || 'global';
     const { category, email, push, in_app, sms, frequency, quiet_start, quiet_end, dnd } = req.body;
-    if (!category) return res.status(400).json({ error: 'category is required' });
+    if (!category) return sendError(req, res, 'category is required', 400, 'VALIDATION_ERROR');
     const pref = await notificationPreferencesRepository.set(userId, category, {
       email,
       push,
@@ -393,9 +390,9 @@ router.put('/notifications/preferences', validate(updatePreferencesSchema), requ
       quiet_end,
       dnd,
     });
-    return res.json({ preference: pref });
+    return sendSuccess(res, { preference: pref });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -404,12 +401,12 @@ router.put('/notifications/preferences/bulk', validate(bulkPreferencesSchema), r
     const userId = req.body.userId || 'global';
     const { preferences } = req.body;
     if (!Array.isArray(preferences) || !preferences.length) {
-      return res.status(400).json({ error: 'preferences array is required' });
+      return sendError(req, res, 'preferences array is required', 400, 'VALIDATION_ERROR');
     }
     const results = await notificationPreferencesRepository.setBulk(userId, preferences);
-    return res.json({ preferences: results });
+    return sendSuccess(res, { preferences: results });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -419,9 +416,9 @@ router.post('/notifications/analytics', async (req, res) => {
     const event = req.body || {};
     // Minimal validation — in future route can forward to analytics pipeline
     console.log('[notification-analytics]', event.type || 'unknown', event);
-    return res.json({ ok: true });
+    return sendSuccess(res, { ok: true });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 

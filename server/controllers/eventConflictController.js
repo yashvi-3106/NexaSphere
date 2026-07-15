@@ -1,21 +1,18 @@
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 import { eventConflictService } from "../services/eventConflictService.js";
 
 export const getConflicts = async (req, res) => {
   try {
     const conflicts = await eventConflictService.checkConflicts();
 
-    return res.json({
-      success: true,
+    return sendSuccess(res, {
       total: conflicts.length,
       conflicts,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to check event conflicts.",
-    });
+    return sendError(req, res, "Failed to check event conflicts.", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -24,10 +21,7 @@ export const getVenueAvailability = async (req, res) => {
     const { venue, date } = req.query;
 
     if (!venue || !date) {
-      return res.status(400).json({
-        success: false,
-        message: "Venue and date are required.",
-      });
+      return sendError(req, res, "Venue and date are required.", 400, 'VALIDATION_ERROR');
     }
 
     const result = await eventConflictService.checkVenueAvailability(
@@ -35,17 +29,13 @@ export const getVenueAvailability = async (req, res) => {
       date
     );
 
-    return res.json({
-      success: true,
+    return sendSuccess(res, {
       data: result,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to check venue availability.",
-    });
+    return sendError(req, res, "Failed to check venue availability.", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -53,17 +43,13 @@ export const getAttendanceImpact = async (req, res) => {
   try {
     const impact = await eventConflictService.attendanceImpact();
 
-    return res.json({
-      success: true,
+    return sendSuccess(res, {
       data: impact,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to generate attendance analysis.",
-    });
+    return sendError(req, res, "Failed to generate attendance analysis.", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -72,17 +58,13 @@ export const getScheduleRecommendations = async (req, res) => {
     const recommendations =
       await eventConflictService.scheduleRecommendation();
 
-    return res.json({
-      success: true,
+    return sendSuccess(res, {
       data: recommendations,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to generate recommendations.",
-    });
+    return sendError(req, res, "Failed to generate recommendations.", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -90,17 +72,13 @@ export const getCalendarEvents = async (req, res) => {
   try {
     const events = await eventConflictService.calendarEvents();
 
-    return res.json({
-      success: true,
+    return sendSuccess(res, {
       data: events,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to load calendar events.",
-    });
+    return sendError(req, res, "Failed to load calendar events.", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -108,17 +86,13 @@ export const getOrganizerAlerts = async (req, res) => {
   try {
     const alerts = await eventConflictService.getAlerts();
 
-    return res.json({
-      success: true,
+    return sendSuccess(res, {
       total: alerts.length,
       alerts,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to load organizer alerts.",
-    });
+    return sendError(req, res, "Failed to load organizer alerts.", 500, 'INTERNAL_ERROR');
   }
 };

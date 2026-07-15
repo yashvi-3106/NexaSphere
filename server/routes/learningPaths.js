@@ -5,15 +5,16 @@ import { learningPathsRepository } from '../repositories/learningPathsRepository
 import { validate } from '../middleware/validate.js';
 import { apiRateLimiter } from '../middleware/rateLimiter.js';
 import { enrollSchema, completeMilestoneSchema, assessSchema } from '../validators/routes/learningPathsSchemas.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 const router = express.Router();
 
 router.get('/learning-paths', async (req, res) => {
   try {
     const paths = await learningPathsRepository.listAll();
-    res.json(paths);
+    sendSuccess(res, paths);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -21,9 +22,9 @@ router.get('/learning-paths/:id', requireStudentAuth, async (req, res) => {
   try {
     const userId = req.studentUser.sub || req.studentUser.id;
     const details = await learningPathService.getPathDetails(userId, req.params.id);
-    res.json(details);
+    sendSuccess(res, details);
   } catch (err) {
-    res.status(404).json({ error: err.message });
+    sendError(req, res, err.message, 404, 'NOT_FOUND');
   }
 });
 
@@ -35,18 +36,18 @@ router.post('/learning-paths/:id/enroll', apiRateLimiter, validate(enrollSchema)
     targetDate.setDate(targetDate.getDate() + (targetWeeks || 12) * 7);
 
     await learningPathsRepository.enrollUser(userId, req.params.id, targetDate, initialLevel || 1);
-    res.status(201).json({ success: true });
+    sendSuccess(res, { success: true }, 201);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    sendError(req, res, err.message, 400, 'VALIDATION_ERROR');
   }
 });
 
 router.get('/learning-paths/:id/leaderboard', async (req, res) => {
   try {
     const leaderboard = await learningPathService.getLeaderboard(req.params.id);
-    res.json(leaderboard);
+    sendSuccess(res, leaderboard);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -60,14 +61,14 @@ router.post(
       const { pathId } = req.body;
 
       const enrollment = await learningPathsRepository.getUserEnrollment(userId, pathId);
-      if (!enrollment) return res.status(404).json({ error: 'Not enrolled in this path' });
+      if (!enrollment) return sendError(req, res, 'Not enrolled in this path', 404, 'NOT_FOUND');
 
       await learningPathsRepository.completeMilestone(enrollment.id, req.params.milestoneId);
       const updated = await learningPathService.calculateProgress(enrollment.id);
 
-      res.json({ success: true, progress: updated.progress_percent });
+      sendSuccess(res, { progress: updated.progress_percent });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -77,9 +78,9 @@ router.post('/learning-paths/:id/assess', apiRateLimiter, validate(assessSchema)
     // Simple logic to set starting level based on quiz score
     const { score } = req.body; // Score from 0-10
     const level = score > 8 ? 3 : score > 4 ? 2 : 1;
-    res.json({ recommendedLevel: level });
+    sendSuccess(res, { recommendedLevel: level });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 

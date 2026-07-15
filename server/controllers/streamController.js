@@ -1,6 +1,7 @@
 import { streamRepository } from '../repositories/streamRepository.js';
 import { streamService } from '../services/streamService.js';
 import { emitToRoom } from '../config/socket.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 export const listStreams = async (req, res) => {
   const { page, limit, status } = req.query;
@@ -9,23 +10,23 @@ export const listStreams = async (req, res) => {
     limit: parseInt(limit) || 20,
     status,
   });
-  res.json(data);
+  sendSuccess(res, data);
 };
 
 export const getStream = async (req, res) => {
   const stream = await streamRepository.getStreamById(req.params.id);
-  if (!stream) return res.status(404).json({ error: 'Stream not found' });
+  if (!stream) return sendError(req, res, 'Stream not found', 404, 'NOT_FOUND');
 
   // Update viewer count on access
   const count = await streamService.updateViewerMetrics(req.params.id);
   emitToRoom(`stream:${req.params.id}`, 'viewer_count_update', { count });
 
-  res.json(stream);
+  sendSuccess(res, stream);
 };
 
 export const getStreamByEvent = async (req, res) => {
   const stream = await streamRepository.getStreamByEventId(req.params.eventId);
-  res.json(stream || { message: 'No stream for this event' });
+  sendSuccess(res, stream || { message: 'No stream for this event' });
 };
 
 export const createStream = async (req, res) => {
@@ -36,24 +37,24 @@ export const createStream = async (req, res) => {
     hls_url: provision.playbackUrl,
   };
   const stream = await streamRepository.createStream(input);
-  res.status(201).json({ ...stream, streamKey: provision.streamKey });
+  sendSuccess(res, { ...stream, streamKey: provision.streamKey }, 201);
 };
 
 export const updateStream = async (req, res) => {
   const stream = await streamRepository.updateStream(req.params.id, req.body);
-  res.json(stream);
+  sendSuccess(res, stream);
 };
 
 export const setStreamStatus = async (req, res) => {
   const { status } = req.body;
   const stream = await streamRepository.setStreamStatus(req.params.id, status);
   emitToRoom(`stream:${req.params.id}`, 'status_change', { status });
-  res.json(stream);
+  sendSuccess(res, stream);
 };
 
 export const deleteStream = async (req, res) => {
   await streamRepository.deleteStream(req.params.id);
-  res.status(204).send();
+  sendNoContent(res);
 };
 
 export const addChatMessage = async (req, res) => {
@@ -67,12 +68,12 @@ export const addChatMessage = async (req, res) => {
   });
 
   emitToRoom(`stream:${req.params.id}`, 'chat_message', chat);
-  res.status(201).json(chat);
+  sendSuccess(res, chat, 201);
 };
 
 export const listChatMessages = async (req, res) => {
   const data = await streamRepository.listChatMessages(req.params.id);
-  res.json(data);
+  sendSuccess(res, data);
 };
 
 export const moderateChatMessage = async (req, res) => {
@@ -80,7 +81,7 @@ export const moderateChatMessage = async (req, res) => {
   if (chat) {
     emitToRoom(`stream:${chat.streamId}`, 'message_moderated', { id: chat.id });
   }
-  res.json(chat);
+  sendSuccess(res, chat);
 };
 
 export const banUser = async (req, res) => {
@@ -88,35 +89,35 @@ export const banUser = async (req, res) => {
   await streamRepository.banUserFromStream(req.params.id, user_email);
 
   emitToRoom(`stream:${req.params.id}`, 'user_banned', { userEmail: user_email });
-  res.json({ success: true, message: `User ${user_email} banned` });
+  sendSuccess(res, { message: `User ${user_email} banned` });
 };
 
 export const addModChatMessage = async (req, res) => {
   const chat = await streamRepository.addModChatMessage(req.params.id, req.body);
   emitToRoom(`stream:${req.params.id}:mods`, 'mod_chat_message', chat);
-  res.status(201).json(chat);
+  sendSuccess(res, chat, 201);
 };
 
 export const listModChatMessages = async (req, res) => {
   const data = await streamRepository.listModChatMessages(req.params.id);
-  res.json(data);
+  sendSuccess(res, data);
 };
 
 export const getStreamAnalytics = async (req, res) => {
   const analytics = await streamRepository.getStreamAnalytics(req.params.id);
-  if (!analytics) return res.status(404).json({ error: 'Analytics not found' });
-  res.json(analytics);
+  if (!analytics) return sendError(req, res, 'Analytics not found', 404, 'NOT_FOUND');
+  sendSuccess(res, analytics);
 };
 
 export const createPoll = async (req, res) => {
   const poll = await streamRepository.createPoll(req.params.id, req.body);
   emitToRoom(`stream:${req.params.id}`, 'new_poll', poll);
-  res.status(201).json(poll);
+  sendSuccess(res, poll, 201);
 };
 
 export const listPolls = async (req, res) => {
   const polls = await streamRepository.listPolls(req.params.id);
-  res.json(polls);
+  sendSuccess(res, polls);
 };
 
 export const votePoll = async (req, res) => {
@@ -124,7 +125,7 @@ export const votePoll = async (req, res) => {
   if (poll) {
     emitToRoom(`stream:${poll.streamId}`, 'poll_update', poll);
   }
-  res.json(poll);
+  sendSuccess(res, poll);
 };
 
 export const closePoll = async (req, res) => {
@@ -132,13 +133,13 @@ export const closePoll = async (req, res) => {
   if (poll) {
     emitToRoom(`stream:${poll.streamId}`, 'poll_closed', { id: poll.id });
   }
-  res.json(poll);
+  sendSuccess(res, poll);
 };
 
 export const adminListAll = async (req, res) => {
   const { page, limit, status } = req.query;
   const data = await streamRepository.adminListAll({ page, limit, status });
-  res.json(data);
+  sendSuccess(res, data);
 };
 
 // --- Q&A Handlers ---
@@ -146,12 +147,12 @@ export const adminListAll = async (req, res) => {
 export const addQuestion = async (req, res) => {
   const question = await streamRepository.addQuestion(req.params.id, req.body);
   emitToRoom(`stream:${req.params.id}`, 'new_question', question);
-  res.status(201).json(question);
+  sendSuccess(res, question, 201);
 };
 
 export const listQuestions = async (req, res) => {
   const questions = await streamRepository.listQuestions(req.params.id);
-  res.json(questions);
+  sendSuccess(res, questions);
 };
 
 export const answerQuestion = async (req, res) => {
@@ -159,7 +160,7 @@ export const answerQuestion = async (req, res) => {
   if (question) {
     emitToRoom(`stream:${question.streamId}`, 'question_answered', question);
   }
-  res.json(question);
+  sendSuccess(res, question);
 };
 
 // --- Reaction Handlers ---
@@ -170,10 +171,10 @@ export const addReaction = async (req, res) => {
     emoji: req.body.emoji,
     count: reaction.count,
   });
-  res.json(reaction);
+  sendSuccess(res, reaction);
 };
 
 export const getReactions = async (req, res) => {
   const reactions = await streamRepository.getReactions(req.params.id);
-  res.json(reactions);
+  sendSuccess(res, reactions);
 };

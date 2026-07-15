@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import { sendError } from '../utils/responseHelper.js';
 
 export function exportPDF(req, res) {
   try {
@@ -118,6 +119,6 @@ export function exportPDF(req, res) {
     doc.end();
   } catch (err) {
     console.error('Failed to export whiteboard PDF:', err.message);
-    res.status(500).json({ error: 'Failed to export whiteboard PDF' });
+    sendError(req, res, 'Failed to export whiteboard PDF', 500, 'INTERNAL_ERROR');
   }
 }

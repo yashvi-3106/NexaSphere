@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { supabaseRequest, HAS_SUPABASE } from '../storage/supabaseClient.js';
 import { validate } from '../middleware/validate.js';
 import { customFunnelSchema, saveReportSchema, executeReportSchema } from '../validators/routes/analyticsRouteSchemas.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 import {
   getDashboardSummary,
   getUserAnalytics,
@@ -32,7 +33,7 @@ async function readContentSafe() {
 }
 
 router.get('/', (req, res) => {
-  res.json({ ok: true, message: 'Analytics endpoint is available.' });
+  sendSuccess(res, { ok: true, message: 'Analytics endpoint is available.' });
 });
 
 router.get('/stats', async (_req, res) => {
@@ -58,9 +59,9 @@ router.get('/stats', async (_req, res) => {
       upcomingEvents = (content.events || []).filter((e) => e.status === 'upcoming').length;
     }
 
-    res.json({ totalUsers, activeRegistrations, upcomingEvents, conversionRate });
+    sendSuccess(res, { totalUsers, activeRegistrations, upcomingEvents, conversionRate });
   } catch (error) {
-    res.status(500).json({ error: error.message || 'Failed to generate stats' });
+    sendError(req, res, error.message || 'Failed to generate stats', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -88,9 +89,9 @@ router.get('/growth', async (_req, res) => {
         }));
     }
 
-    res.json(growth);
+    sendSuccess(res, growth);
   } catch (error) {
-    res.status(500).json({ error: error.message || 'Failed to generate growth data' });
+    sendError(req, res, error.message || 'Failed to generate growth data', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -118,9 +119,9 @@ router.get('/events', async (_req, res) => {
       }));
     }
 
-    res.json(eventStats);
+    sendSuccess(res, eventStats);
   } catch (error) {
-    res.status(500).json({ error: error.message || 'Failed to generate events data' });
+    sendError(req, res, error.message || 'Failed to generate events data', 500, 'INTERNAL_ERROR');
   }
 });
 

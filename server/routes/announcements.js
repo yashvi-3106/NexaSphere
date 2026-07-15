@@ -6,6 +6,7 @@ import { apiRateLimiter } from '../middleware/rateLimiter.js';
 import eventManager from '../services/eventEmitterService.js';
 import logger from '../utils/logger.js';
 import { validate } from '../middleware/validate.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 import {
   createAnnouncementSchema,
   updateAnnouncementSchema,
@@ -28,10 +29,10 @@ router.get('/api/announcements', requireStudentAuth, apiRateLimiter, async (req,
           : null,
     };
     const list = await announcementsService.listActiveAnnouncementsForUser(user);
-    return res.json({ announcements: list });
+    return sendSuccess(res, { announcements: list });
   } catch (err) {
     logger.error('Error fetching announcements for user:', err.message);
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -45,10 +46,10 @@ router.get(
       const page = parseInt(req.query.page, 10) || 1;
       const limit = parseInt(req.query.limit, 10) || 50;
       const result = await announcementsService.listAnnouncements({ page, limit });
-      return res.json(result);
+      return sendSuccess(res, result);
     } catch (err) {
       logger.error('Error listing admin announcements:', err.message);
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );
@@ -69,12 +70,17 @@ router.post(
           link: created.ctaUrl,
         });
       }
-      return res.status(201).json(created);
+      return sendSuccess(res, created, 201);
     } catch (err) {
       logger.error('Error creating announcement:', err.message);
-      return res
-        .status(err.name === 'ZodError' ? 400 : 500)
-        .json({ error: err.message, details: err.issues });
+      return sendError(
+        req,
+        res,
+        err.message,
+        err.name === 'ZodError' ? 400 : 500,
+        err.name === 'ZodError' ? 'VALIDATION_ERROR' : 'INTERNAL_ERROR',
+        err.issues
+      );
     }
   }
 );
@@ -88,11 +94,11 @@ router.put(
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid announcement ID' });
+        return sendError(req, res, 'Invalid announcement ID', 400, 'VALIDATION_ERROR');
       }
       const updated = await announcementsService.updateAnnouncement(id, req.body);
       if (!updated) {
-        return res.status(404).json({ error: 'Announcement not found' });
+        return sendError(req, res, 'Announcement not found', 404, 'NOT_FOUND');
       }
       // Real-time broadcast if published or updated status to published
       if (updated.status === 'published') {
@@ -102,12 +108,17 @@ router.put(
           link: updated.ctaUrl,
         });
       }
-      return res.json(updated);
+      return sendSuccess(res, updated);
     } catch (err) {
       logger.error('Error updating announcement:', err.message);
-      return res
-        .status(err.name === 'ZodError' ? 400 : 500)
-        .json({ error: err.message, details: err.issues });
+      return sendError(
+        req,
+        res,
+        err.message,
+        err.name === 'ZodError' ? 400 : 500,
+        err.name === 'ZodError' ? 'VALIDATION_ERROR' : 'INTERNAL_ERROR',
+        err.issues
+      );
     }
   }
 );
@@ -120,16 +131,16 @@ router.delete(
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid announcement ID' });
+        return sendError(req, res, 'Invalid announcement ID', 400, 'VALIDATION_ERROR');
       }
       const success = await announcementsService.deleteAnnouncement(id);
       if (!success) {
-        return res.status(404).json({ error: 'Announcement not found' });
+        return sendError(req, res, 'Announcement not found', 404, 'NOT_FOUND');
       }
-      return res.json({ success: true });
+      return sendSuccess(res, { ok: true });
     } catch (err) {
       logger.error('Error deleting announcement:', err.message);
-      return res.status(500).json({ error: err.message });
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
   }
 );

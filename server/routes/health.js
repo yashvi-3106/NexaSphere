@@ -7,6 +7,7 @@
 import { Router } from 'express';
 import { eventsService } from '../services/eventsService.js';
 import { HAS_SUPABASE } from '../storage/supabaseClient.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 const router = Router();
 
@@ -15,14 +16,14 @@ const router = Router();
  * and load balancers (Render, Railway, etc.).
  */
 router.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'nexasphere-api', timestamp: new Date().toISOString() });
+  sendSuccess(res, { status: 'ok', service: 'nexasphere-api', timestamp: new Date().toISOString() });
 });
 
 /**
  * GET /api/health — Alias for /health used by platform-level monitors.
  */
 router.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'nexasphere-api', timestamp: new Date().toISOString() });
+  sendSuccess(res, { status: 'ok', service: 'nexasphere-api', timestamp: new Date().toISOString() });
 });
 
 /**
@@ -33,15 +34,13 @@ router.get('/api/health', (_req, res) => {
 router.get('/healthz', async (_req, res) => {
   try {
     const list = await eventsService.listEvents({ page: 1, limit: 1 });
-    res.json({
+    sendSuccess(res, {
       ok: true,
       events: list?.total ?? 0,
       storage: HAS_SUPABASE ? 'supabase' : 'file',
     });
   } catch (e) {
-    res.status(503).json({
-      ok: false,
-      error: e?.message || 'Health check failed',
+    sendError(req, res, e?.message || 'Health check failed', 503, 'DEPENDENCY_ERROR', {
       storage: HAS_SUPABASE ? 'supabase' : 'file',
     });
   }

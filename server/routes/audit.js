@@ -4,6 +4,7 @@ import { apiRateLimiter } from '../middleware/rateLimiter.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import { auditMonitoringService } from '../services/auditMonitoringService.js';
 import { generateCSV } from '../utils/csvParser.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 const router = Router();
 const adminAuth = [apiRateLimiter, adminAuthMiddleware.requireAdmin];
@@ -25,9 +26,9 @@ router.get(paths('/audit/logs'), adminAuth, async (req, res) => {
       limit,
       offset,
     });
-    return res.json({ logs });
+    return sendSuccess(res, { logs });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -74,7 +75,7 @@ router.get(paths('/audit/export'), adminAuth, async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename=audit_logs.csv');
     return res.send(csv);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -82,9 +83,9 @@ router.get(paths('/audit/export'), adminAuth, async (req, res) => {
 router.get(paths('/audit/sessions'), adminAuth, async (req, res) => {
   try {
     const sessions = await auditMonitoringService.getActiveSessions();
-    return res.json({ sessions });
+    return sendSuccess(res, { sessions });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -92,13 +93,13 @@ router.get(paths('/audit/sessions'), adminAuth, async (req, res) => {
 router.post(paths('/audit/tamper-check'), adminAuth, async (req, res) => {
   try {
     const corruptedIds = await auditLogRepository.verifyLogTampering();
-    return res.json({
+    return sendSuccess(res, {
       status: corruptedIds.length === 0 ? 'SECURE' : 'COMPROMISED',
       corruptedCount: corruptedIds.length,
       corruptedIds,
     });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -110,9 +111,9 @@ router.get(paths('/audit/reports/activity'), adminAuth, async (req, res) => {
 
   try {
     const report = await auditMonitoringService.generateActivityReport(start, end);
-    return res.json(report);
+    return sendSuccess(res, report);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -120,9 +121,9 @@ router.get(paths('/audit/reports/activity'), adminAuth, async (req, res) => {
 router.get(paths('/audit/reports/security'), adminAuth, async (req, res) => {
   try {
     const report = await auditMonitoringService.generateSecurityIncidentReport();
-    return res.json(report);
+    return sendSuccess(res, report);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -130,9 +131,9 @@ router.get(paths('/audit/reports/security'), adminAuth, async (req, res) => {
 router.get(paths('/audit/reports/compliance'), adminAuth, async (req, res) => {
   try {
     const report = await auditMonitoringService.generateComplianceReport();
-    return res.json(report);
+    return sendSuccess(res, report);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -143,9 +144,9 @@ router.post(paths('/audit/retention'), adminAuth, async (req, res) => {
 
   try {
     const result = await auditMonitoringService.runRetentionCleanup(days);
-    return res.json(result);
+    return sendSuccess(res, result);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -153,14 +154,14 @@ router.post(paths('/audit/retention'), adminAuth, async (req, res) => {
 router.post(paths('/audit/alerts/check'), adminAuth, async (req, res) => {
   const { username, ipAddress } = req.body;
   if (!username || !ipAddress) {
-    return res.status(400).json({ error: 'username and ipAddress are required' });
+    return sendError(req, res, 'username and ipAddress are required', 400, 'VALIDATION_ERROR');
   }
 
   try {
     const alerts = await auditMonitoringService.checkSuspiciousActivity(username, ipAddress);
-    return res.json({ alerts });
+    return sendSuccess(res, { alerts });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 

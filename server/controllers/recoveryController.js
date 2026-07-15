@@ -3,6 +3,7 @@ import { portfolioRepository } from '../repositories/portfolioRepository.js';
 import crypto from 'crypto';
 import { withDb } from '../repositories/db.js';
 import bcrypt from 'bcryptjs';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -18,10 +19,10 @@ export const recoveryController = {
         );
       });
       // Optionally log audit event here
-      return res.json({ message: 'Account unlocked successfully' });
+      return sendSuccess(res, { message: 'Account unlocked successfully' });
     } catch (err) {
       console.error('Error unlocking account:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -31,7 +32,7 @@ export const recoveryController = {
       const { id } = req.params;
       const { newPassword } = req.body;
       if (!newPassword || newPassword.length < 8) {
-        return res.status(400).json({ error: 'Password must be at least 8 characters' });
+        return sendError(req, res, 'Password must be at least 8 characters', 400, 'VALIDATION_ERROR');
       }
 
       const hash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
@@ -39,10 +40,10 @@ export const recoveryController = {
         await client.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hash, id]);
       });
 
-      return res.json({ message: 'Password reset successfully' });
+      return sendSuccess(res, { message: 'Password reset successfully' });
     } catch (err) {
       console.error('Error resetting password:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -51,10 +52,10 @@ export const recoveryController = {
     try {
       const { username } = req.params;
       await portfolioRepository.delete(username);
-      return res.json({ message: 'Portfolio moved to trash' });
+      return sendSuccess(res, { message: 'Portfolio moved to trash' });
     } catch (err) {
       console.error('Error deleting portfolio:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -63,10 +64,10 @@ export const recoveryController = {
     try {
       const { username } = req.params;
       await portfolioRepository.recover(username);
-      return res.json({ message: 'Portfolio recovered successfully' });
+      return sendSuccess(res, { message: 'Portfolio recovered successfully' });
     } catch (err) {
       console.error('Error recovering portfolio:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -74,7 +75,7 @@ export const recoveryController = {
   async forgotPassword(req, res) {
     try {
       const { email } = req.body;
-      if (!email) return res.status(400).json({ error: 'Email is required' });
+      if (!email) return sendError(req, res, 'Email is required', 400, 'VALIDATION_ERROR');
 
       // In a real app, send the token via emailService here
       // For now, we just create the token in the DB
@@ -100,12 +101,12 @@ export const recoveryController = {
       }
 
       // Always return success to prevent email enumeration
-      return res.json({
+      return sendSuccess(res, {
         message: 'If an account exists with that email, a password reset link has been sent.',
       });
     } catch (err) {
       console.error('Error in forgot password:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -114,9 +115,7 @@ export const recoveryController = {
     try {
       const { token, newPassword } = req.body;
       if (!token || !newPassword || newPassword.length < 8) {
-        return res
-          .status(400)
-          .json({ error: 'Valid token and new password (min 8 chars) required' });
+        return sendError(req, res, 'Valid token and new password (min 8 chars) required', 400, 'VALIDATION_ERROR');
       }
 
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
@@ -129,7 +128,7 @@ export const recoveryController = {
       });
 
       if (!result) {
-        return res.status(400).json({ error: 'Invalid or expired token' });
+        return sendError(req, res, 'Invalid or expired token', 400, 'VALIDATION_ERROR');
       }
 
       const hash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
@@ -144,10 +143,10 @@ export const recoveryController = {
         );
       });
 
-      return res.json({ message: 'Password has been reset successfully' });
+      return sendSuccess(res, { message: 'Password has been reset successfully' });
     } catch (err) {
       console.error('Error resetting password with token:', err);
-      return res.status(500).json({ error: 'Internal server error' });
+      return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
     }
   },
 };

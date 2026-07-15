@@ -1,5 +1,6 @@
 import { prisma } from '../config/db.js';
 import Fuse from 'fuse.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 /**
  * Advanced Search Controller
@@ -73,14 +74,14 @@ export const handleAdvancedSearch = async (req, res) => {
     // 5. Analytics: Log query
     await logSearchAnalytics(q, results.length, req.user?.id);
 
-    return res.status(200).json({
+    return sendSuccess(res, {
       results: results.slice(0, 50), // Limit for performance
       facets,
       suggestions: results.length === 0 ? generateSuggestions(q) : [],
     });
   } catch (error) {
     console.error('Search failure:', error);
-    res.status(500).json({ error: 'Search engine unavailable' });
+    return sendError(req, res, 'Search engine unavailable', 500, 'INTERNAL_ERROR');
   }
 };
 

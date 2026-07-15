@@ -1,4 +1,5 @@
 import { financialService } from '../services/financialService.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 function wrapAsync(fn) {
   return (req, res) =>
@@ -16,7 +17,7 @@ function wrapAsync(fn) {
         status = 400;
       }
 
-      res.status(status).json({ error: msg || 'Internal server error' });
+      sendError(req, res, msg || 'Internal server error', status);
     });
 }
 
@@ -24,129 +25,129 @@ function wrapAsync(fn) {
 export const createBudget = wrapAsync(async (req, res) => {
   const { eventId, name, totalAmount, startDate, endDate, categoryAllocations } = req.body;
   if (!name) {
-    return res.status(400).json({ error: 'Budget name is required' });
+    return sendError(req, res, 'Budget name is required', 400, 'VALIDATION_ERROR');
   }
 
   const budget = await financialService.createBudget(
     { eventId, name, totalAmount, startDate, endDate, categoryAllocations },
     req.studentUser
   );
-  return res.status(201).json(budget);
+  return sendSuccess(res, budget, 201);
 });
 
 export const getBudgets = wrapAsync(async (req, res) => {
   const budgets = await financialService.getBudgets(req.studentUser);
-  return res.status(200).json({ budgets });
+  return sendSuccess(res, { budgets });
 });
 
 export const getBudgetById = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const budget = await financialService.getBudgetById(id, req.studentUser);
-  return res.status(200).json(budget);
+  return sendSuccess(res, budget);
 });
 
 export const updateBudget = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const updated = await financialService.updateBudget(id, req.body, req.studentUser);
-  return res.status(200).json(updated);
+  return sendSuccess(res, updated);
 });
 
 export const deleteBudget = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const success = await financialService.deleteBudget(id, req.studentUser);
-  return res.status(200).json({ success });
+  return sendSuccess(res, { success });
 });
 
 export const cloneBudget = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const { newEventId } = req.body;
   if (!newEventId) {
-    return res.status(400).json({ error: 'newEventId is required to clone a budget' });
+    return sendError(req, res, 'newEventId is required to clone a budget', 400, 'VALIDATION_ERROR');
   }
   const cloned = await financialService.cloneBudget(id, newEventId, req.studentUser);
-  return res.status(201).json(cloned);
+  return sendSuccess(res, cloned, 201);
 });
 
 // --- Expenses ---
 export const createExpense = wrapAsync(async (req, res) => {
   const { budgetId, eventId, name, amount, category, receiptUrl } = req.body;
   if (!name || amount === undefined || !category) {
-    return res.status(400).json({ error: 'Name, amount, and category are required' });
+    return sendError(req, res, 'Name, amount, and category are required', 400, 'VALIDATION_ERROR');
   }
 
   const expense = await financialService.createExpense(
     { budgetId, eventId, name, amount, category, receiptUrl },
     req.studentUser
   );
-  return res.status(201).json(expense);
+  return sendSuccess(res, expense, 201);
 });
 
 export const getExpenses = wrapAsync(async (req, res) => {
   const { budgetId } = req.query;
   if (!budgetId) {
-    return res.status(400).json({ error: 'budgetId is required as query param' });
+    return sendError(req, res, 'budgetId is required as query param', 400, 'VALIDATION_ERROR');
   }
   const expenses = await financialService.getExpenses(budgetId, req.studentUser);
-  return res.status(200).json({ expenses });
+  return sendSuccess(res, { expenses });
 });
 
 export const updateExpense = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const updated = await financialService.updateExpense(id, req.body, req.studentUser);
-  return res.status(200).json(updated);
+  return sendSuccess(res, updated);
 });
 
 export const deleteExpense = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const success = await financialService.deleteExpense(id, req.studentUser);
-  return res.status(200).json({ success });
+  return sendSuccess(res, { success });
 });
 
 // --- Revenue ---
 export const createRevenue = wrapAsync(async (req, res) => {
   const { budgetId, eventId, source, amount, description, receivedAt } = req.body;
   if (!source || amount === undefined) {
-    return res.status(400).json({ error: 'Source and amount are required' });
+    return sendError(req, res, 'Source and amount are required', 400, 'VALIDATION_ERROR');
   }
 
   const revenue = await financialService.createRevenue(
     { budgetId, eventId, source, amount, description, receivedAt },
     req.studentUser
   );
-  return res.status(201).json(revenue);
+  return sendSuccess(res, revenue, 201);
 });
 
 export const getRevenues = wrapAsync(async (req, res) => {
   const { budgetId } = req.query;
   if (!budgetId) {
-    return res.status(400).json({ error: 'budgetId is required as query param' });
+    return sendError(req, res, 'budgetId is required as query param', 400, 'VALIDATION_ERROR');
   }
   const revenues = await financialService.getRevenues(budgetId, req.studentUser);
-  return res.status(200).json({ revenues });
+  return sendSuccess(res, { revenues });
 });
 
 export const deleteRevenue = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const success = await financialService.deleteRevenue(id, req.studentUser);
-  return res.status(200).json({ success });
+  return sendSuccess(res, { success });
 });
 
 // --- Reports & Calculations ---
 export const getBudgetVariance = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const report = await financialService.getBudgetVariance(id, req.studentUser);
-  return res.status(200).json(report);
+  return sendSuccess(res, report);
 });
 
 export const getIncomeStatement = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const report = await financialService.getIncomeStatement(id, req.studentUser);
-  return res.status(200).json(report);
+  return sendSuccess(res, report);
 });
 
 export const getBudgetsUtilizationReport = wrapAsync(async (req, res) => {
   const report = await financialService.getBudgetsUtilizationReport(req.studentUser);
-  return res.status(200).json({ budgets: report });
+  return sendSuccess(res, { budgets: report });
 });
 
 export const exportReport = wrapAsync(async (req, res) => {
@@ -161,10 +162,10 @@ export const exportReport = wrapAsync(async (req, res) => {
     return res.status(200).send(result);
   }
 
-  return res.status(200).json(JSON.parse(result));
+  return sendSuccess(res, JSON.parse(result));
 });
 
 export const getRevenueReport = wrapAsync(async (req, res) => {
   const report = await financialService.getRevenueReport(req.studentUser);
-  return res.status(200).json(report);
+  return sendSuccess(res, report);
 });

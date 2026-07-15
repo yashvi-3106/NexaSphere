@@ -1,4 +1,5 @@
 import { portfolioAnalyticsService } from "../services/portfolioAnalyticsService.js";
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 export async function getPortfolioAnalytics(req, res) {
   try {
@@ -7,15 +8,11 @@ export async function getPortfolioAnalytics(req, res) {
         req.params.username
       );
 
-    res.json({
-      success: true,
+    sendSuccess(res, {
       analytics,
     });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -26,12 +23,9 @@ export async function recordPortfolioVisit(req, res) {
         req.params.username
       );
 
-    res.json(response);
+    sendSuccess(res, response);
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -42,14 +36,10 @@ export async function getMonthlyReport(req, res) {
         req.params.username
       );
 
-    res.json({
-      success: true,
+    sendSuccess(res, {
       report,
     });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 }

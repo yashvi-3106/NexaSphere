@@ -2,6 +2,7 @@ import passport from 'passport';
 import { studentUsersRepository } from '../repositories/studentUsersRepository.js';
 import { studentAuthService } from '../services/studentAuthService.js';
 import { withDb } from '../repositories/db.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 export const googleAuth = (req, res, next) => {
   const state = req.query.token || '';
@@ -76,7 +77,7 @@ export const githubPortfolioCallback = (req, res, next) => {
 };
 export const getMe = async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return sendError(req, res, 'Not authenticated', 401, 'UNAUTHORIZED');
   }
   let freshUser = null;
   try {
@@ -103,29 +104,29 @@ export const getMe = async (req, res) => {
       }
     : req.studentUser;
 
-  return res.json({ user: userToSend });
+  return sendSuccess(res, { user: userToSend });
 };
 
 export const updateTheme = async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return sendError(req, res, 'Not authenticated', 401, 'UNAUTHORIZED');
   }
   const { theme } = req.body;
   if (theme !== 'light' && theme !== 'dark' && theme !== 'system') {
-    return res.status(400).json({ error: 'Invalid theme' });
+    return sendError(req, res, 'Invalid theme', 400, 'VALIDATION_ERROR');
   }
   try {
     await studentUsersRepository.updateTheme(req.studentUser.sub || req.studentUser.id, theme);
-    return res.json({ ok: true, theme });
+    return sendSuccess(res, { ok: true, theme });
   } catch (err) {
     console.error('Error updating theme in database:', err);
-    return res.status(500).json({ error: 'Failed to update theme' });
+    return sendError(req, res, 'Failed to update theme', 500, 'INTERNAL_ERROR');
   }
 };
 
 export const updateSlackSettings = async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return sendError(req, res, 'Not authenticated', 401, 'UNAUTHORIZED');
   }
   const { slackUserId, slackDmReminders } = req.body;
   try {
@@ -133,9 +134,9 @@ export const updateSlackSettings = async (req, res) => {
       slackUserId,
       slackDmReminders,
     });
-    return res.json({ success: true, user: { ...req.studentUser, ...updatedUser } });
+    return sendSuccess(res, { success: true, user: { ...req.studentUser, ...updatedUser } });
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to update Slack settings: ' + err.message });
+    return sendError(req, res, 'Failed to update Slack settings: ' + err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -146,10 +147,10 @@ export const logout = async (req, res) => {
       await studentAuthService.logout(token);
     }
     res.clearCookie('ns_student_token');
-    return res.json({ ok: true });
+    return sendSuccess(res, { ok: true });
   } catch (err) {
     console.error('Logout error:', err);
-    return res.status(500).json({ error: 'Logout failed' });
+    return sendError(req, res, 'Logout failed', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -157,7 +158,7 @@ export const logout = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return sendError(req, res, 'Not authenticated', 401, 'UNAUTHORIZED');
   }
   try {
     const userId = req.studentUser.sub || req.studentUser.id;
@@ -166,7 +167,7 @@ export const getProfile = async (req, res) => {
       (await studentUsersRepository.findByProvider(req.studentUser.provider, userId)) ||
       (await studentUsersRepository.findByEmail(req.studentUser.email));
 
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return sendError(req, res, 'User not found', 404, 'NOT_FOUND');
 
     // Safely count related data — tables may not exist yet in all envs
     let registrations = [];
@@ -213,7 +214,7 @@ export const getProfile = async (req, res) => {
       (r) => r.attended || r.status === 'attended'
     ).length;
 
-    return res.json({
+    return sendSuccess(res, {
       id: user.id,
       fullName: user.full_name,
       email: user.email,
@@ -232,13 +233,13 @@ export const getProfile = async (req, res) => {
     });
   } catch (err) {
     console.error('getProfile error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
+    return sendError(req, res, 'Server error', 500, 'INTERNAL_ERROR', err.message);
   }
 };
 
 export const updateProfile = async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return sendError(req, res, 'Not authenticated', 401, 'UNAUTHORIZED');
   }
   try {
     const userId = req.studentUser.sub || req.studentUser.id;
@@ -256,9 +257,9 @@ export const updateProfile = async (req, res) => {
       dbUpdates.social_links = JSON.stringify(updates.socialLinks);
 
     const updatedUser = await studentUsersRepository.updateProfile(userId, dbUpdates);
-    if (!updatedUser) return res.status(404).json({ error: 'User not found' });
+    if (!updatedUser) return sendError(req, res, 'User not found', 404, 'NOT_FOUND');
 
-    return res.json({
+    return sendSuccess(res, {
       id: updatedUser.id,
       fullName: updatedUser.full_name,
       email: updatedUser.email,
@@ -267,17 +268,17 @@ export const updateProfile = async (req, res) => {
     });
   } catch (err) {
     console.error('updateProfile error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
+    return sendError(req, res, 'Server error', 500, 'INTERNAL_ERROR', err.message);
   }
 };
 
 export const getRegistrations = async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return sendError(req, res, 'Not authenticated', 401, 'UNAUTHORIZED');
   }
   try {
     const user = await studentUsersRepository.findByEmail(req.studentUser.email);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return sendError(req, res, 'User not found', 404, 'NOT_FOUND');
 
     let registrations = [];
     try {
@@ -296,9 +297,9 @@ export const getRegistrations = async (req, res) => {
       /* table may not exist yet */
     }
 
-    return res.json(registrations);
+    return sendSuccess(res, registrations);
   } catch (err) {
     console.error('getRegistrations error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
+    return sendError(req, res, 'Server error', 500, 'INTERNAL_ERROR', err.message);
   }
 };
