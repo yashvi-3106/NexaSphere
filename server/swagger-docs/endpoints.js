@@ -475,6 +475,50 @@
 
 /**
  * @swagger
+ * tags:
+ *   - name: Budget Management
+ *     description: Intelligent Event Budget Planning & Expense Management APIs
+ */
+
+/**
+ * @swagger
+ * /api/budgets:
+ *   get:
+ *     summary: Get all budgets
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Budgets retrieved successfully
+ *
+ *   post:
+ *     summary: Create budget
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Budget created successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}:
+ *   get:
+ *     summary: Get budget by ID
+ *     tags: [Budget Management]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Budget retrieved successfully
+ *
+ *   put:
+ *     summary: Update budget
+ *     tags: [Budget Management]
  * /api/notification-preferences/{userId}:
  *   get:
  *     summary: Get notification preferences
@@ -588,8 +632,6 @@
  *       200:
  *         description: Notification history returned successfully
  */
- * ...
- */
 
 /**
  * @swagger
@@ -649,6 +691,16 @@
  *         name: id
  *         required: true
  *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Budget updated successfully
+ *
+ *   delete:
+ *     summary: Delete budget
+ *     tags: [Budget Management]
  *           type: string
  *     requestBody:
  *       required: true
@@ -677,6 +729,10 @@
  *         name: id
  *         required: true
  *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Budget deleted successfully
  *           type: string
  *     requestBody:
  *       required: true
@@ -694,6 +750,10 @@
 
 /**
  * @swagger
+ * /api/budgets/{id}/expenses:
+ *   get:
+ *     summary: Get budget expenses
+ *     tags: [Budget Management]
  * /api/announcements/{id}/read:
  *   post:
  *     summary: Mark announcement as read
@@ -704,6 +764,43 @@
  *         name: id
  *         required: true
  *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Expenses retrieved successfully
+ *
+ *   post:
+ *     summary: Add expense
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Expense added successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}/invoice:
+ *   post:
+ *     summary: Upload invoice
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Invoice uploaded successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/{id}/approve:
+ *   post:
+ *     summary: Approve expense
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Expense approved successfully
  *           type: string
  *     requestBody:
  *       required: true
@@ -1074,6 +1171,13 @@
 
 /**
  * @swagger
+ * /api/budgets/{id}/remaining:
+ *   get:
+ *     summary: Get remaining budget
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Remaining budget calculated successfully
  * /api/activity-timeline/{userId}/summary:
  *   get:
  *     summary: Monthly activity summary
@@ -1092,19 +1196,241 @@
 
 /**
  * @swagger
- * /api/activity-timeline/{userId}/stats:
+ * /api/budgets/{id}/categories:
  *   get:
- *     summary: Activity statistics
- *     tags:
- *       - Activity Timeline
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
+ *     summary: Category-wise spending
+ *     tags: [Budget Management]
  *     responses:
  *       200:
- *         description: Activity statistics
+ *         description: Category-wise spending retrieved
+ */
+
+/**
+ * @swagger
+ * /api/budgets/vendors:
+ *   get:
+ *     summary: Get vendors
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Vendors retrieved successfully
+ *
+ *   post:
+ *     summary: Add vendor
+ *     tags: [Budget Management]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Vendor added successfully
+ */
+
+/**
+ * @swagger
+ * /api/budgets/reports:
+ *   get:
+ *     summary: Financial reports
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Financial reports retrieved
+ */
+
+/**
+ * @swagger
+ * /api/budgets/alerts:
+ *   get:
+ *     summary: Budget alerts
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Budget alerts retrieved
+ */
+
+/**
+ * @swagger
+ * /api/budgets/export:
+ *   get:
+ *     summary: Export expense statements
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Expense statements exported
+ */
+
+/**
+ * @swagger
+ * /api/budgets/history:
+ *   get:
+ *     summary: Historical budget comparison
+ *     tags: [Budget Management]
+ *     responses:
+ *       200:
+ *         description: Historical comparison retrieved
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   - name: API Analytics
+ *     description: Platform-Wide API Usage Analytics & Developer Portal
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/dashboard:
+ *   get:
+ *     summary: Get API usage dashboard
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Dashboard retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/requests:
+ *   get:
+ *     summary: Get request analytics
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Request analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/response-times:
+ *   get:
+ *     summary: Get response time metrics
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Response time metrics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/errors:
+ *   get:
+ *     summary: Get API error analytics
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Error analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/docs:
+ *   get:
+ *     summary: Get interactive API documentation
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Documentation retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/sdk:
+ *   get:
+ *     summary: Get SDK documentation
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: SDK documentation retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/changelog:
+ *   get:
+ *     summary: Get API changelog
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Changelog retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/versions:
+ *   get:
+ *     summary: Get API versions
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: API versions retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/keys:
+ *   get:
+ *     summary: Get API keys
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: API keys retrieved successfully
+ *
+ *   post:
+ *     summary: Generate API key
+ *     tags: [API Analytics]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: API key generated successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/keys/{id}:
+ *   delete:
+ *     summary: Revoke API key
+ *     tags: [API Analytics]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: API key revoked successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/rate-limits:
+ *   get:
+ *     summary: Get rate limit usage
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Rate limit information retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/sandbox:
+ *   get:
+ *     summary: Get API testing sandbox
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Sandbox information retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/api-analytics/announcements:
+ *   get:
+ *     summary: Get developer announcements
+ *     tags: [API Analytics]
+ *     responses:
+ *       200:
+ *         description: Developer announcements retrieved successfully
  */
 export default {};

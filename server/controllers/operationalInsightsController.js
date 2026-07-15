@@ -1,80 +1,54 @@
-const operationalInsightsService = require("../services/operationalInsightsService");
-const { sendSuccess } = require("../utils/responseHelper.js");
+import operationalInsightsService from '../services/operationalInsightsService.js';
+import { sendSuccess } from '../utils/responseHelper.js';
 
-exports.getDashboardOverview = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getDashboardOverview()
-  );
+export const getDashboardOverview = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getDashboardOverview());
 };
 
-exports.getSystemHealth = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getSystemHealth()
-  );
+export const getSystemHealth = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getSystemHealth());
 };
 
-exports.getActiveUsers = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getActiveUsers()
-  );
+export const getActiveUsers = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getActiveUsers());
 };
 
-exports.getApiTraffic = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getApiTraffic()
-  );
+export const getApiTraffic = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getApiTraffic());
 };
 
-exports.getDatabasePerformance = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getDatabasePerformance()
-  );
+export const getDatabasePerformance = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getDatabasePerformance());
 };
 
-exports.getBackgroundJobs = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getBackgroundJobs()
-  );
+export const getBackgroundJobs = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getBackgroundJobs());
 };
 
-exports.getStorageUsage = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getStorageUsage()
-  );
+export const getStorageUsage = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getStorageUsage());
 };
 
-exports.getNotificationStats = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getNotificationStats()
-  );
+export const getNotificationStats = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getNotificationStats());
 };
 
-exports.getErrorLogs = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getErrorLogs()
-  );
+export const getErrorLogs = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getErrorLogs());
 };
 
-exports.getMaintenanceSchedule = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getMaintenanceSchedule()
-  );
+export const getMaintenanceSchedule = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getMaintenanceSchedule());
 };
 
-exports.getDependencies = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getDependencies()
-  );
+export const getDependencies = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getDependencies());
 };
 
-exports.getResourceUsage = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getResourceUsage()
-  );
+export const getResourceUsage = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getResourceUsage());
 };
 
-exports.getOperationalReports = (req, res) => {
-  sendSuccess(res,
-    operationalInsightsService.getOperationalReports()
-  );
+export const getOperationalReports = (req, res) => {
+  sendSuccess(res, operationalInsightsService.getOperationalReports());
 };
