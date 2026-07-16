@@ -76,7 +76,7 @@ export function OnboardingTour() {
       if (element) {
         // Ensure element is visible in sidebar (scroll it if needed)
         element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        
+
         // Get bounding client rect
         const rect = element.getBoundingClientRect();
         setTargetRect({
@@ -147,7 +147,7 @@ export function OnboardingTour() {
     const padding = 20;
     popoverStyle = {
       left: `${targetRect.right + padding}px`,
-      top: `${Math.max(20, targetRect.top + (targetRect.height / 2) - 100)}px`,
+      top: `${Math.max(20, targetRect.top + targetRect.height / 2 - 100)}px`,
       position: 'fixed',
     };
   }

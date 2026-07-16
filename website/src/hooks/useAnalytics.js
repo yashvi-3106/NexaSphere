@@ -40,16 +40,12 @@ export function useAnalytics() {
   // Track global clicks for heatmap
   useEffect(() => {
     const handleClick = (e) => {
-      // Find closest semantic element or use path
-      let target = e.target;
-      let selector = '';
-      if (target.id) {
-        selector = `#${target.id}`;
-      } else if (target.className && typeof target.className === 'string') {
-        selector = `.${target.className.split(' ').join('.')}`;
-      } else {
-        selector = target.tagName.toLowerCase();
-      }
+      const target = e.target;
+      const selector = target.id
+        ? `#${target.id}`
+        : target.className && typeof target.className === 'string'
+          ? `.${target.className.split(' ').join('.')}`
+          : target.tagName.toLowerCase();
 
       logEvent('click', {
         selector,

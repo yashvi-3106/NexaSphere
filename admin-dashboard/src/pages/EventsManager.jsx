@@ -76,8 +76,13 @@ export function EventsManager() {
     <div className="page">
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <h2 className="page-title" style={{ margin: 0 }}>Events</h2>
-          <HelpTooltip content="Schedule and manage upcoming events. Add locations, dates, descriptions, ticketing options, and monitor live status." position="right" />
+          <h2 className="page-title" style={{ margin: 0 }}>
+            Events
+          </h2>
+          <HelpTooltip
+            content="Schedule and manage upcoming events. Add locations, dates, descriptions, ticketing options, and monitor live status."
+            position="right"
+          />
         </div>
         <button className="btn-primary" onClick={() => setShowForm(true)}>
           + Add Event

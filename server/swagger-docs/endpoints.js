@@ -588,8 +588,6 @@
  *       200:
  *         description: Notification history returned successfully
  */
- * ...
- */
 
 /**
  * @swagger

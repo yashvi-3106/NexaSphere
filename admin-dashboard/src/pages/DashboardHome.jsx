@@ -34,8 +34,13 @@ export function DashboardHome() {
   return (
     <div className="page">
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-        <h2 className="page-title" style={{ marginBottom: 0 }}>Dashboard</h2>
-        <HelpTooltip content="Your overall administrator command center. Quick view of community events, application flows, and active staff." position="right" />
+        <h2 className="page-title" style={{ marginBottom: 0 }}>
+          Dashboard
+        </h2>
+        <HelpTooltip
+          content="Your overall administrator command center. Quick view of community events, application flows, and active staff."
+          position="right"
+        />
       </div>
 
       {/* ── Offline mode banner ── */}
@@ -80,7 +85,10 @@ export function DashboardHome() {
               <div className="stat-value">{stats.totalEvents}</div>
               <div className="stat-label">
                 Total Events
-                <HelpTooltip content="The overall count of created, ongoing, and completed events." position="top" />
+                <HelpTooltip
+                  content="The overall count of created, ongoing, and completed events."
+                  position="top"
+                />
               </div>
             </div>
           </div>
@@ -104,7 +112,10 @@ export function DashboardHome() {
               <div className="stat-value">{stats.teamMembers}</div>
               <div className="stat-label">
                 Core Team
-                <HelpTooltip content="Registered administrators, core team members, and role officers." position="top" />
+                <HelpTooltip
+                  content="Registered administrators, core team members, and role officers."
+                  position="top"
+                />
               </div>
             </div>
           </div>
@@ -116,7 +127,10 @@ export function DashboardHome() {
               <div className="stat-value">{stats.totalApplications}</div>
               <div className="stat-label">
                 Applications
-                <HelpTooltip content="Pending and reviewed applications for community membership." position="top" />
+                <HelpTooltip
+                  content="Pending and reviewed applications for community membership."
+                  position="top"
+                />
                 {isOffline && (
                   <span
                     style={{
