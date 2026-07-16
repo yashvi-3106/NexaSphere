@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import UserTimelineModal from '../components/UserTimelineModal';
+import { HelpTooltip } from '../components/HelpTooltip';
 
 const ROLES = ['member', 'moderator', 'admin'];
 const PASSWORD_REQUIREMENTS = [
@@ -314,7 +315,10 @@ export default function UserManager() {
           marginBottom: '16px',
         }}
       >
-        <h2>User Management</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 style={{ margin: 0 }}>User Management</h2>
+          <HelpTooltip content="Register new users, assign administrator permissions (member, moderator, admin), unlock security locks, and reset passwords." position="right" />
+        </div>
         <button onClick={() => setShowAddModal(true)}>+ Add User</button>
       </div>
 

@@ -1861,4 +1861,4 @@ export const api = {
 };
 
 
-export { auth, eventEmitter, EVENTS };
+export { auth, eventEmitter, EVENTS, fetchWithAuth as apiClient };

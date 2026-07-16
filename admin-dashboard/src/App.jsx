@@ -31,13 +31,15 @@ import { CircuitBreakerManager } from './pages/CircuitBreakerManager';
 import { WaitingRoomManager } from './pages/WaitingRoomManager';
 import { SponsorshipsManager } from './pages/SponsorshipsManager';
 import { UserSegmentation } from './pages/UserSegmentation';
-import { PlatformSettings } from './pages/dashboard/PlatformSettings';
+import PlatformSettings from './pages/dashboard/PlatformSettings';
 import { SsoInvitePage } from './pages/SsoInvitePage';
 import { ModerationManager } from './pages/ModerationManager';
 import { RBACManager } from './pages/RBACManager';
 import { BackupsManager } from './pages/BackupsManager';
 import { UserEngagementReport } from './pages/UserEngagementReport';
-import { ScheduledReports } from './pages/ScheduledReports';
+import ScheduledReports from './pages/dashboard/ScheduledReports';
+import UserManager from './pages/UserManager';
+import { OnboardingTour } from './components/OnboardingTour';
 import './styles/admin.css';
 
 function RequireAuth() {
@@ -69,6 +71,7 @@ function DashboardLayout() {
         </ErrorBoundary>
       </main>
       <Toast />
+      <OnboardingTour />
     </div>
   );
 }
@@ -100,6 +103,7 @@ export default function App() {
             <Route path="/dashboard/waiting-room" element={<WaitingRoomManager />} />
             <Route path="/dashboard/groups" element={<UserGroups />} />
             <Route path="/dashboard/roles" element={<RolesManager />} />
+            <Route path="/dashboard/users" element={<UserManager />} />
             <Route path="/dashboard/tasks" element={<ScheduledTasksManager />} />
             <Route path="/dashboard/backups" element={<BackupsManager />} />
             <Route path="/dashboard/sponsorships" element={<SponsorshipsManager />} />

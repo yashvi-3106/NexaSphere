@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { CustomReportBuilder } from '../components/analytics/CustomReportBuilder';
 import { buildFeedbackAnalyticsReport } from '../utils/analyticsHelpers';
+import { HelpTooltip } from '../components/HelpTooltip';
 
 export function ComprehensiveAnalytics() {
   const [summary, setSummary] = useState(null);
@@ -85,7 +86,10 @@ export function ComprehensiveAnalytics() {
   return (
     <div className="page bg-gray-50 text-gray-900 min-h-screen p-8">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Admin Analytics Dashboard</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 className="text-2xl font-bold" style={{ margin: 0 }}>Admin Analytics Dashboard</h2>
+          <HelpTooltip content="Monitor key platform metrics including active members, funnel steps, custom reports, and feedback analysis." position="right" />
+        </div>
         <a
           href="/dashboard/analytics/funnel"
           style={{
@@ -255,6 +259,8 @@ export function ComprehensiveAnalytics() {
           </div>
         </div>
       )}
+    </>
+  )}
 
       {/* Custom Report Builder */}
       <div className="mb-8">

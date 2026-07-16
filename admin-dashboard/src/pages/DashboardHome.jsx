@@ -5,6 +5,7 @@ import { api, auth } from '../services/api';
 import { Skeleton } from '../components/Skeleton';
 import { AdminIcon } from '../components/AdminIcon';
 import { PermissionGuard } from '../components/PermissionGuard';
+import { HelpTooltip } from '../components/HelpTooltip';
 
 export function DashboardHome() {
   const [stats, setStats] = useState(null);
@@ -32,7 +33,10 @@ export function DashboardHome() {
 
   return (
     <div className="page">
-      <h2 className="page-title">Dashboard</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+        <h2 className="page-title" style={{ marginBottom: 0 }}>Dashboard</h2>
+        <HelpTooltip content="Your overall administrator command center. Quick view of community events, application flows, and active staff." position="right" />
+      </div>
 
       {/* ── Offline mode banner ── */}
       {isOffline && (
@@ -74,7 +78,10 @@ export function DashboardHome() {
             </span>
             <div>
               <div className="stat-value">{stats.totalEvents}</div>
-              <div className="stat-label">Total Events</div>
+              <div className="stat-label">
+                Total Events
+                <HelpTooltip content="The overall count of created, ongoing, and completed events." position="top" />
+              </div>
             </div>
           </div>
           <div className="stat-card">
@@ -83,7 +90,10 @@ export function DashboardHome() {
             </span>
             <div>
               <div className="stat-value">{stats.upcomingEvents}</div>
-              <div className="stat-label">Upcoming Events</div>
+              <div className="stat-label">
+                Upcoming Events
+                <HelpTooltip content="Events scheduled to start in the future." position="top" />
+              </div>
             </div>
           </div>
           <div className="stat-card">
@@ -92,7 +102,10 @@ export function DashboardHome() {
             </span>
             <div>
               <div className="stat-value">{stats.teamMembers}</div>
-              <div className="stat-label">Core Team</div>
+              <div className="stat-label">
+                Core Team
+                <HelpTooltip content="Registered administrators, core team members, and role officers." position="top" />
+              </div>
             </div>
           </div>
           <div className="stat-card">
@@ -103,6 +116,7 @@ export function DashboardHome() {
               <div className="stat-value">{stats.totalApplications}</div>
               <div className="stat-label">
                 Applications
+                <HelpTooltip content="Pending and reviewed applications for community membership." position="top" />
                 {isOffline && (
                   <span
                     style={{
