@@ -8,18 +8,18 @@ class BookmarkService {
       title: data.title,
       module: data.module,
       itemId: data.itemId,
-      folder: data.folder || "General",
+      folder: data.folder || 'General',
       tags: data.tags || [],
       createdAt: new Date(),
-      favorite: true
+      favorite: true,
     };
 
     bookmarks.push(bookmark);
 
     return {
       success: true,
-      message: "Bookmark created successfully.",
-      data: bookmark
+      message: 'Bookmark created successfully.',
+      data: bookmark,
     };
   }
 
@@ -27,17 +27,17 @@ class BookmarkService {
     return {
       success: true,
       total: bookmarks.length,
-      data: bookmarks
+      data: bookmarks,
     };
   }
 
   deleteBookmark(id) {
-    const index = bookmarks.findIndex(b => b.id === id);
+    const index = bookmarks.findIndex((b) => b.id === id);
 
     if (index === -1) {
       return {
         success: false,
-        message: "Bookmark not found."
+        message: 'Bookmark not found.',
       };
     }
 
@@ -45,26 +45,26 @@ class BookmarkService {
 
     return {
       success: true,
-      message: "Bookmark removed."
+      message: 'Bookmark removed.',
     };
   }
 
   searchBookmarks(query) {
-    const results = bookmarks.filter(bookmark =>
+    const results = bookmarks.filter((bookmark) =>
       bookmark.title.toLowerCase().includes(query.toLowerCase())
     );
 
     return {
       success: true,
       total: results.length,
-      data: results
+      data: results,
     };
   }
 
   getRecentBookmarks() {
     return {
       success: true,
-      data: [...bookmarks].reverse().slice(0, 10)
+      data: [...bookmarks].reverse().slice(0, 10),
     };
   }
 
@@ -72,62 +72,62 @@ class BookmarkService {
     const folder = {
       id: Date.now().toString(),
       name,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
     folders.push(folder);
 
     return {
       success: true,
-      data: folder
+      data: folder,
     };
   }
 
   getFolders() {
     return {
       success: true,
-      data: folders
+      data: folders,
     };
   }
 
   updateFolder(id, name) {
-    const folder = folders.find(f => f.id === id);
+    const folder = folders.find((f) => f.id === id);
 
     if (!folder)
       return {
         success: false,
-        message: "Folder not found."
+        message: 'Folder not found.',
       };
 
     folder.name = name;
 
     return {
       success: true,
-      data: folder
+      data: folder,
     };
   }
 
   deleteFolder(id) {
-    const index = folders.findIndex(f => f.id === id);
+    const index = folders.findIndex((f) => f.id === id);
 
     if (index === -1)
       return {
         success: false,
-        message: "Folder not found."
+        message: 'Folder not found.',
       };
 
     folders.splice(index, 1);
 
     return {
       success: true,
-      message: "Folder deleted."
+      message: 'Folder deleted.',
     };
   }
 
   shareCollection(id) {
     return {
       success: true,
-      shareLink: `https://nexasphere.app/share/${id}`
+      shareLink: `https://nexasphere.app/share/${id}`,
     };
   }
 
@@ -135,14 +135,14 @@ class BookmarkService {
     return {
       success: true,
       synced: bookmarks.length,
-      lastSync: new Date()
+      lastSync: new Date(),
     };
   }
 
   exportBookmarks() {
     return {
       success: true,
-      data: bookmarks
+      data: bookmarks,
     };
   }
 
@@ -152,11 +152,10 @@ class BookmarkService {
       data: {
         totalBookmarks: bookmarks.length,
         totalFolders: folders.length,
-        mostUsedFolder:
-          folders.length > 0 ? folders[0].name : "General"
-      }
+        mostUsedFolder: folders.length > 0 ? folders[0].name : 'General',
+      },
     };
   }
 }
 
-module.exports = new BookmarkService();
+export default new BookmarkService();
