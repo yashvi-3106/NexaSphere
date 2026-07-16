@@ -19,7 +19,9 @@ if (process.env.REDIS_URL) {
 
 export const bulkOperationsQueueName = 'bulk-operations';
 
-const bulkOperationsQueue = connection ? new Queue(bulkOperationsQueueName, { connection }) : null;
+export const bulkOperationsQueue = connection
+  ? new Queue(bulkOperationsQueueName, { connection })
+  : null;
 
 class BulkOperationsService {
   constructor() {

@@ -49,13 +49,18 @@ import {
   createSubscriptionSchema,
   adminBannerBodySchema,
 } from '../validators/routes/apiSchemas.js';
-import announcementPriorityRouter from "./announcementPriority.js";
-import eventConflictRouter from "./eventConflict.js";
-import waitlistRoutes from "./waitlist.js";
+import announcementPriorityRouter from './announcementPriority.js';
+import eventConflictRouter from './eventConflict.js';
+import waitlistRoutes from './waitlist.js';
 import * as localAuthController from '../controllers/localAuthController.js';
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
+import * as whiteboardController from '../controllers/whiteboardController.js';
+import { impersonationService } from '../services/impersonationService.js';
+import * as followsController from '../controllers/followsController.js';
+import recommendationEngine from '../routes/recommendationEngine.js';
+import platformAnalyticsRoutes from '../routes/platformAnalytics.js';
 import multer from 'multer';
 
 const router = Router();
@@ -82,7 +87,11 @@ router.post(
   recommendationsController.getProjectRecommendations
 );
 router.get('/api/users', usersController.getPublicUsers);
-router.post('/api/whiteboard/export-pdf', validate(exportPDFSchema), whiteboardController.exportPDF);
+router.post(
+  '/api/whiteboard/export-pdf',
+  validate(exportPDFSchema),
+  whiteboardController.exportPDF
+);
 router.get('/api/content/events', eventsController.listEvents);
 router.get('/api/content/banners', bannersController.listActiveBanners);
 router.post(
@@ -131,25 +140,35 @@ router.delete(
   adminAuthMiddleware.requireScope('events:write'),
   activityEventsController.deleteActivityEvent
 );
-router.post('/account-recovery/request', authRateLimiter, validate(accountRecoveryRequestSchema), async (req, res) => {
-  const { email } = req.body;
+router.post(
+  '/account-recovery/request',
+  authRateLimiter,
+  validate(accountRecoveryRequestSchema),
+  async (req, res) => {
+    const { email } = req.body;
 
-  await studentAuthService.createRecoveryRequest(email);
+    await studentAuthService.createRecoveryRequest(email);
 
-  return sendSuccess(res, {
-    success: true,
-    message: 'If an account with that email exists, a recovery code has been sent.',
-  });
-});
-router.post('/account-recovery/verify', authRateLimiter, validate(accountRecoveryVerifySchema), async (req, res) => {
-  const { email, enteredCode } = req.body;
+    return sendSuccess(res, {
+      success: true,
+      message: 'If an account with that email exists, a recovery code has been sent.',
+    });
+  }
+);
+router.post(
+  '/account-recovery/verify',
+  authRateLimiter,
+  validate(accountRecoveryVerifySchema),
+  async (req, res) => {
+    const { email, enteredCode } = req.body;
 
-  const valid = await studentAuthService.verifyRecoveryCode(email, enteredCode);
+    const valid = await studentAuthService.verifyRecoveryCode(email, enteredCode);
 
-  return sendSuccess(res, {
-    success: valid,
-  });
-});
+    return sendSuccess(res, {
+      success: valid,
+    });
+  }
+);
 
 // Admin auth
 router.post(
@@ -185,12 +204,27 @@ router.delete(
   adminAuditMiddleware,
   usersController.adminDeactivateUser
 );
-router.post('/api/admin/login', authRateLimiter, validate(adminLoginSchema), adminAuthMiddleware.login);
+router.post(
+  '/api/admin/login',
+  authRateLimiter,
+  validate(adminLoginSchema),
+  adminAuthMiddleware.login
+);
 
 // Local User Auth
-router.post('/api/auth/local/login', authRateLimiter, validate(localLoginSchema), localAuthController.localLogin);
+router.post(
+  '/api/auth/local/login',
+  authRateLimiter,
+  validate(localLoginSchema),
+  localAuthController.localLogin
+);
 
-router.post('/api/admin/2fa/verify', authRateLimiter, validate(verifyTwoFactorSchema), adminAuthMiddleware.verifyTwoFactor);
+router.post(
+  '/api/admin/2fa/verify',
+  authRateLimiter,
+  validate(verifyTwoFactorSchema),
+  adminAuthMiddleware.verifyTwoFactor
+);
 router.post(
   '/api/admin/2fa/setup/verify',
   authRateLimiter,
@@ -282,7 +316,11 @@ router.post(
 );
 
 // Banners Admin
-router.get('/api/admin/banners', adminAuthMiddleware.requireAdmin, bannersController.listAllBanners);
+router.get(
+  '/api/admin/banners',
+  adminAuthMiddleware.requireAdmin,
+  bannersController.listAllBanners
+);
 router.post(
   '/api/admin/banners',
   adminAuthMiddleware.requireAdmin,
@@ -295,7 +333,11 @@ router.put(
   validate(adminBannerBodySchema),
   bannersController.updateBanner
 );
-router.delete('/api/admin/banners/:id', adminAuthMiddleware.requireAdmin, bannersController.deleteBanner);
+router.delete(
+  '/api/admin/banners/:id',
+  adminAuthMiddleware.requireAdmin,
+  bannersController.deleteBanner
+);
 
 router.post(
   '/api/admin/subscriptions/:userId/cancel',
@@ -354,10 +396,7 @@ router.get(
   portfolioAnalyticsController.getPortfolioAnalytics
 );
 
-router.post(
-  '/api/portfolio/:username/visit',
-  portfolioAnalyticsController.recordPortfolioVisit
-);
+router.post('/api/portfolio/:username/visit', portfolioAnalyticsController.recordPortfolioVisit);
 
 router.get(
   '/api/portfolio/:username/monthly-report',
@@ -448,15 +487,9 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   const active = impersonationService.getActive(req.adminSession.token);
   return sendSuccess(res, { impersonating: !!active, user: active?.targetUser || null });
 });
-router.use(
-  "/api/announcements",
-  announcementPriorityRouter
-);
-router.use("/api/events", eventConflictRouter);
-router.use(
-  "/api/admin/waitlist",
-  waitlistRoutes
-);
+router.use('/api/announcements', announcementPriorityRouter);
+router.use('/api/events', eventConflictRouter);
+router.use('/api/admin/waitlist', waitlistRoutes);
 // Audit Log Viewer APIs
 router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
 router.get(
@@ -464,10 +497,7 @@ router.get(
   adminAuthMiddleware.requireAdmin,
   auditLogController.getStats
 );
-router.use(
-  "/recommendations",
-  recommendationEngine
-);
+router.use('/recommendations', recommendationEngine);
 
 // Follows/User Following System APIs
 // Follow/Unfollow operations
@@ -523,6 +553,6 @@ router.get(
 );
 
 // Platform Analytics APIs
-router.use("/api/analytics", platformAnalyticsRoutes);
+router.use('/api/analytics', platformAnalyticsRoutes);
 
 export default router;

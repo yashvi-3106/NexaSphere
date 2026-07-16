@@ -101,7 +101,9 @@ export const searchController = {
                   id: doc.id,
                   type: 'activity',
                   title: getHighlight('title', doc.title),
-                  description: getHighlight('description', doc.description) || getHighlight('subtitle', doc.subtitle),
+                  description:
+                    getHighlight('description', doc.description) ||
+                    getHighlight('subtitle', doc.subtitle),
                   tags: doc.tags,
                   url: `/activities/${encodeURIComponent(doc.id)}`,
                   score: hit.text_match || 0,
@@ -113,12 +115,12 @@ export const searchController = {
           // Sort by match score
           results.sort((a, b) => b.score - a.score);
 
-          const trueTotal = results.length;
+          const typesenseTotal = results.length;
           const paginated = results.slice(skip, skip + limit);
 
           return sendSuccess(res, {
             results: paginated,
-            total: trueTotal,
+            total: typesenseTotal,
             query: q,
             page,
             limit,
@@ -190,7 +192,7 @@ export const searchController = {
           threshold: 0.4, // typo tolerance
         });
 
-        results = fuse.search(q).map(r => ({ ...r.item, score: r.score }));
+        results = fuse.search(q).map((r) => ({ ...r.item, score: r.score }));
         trueTotal = results.length;
         results = results.slice(skip, skip + limit);
       }
@@ -388,10 +390,10 @@ export const searchController = {
         }
       }
 
-      const trueTotal = results.length;
+      const allResultsCount = results.length;
       results = results.slice(0, limit);
 
-      return sendSuccess(res, { results, total: trueTotal, query: q });
+      return sendSuccess(res, { results, total: allResultsCount, query: q });
     } catch (err) {
       console.error('Search error:', err);
       return sendError(req, res, 'Search failed', 500, 'INTERNAL_ERROR', { results: [], total: 0 });
@@ -429,7 +431,10 @@ export const searchController = {
       return sendSuccess(res, { trending: sorted, popularSearches });
     } catch (err) {
       console.error('Trending error:', err);
-      return sendError(req, res, 'Failed to fetch trending', 500, 'INTERNAL_ERROR', { trending: [], popularSearches: [] });
+      return sendError(req, res, 'Failed to fetch trending', 500, 'INTERNAL_ERROR', {
+        trending: [],
+        popularSearches: [],
+      });
     }
   },
 
@@ -490,7 +495,9 @@ export const searchController = {
       return sendSuccess(res, { recommendations: recommended });
     } catch (err) {
       console.error('Recommendations error:', err);
-      return sendError(req, res, 'Failed to fetch recommendations', 500, 'INTERNAL_ERROR', { recommendations: [] });
+      return sendError(req, res, 'Failed to fetch recommendations', 500, 'INTERNAL_ERROR', {
+        recommendations: [],
+      });
     }
   },
 };

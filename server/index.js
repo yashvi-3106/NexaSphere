@@ -30,7 +30,6 @@ import { slackIntegrationService } from './services/slackIntegrationService.js';
 import { initializeSocketIO } from './config/socket.js';
 import adminStreamRouter from './routes/adminStream.js';
 import faqRouter from './routes/faqRoutes.js';
-import { setupAuditContext } from './middleware/adminAuditMiddleware.js';
 import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
 import healthRouter from './routes/health.js';
@@ -112,8 +111,8 @@ import financialsRouter from './routes/financials.js';
 import { schedulerService } from './services/schedulerService.js';
 import feedbackRouter from './routes/feedbackRoutes.js';
 import * as slackController from './controllers/slackController.js';
-import activityTimelineRoutes from "./routes/activityTimeline.js";
-app.use("/api/activity-timeline", activityTimelineRoutes);
+import activityTimelineRoutes from './routes/activityTimeline.js';
+app.use('/api/activity-timeline', activityTimelineRoutes);
 
 import { initializeTypesenseCollections } from './config/typesense.js';
 import moderationRouter from './routes/moderation.js';
@@ -153,8 +152,6 @@ const ADMIN_EVENT_PASSWORD = requiredStrongPassword('ADMIN_EVENT_PASSWORD');
 const SESSION_SECRET = requiredStrongPassword('SESSION_SECRET');
 const ADMIN_PASSWORD = requiredStrongPassword('ADMIN_PASSWORD');
 
-
-
 const app = express();
 
 const useStructuredHttpLog = (process.env.LOG_FORMAT || '').toLowerCase() === 'json';
@@ -164,10 +161,7 @@ app.set('trust proxy', 1);
 
 initializeSentry(app);
 app.use(compression());
-app.use(
-  "/api/notification-preferences",
-  notificationPreferenceRoutes
-);
+app.use('/api/notification-preferences', notificationPreferenceRoutes);
 
 // Use compression with fallback (Brotli supported by default in compression v1.8 if zlib supports it)
 // Skip compression for responses smaller than 1KB (1024 bytes)
@@ -291,16 +285,16 @@ app.use(
         objectSrc: ["'none'"],
 
         // ✅ CRITICAL FIX: Missing directives added below
-        baseUri: ["'self'"],                                    // Prevents <base> tag injection
-        frameAncestors: ["'none'"],                             // Prevents clickjacking
-        formAction: ["'self'"],                                 // Prevents form submission to external sites
-        workerSrc: ["'self'", 'blob:'],                         // Restricts web worker sources
-        manifestSrc: ["'self'"],                                // Restricts manifest sources
-        mediaSrc: ["'self'"],                                   // Restricts media sources
+        baseUri: ["'self'"], // Prevents <base> tag injection
+        frameAncestors: ["'none'"], // Prevents clickjacking
+        formAction: ["'self'"], // Prevents form submission to external sites
+        workerSrc: ["'self'", 'blob:'], // Restricts web worker sources
+        manifestSrc: ["'self'"], // Restricts manifest sources
+        mediaSrc: ["'self'"], // Restricts media sources
 
         frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'], // Restricts iframe sources
-        childSrc: ["'none'"],                                   // Restricts child browsing contexts
-        upgradeInsecureRequests: [],                            // Upgrades HTTP to HTTPS
+        childSrc: ["'none'"], // Restricts child browsing contexts
+        upgradeInsecureRequests: [], // Upgrades HTTP to HTTPS
 
         reportUri: '/api/v1/csp-violation',
       },
@@ -437,10 +431,25 @@ app.use('/api/admin/rbac', adminAuth, rbacRouter);
 
 // Database Backup & Recovery Endpoints
 app.get('/api/admin/backups', adminAuth, backupController.getBackups);
-app.post('/api/admin/backups/manual', validate(indexSchemas.manualBackupSchema), adminAuth, backupController.runManualBackup);
-app.post('/api/admin/backups/restore', validate(indexSchemas.restoreBackupSchema), adminAuth, backupController.runRestore);
+app.post(
+  '/api/admin/backups/manual',
+  validate(indexSchemas.manualBackupSchema),
+  adminAuth,
+  backupController.runManualBackup
+);
+app.post(
+  '/api/admin/backups/restore',
+  validate(indexSchemas.restoreBackupSchema),
+  adminAuth,
+  backupController.runRestore
+);
 app.get('/api/admin/backups/restore-test-history', adminAuth, backupController.getRestoreHistory);
-app.delete('/api/admin/backups', validate(indexSchemas.deleteBackupSchema), adminAuth, backupController.deleteBackup);
+app.delete(
+  '/api/admin/backups',
+  validate(indexSchemas.deleteBackupSchema),
+  adminAuth,
+  backupController.deleteBackup
+);
 
 const defaultContent = {
   events: [
@@ -460,8 +469,6 @@ const defaultContent = {
   activityEvents: {},
   coreTeam: [],
 };
-
-
 
 // â”€â”€ File Upload Configuration â”€â”€
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
@@ -542,7 +549,13 @@ const uploadWithMagicCheck = (req, res, next) => {
     }
     if (req.file && !validateMagicBytes(req.file.path, req.file.mimetype)) {
       fs.unlink(req.file.path, () => {});
-      return sendError(req, res, 'File content does not match its declared type.', 400, 'VALIDATION_ERROR');
+      return sendError(
+        req,
+        res,
+        'File content does not match its declared type.',
+        400,
+        'VALIDATION_ERROR'
+      );
     }
     next();
   });
@@ -1231,16 +1244,31 @@ app.get('/api/auth/github/callback', studentAuthController.githubCallback);
 app.get('/api/auth/me', requireStudentAuth, studentAuthController.getMe);
 app.delete('/api/auth/me', requireStudentAuth, studentAuthController.deleteAccount);
 app.get('/api/auth/export', requireStudentAuth, studentAuthController.exportData);
-app.post('/api/auth/theme', validate(indexSchemas.updateThemeSchema), requireStudentAuth, studentAuthController.updateTheme);
+app.post(
+  '/api/auth/theme',
+  validate(indexSchemas.updateThemeSchema),
+  requireStudentAuth,
+  studentAuthController.updateTheme
+);
 app.post('/api/auth/logout', studentAuthController.logout);
 
 // Student Profile Endpoints
 app.get('/api/auth/profile', requireStudentAuth, studentAuthController.getProfile);
-app.put('/api/auth/profile', validate(indexSchemas.updateProfileSchema), requireStudentAuth, studentAuthController.updateProfile);
+app.put(
+  '/api/auth/profile',
+  validate(indexSchemas.updateProfileSchema),
+  requireStudentAuth,
+  studentAuthController.updateProfile
+);
 app.get('/api/auth/registrations', requireStudentAuth, studentAuthController.getRegistrations);
 
 // Slack Integration Endpoints
-app.post('/api/auth/slack-settings', validate(indexSchemas.slackSettingsSchema), requireStudentAuth, studentAuthController.updateSlackSettings);
+app.post(
+  '/api/auth/slack-settings',
+  validate(indexSchemas.slackSettingsSchema),
+  requireStudentAuth,
+  studentAuthController.updateSlackSettings
+);
 app.get('/api/slack/auth', slackController.startSlackAuth);
 app.get('/api/slack/auth/callback', slackController.slackAuthCallback);
 app.post(
@@ -1249,7 +1277,12 @@ app.post(
   slackController.handleSlackCommand
 );
 app.get('/api/admin/slack/config', adminAuth, slackController.getSlackConfig);
-app.post('/api/admin/slack/config', validate(indexSchemas.slackConfigSchema), adminAuth, slackController.updateSlackConfig);
+app.post(
+  '/api/admin/slack/config',
+  validate(indexSchemas.slackConfigSchema),
+  adminAuth,
+  slackController.updateSlackConfig
+);
 app.delete('/api/admin/slack/disconnect', adminAuth, slackController.disconnectSlack);
 
 // â”€â”€ Event Admin Management â”€â”€
@@ -1262,28 +1295,80 @@ app.delete('/api/admin/events/:id', adminAuth, eventsController.adminDeleteEvent
 app.get('/api/streams', streamController.listStreams);
 app.get('/api/streams/event/:eventId', streamController.getStreamByEvent);
 app.get('/api/streams/:id', streamController.getStream);
-app.post('/api/streams', validate(indexSchemas.createStreamSchema), adminAuth, streamController.createStream);
-app.put('/api/streams/:id', validate(indexSchemas.updateStreamSchema), adminAuth, streamController.updateStream);
-app.patch('/api/streams/:id/status', validate(indexSchemas.streamStatusSchema), adminAuth, streamController.setStreamStatus);
+app.post(
+  '/api/streams',
+  validate(indexSchemas.createStreamSchema),
+  adminAuth,
+  streamController.createStream
+);
+app.put(
+  '/api/streams/:id',
+  validate(indexSchemas.updateStreamSchema),
+  adminAuth,
+  streamController.updateStream
+);
+app.patch(
+  '/api/streams/:id/status',
+  validate(indexSchemas.streamStatusSchema),
+  adminAuth,
+  streamController.setStreamStatus
+);
 app.delete('/api/streams/:id', adminAuth, streamController.deleteStream);
-app.post('/api/streams/:id/chat', validate(indexSchemas.addChatMessageSchema), apiRateLimiter, streamController.addChatMessage);
+app.post(
+  '/api/streams/:id/chat',
+  validate(indexSchemas.addChatMessageSchema),
+  apiRateLimiter,
+  streamController.addChatMessage
+);
 app.get('/api/streams/:id/chat', streamController.listChatMessages);
-app.post('/api/streams/:id/ban', validate(indexSchemas.banUserSchema), adminAuth, streamController.banUser);
-app.post('/api/streams/:id/polls', validate(indexSchemas.createPollSchema), adminAuth, streamController.createPoll);
+app.post(
+  '/api/streams/:id/ban',
+  validate(indexSchemas.banUserSchema),
+  adminAuth,
+  streamController.banUser
+);
+app.post(
+  '/api/streams/:id/polls',
+  validate(indexSchemas.createPollSchema),
+  adminAuth,
+  streamController.createPoll
+);
 app.get('/api/streams/:id/polls', streamController.listPolls);
-app.post('/api/streams/polls/:pollId/vote', validate(indexSchemas.votePollSchema), streamController.votePoll);
+app.post(
+  '/api/streams/polls/:pollId/vote',
+  validate(indexSchemas.votePollSchema),
+  streamController.votePoll
+);
 app.patch('/api/streams/polls/:pollId/close', adminAuth, streamController.closePoll);
 app.patch('/api/streams/chat/:messageId/moderate', adminAuth, streamController.moderateChatMessage);
 app.get('/api/admin/streams', adminAuth, streamController.adminListAll);
-app.post('/api/streams/:id/mod-chat', validate(indexSchemas.addModChatMessageSchema), adminAuth, streamController.addModChatMessage);
+app.post(
+  '/api/streams/:id/mod-chat',
+  validate(indexSchemas.addModChatMessageSchema),
+  adminAuth,
+  streamController.addModChatMessage
+);
 app.get('/api/streams/:id/mod-chat', adminAuth, streamController.listModChatMessages);
 app.get('/api/streams/:id/analytics', adminAuth, streamController.getStreamAnalytics);
 
 // Streaming Engagement: Q&A and Reactions
-app.post('/api/streams/:id/questions', validate(indexSchemas.addQuestionSchema), streamController.addQuestion);
+app.post(
+  '/api/streams/:id/questions',
+  validate(indexSchemas.addQuestionSchema),
+  streamController.addQuestion
+);
 app.get('/api/streams/:id/questions', streamController.listQuestions);
-app.patch('/api/streams/questions/:qId/answer', validate(indexSchemas.answerQuestionSchema), adminAuth, streamController.answerQuestion);
-app.post('/api/streams/:id/reactions', validate(indexSchemas.addReactionSchema), streamController.addReaction);
+app.patch(
+  '/api/streams/questions/:qId/answer',
+  validate(indexSchemas.answerQuestionSchema),
+  adminAuth,
+  streamController.answerQuestion
+);
+app.post(
+  '/api/streams/:id/reactions',
+  validate(indexSchemas.addReactionSchema),
+  streamController.addReaction
+);
 app.get('/api/streams/:id/reactions', streamController.getReactions);
 
 // search routes
@@ -1445,40 +1530,51 @@ app.get('/api/notifications/preferences', adminAuth, async (req, res) => {
   }
 });
 // Notification analytics (lightweight collector)
-app.put('/api/notifications/preferences', validate(indexSchemas.notificationPreferencesSchema), adminAuth, async (req, res) => {
-  try {
-    const userId = req.body.userId || 'global';
-    const { category, email, push, in_app, sms, frequency, quiet_start, quiet_end, dnd } = req.body;
-    if (!category) return sendError(req, res, 'category is required', 400, 'VALIDATION_ERROR');
-    const pref = await notificationPreferencesRepository.set(userId, category, {
-      email,
-      push,
-      in_app,
-      sms,
-      frequency,
-      quiet_start,
-      quiet_end,
-      dnd,
-    });
-    return sendSuccess(res, { preference: pref });
-  } catch (err) {
-    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
-  }
-});
-
-app.put('/api/notifications/preferences/bulk', validate(indexSchemas.bulkNotificationPreferencesSchema), adminAuth, async (req, res) => {
-  try {
-    const userId = req.body.userId || 'global';
-    const { preferences } = req.body;
-    if (!Array.isArray(preferences) || !preferences.length) {
-      return sendError(req, res, 'preferences array is required', 400, 'VALIDATION_ERROR');
+app.put(
+  '/api/notifications/preferences',
+  validate(indexSchemas.notificationPreferencesSchema),
+  adminAuth,
+  async (req, res) => {
+    try {
+      const userId = req.body.userId || 'global';
+      const { category, email, push, in_app, sms, frequency, quiet_start, quiet_end, dnd } =
+        req.body;
+      if (!category) return sendError(req, res, 'category is required', 400, 'VALIDATION_ERROR');
+      const pref = await notificationPreferencesRepository.set(userId, category, {
+        email,
+        push,
+        in_app,
+        sms,
+        frequency,
+        quiet_start,
+        quiet_end,
+        dnd,
+      });
+      return sendSuccess(res, { preference: pref });
+    } catch (err) {
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
     }
-    const results = await notificationPreferencesRepository.setBulk(userId, preferences);
-    return sendSuccess(res, { preferences: results });
-  } catch (err) {
-    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
-});
+);
+
+app.put(
+  '/api/notifications/preferences/bulk',
+  validate(indexSchemas.bulkNotificationPreferencesSchema),
+  adminAuth,
+  async (req, res) => {
+    try {
+      const userId = req.body.userId || 'global';
+      const { preferences } = req.body;
+      if (!Array.isArray(preferences) || !preferences.length) {
+        return sendError(req, res, 'preferences array is required', 400, 'VALIDATION_ERROR');
+      }
+      const results = await notificationPreferencesRepository.setBulk(userId, preferences);
+      return sendSuccess(res, { preferences: results });
+    } catch (err) {
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
+    }
+  }
+);
 
 // Notification analytics (lightweight collector)
 app.post('/api/notifications/analytics', async (req, res) => {
@@ -1490,7 +1586,7 @@ app.post('/api/notifications/analytics', async (req, res) => {
   } catch (err) {
     return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
-  });
+});
 
 app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
   try {
@@ -1505,7 +1601,13 @@ app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
     });
     if (!credentials.success) {
       const firstIssue = credentials.error.issues[0];
-      return sendError(req, res, firstIssue?.message || 'Invalid request body', 400, 'VALIDATION_ERROR');
+      return sendError(
+        req,
+        res,
+        firstIssue?.message || 'Invalid request body',
+        400,
+        'VALIDATION_ERROR'
+      );
     }
     const { username, passkey } = credentials.data;
 
@@ -1516,7 +1618,13 @@ app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
     const content = portfolioContentSchema.safeParse(body);
     if (!content.success) {
       const firstIssue = content.error.issues[0];
-      return sendError(req, res, `Invalid portfolio content: ${firstIssue?.path?.join('.') || ''} ${firstIssue?.message || ''}`.trim(), 400, 'VALIDATION_ERROR');
+      return sendError(
+        req,
+        res,
+        `Invalid portfolio content: ${firstIssue?.path?.join('.') || ''} ${firstIssue?.message || ''}`.trim(),
+        400,
+        'VALIDATION_ERROR'
+      );
     }
 
     const existingPortfolio = await portfolioRepository.getByUsername(username);
@@ -1524,7 +1632,13 @@ app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
 
     const lockout = checkPasskeyLockout(username, ip);
     if (lockout) {
-      return sendError(req, res, 'Too many failed passkey attempts. Please try again later.', 429, 'RATE_LIMITED');
+      return sendError(
+        req,
+        res,
+        'Too many failed passkey attempts. Please try again later.',
+        429,
+        'RATE_LIMITED'
+      );
     }
 
     const isAuthorized = await portfolioRepository.verifyPasskey(username, passkey, {
@@ -1545,7 +1659,13 @@ app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
     return sendSuccess(res, { ok: true, portfolio: saved });
   } catch (err) {
     if (err.code === '23505') {
-      return sendError(req, res, 'Username already exists. Another request may have just created it.', 409, 'CONFLICT');
+      return sendError(
+        req,
+        res,
+        'Username already exists. Another request may have just created it.',
+        409,
+        'CONFLICT'
+      );
     }
     console.error('Error saving portfolio:', err);
     return sendError(req, res, err.message || 'Internal server error', 500, 'INTERNAL_ERROR');
@@ -1566,8 +1686,18 @@ app.delete('/api/forum/replies/:replyId', requireStudentAuth, forumController.de
 app.post('/api/forum/threads/:id/vote', requireStudentAuth, forumController.voteThread);
 app.post('/api/forum/replies/:replyId/vote', requireStudentAuth, forumController.voteReply);
 app.post('/api/forum/threads/:id/accept/:replyId', requireStudentAuth, forumController.acceptReply);
-app.patch('/api/admin/forum/threads/:id/moderate', validate(indexSchemas.moderateThreadSchema), adminAuth, forumController.moderateThread);
-app.patch('/api/admin/forum/replies/:replyId/moderate', validate(indexSchemas.moderateReplySchema), adminAuth, forumController.moderateReply);
+app.patch(
+  '/api/admin/forum/threads/:id/moderate',
+  validate(indexSchemas.moderateThreadSchema),
+  adminAuth,
+  forumController.moderateThread
+);
+app.patch(
+  '/api/admin/forum/replies/:replyId/moderate',
+  validate(indexSchemas.moderateReplySchema),
+  adminAuth,
+  forumController.moderateReply
+);
 app.get('/api/admin/forum/threads', adminAuth, forumController.adminListThreads);
 
 function requireMentorshipAuth(req, res, next) {
@@ -1621,7 +1751,11 @@ app.get('/api/recommendations', searchRateLimiter, searchController.recommendati
 // Public resource endpoints
 app.get('/api/resources', resourcesController.listResources);
 app.get('/api/resources/:id', resourcesController.getResource);
-app.post('/api/resources', validate(indexSchemas.createResourceSchema), resourcesController.createResource);
+app.post(
+  '/api/resources',
+  validate(indexSchemas.createResourceSchema),
+  resourcesController.createResource
+);
 app.post('/api/resources/:id/vote', resourcesController.voteResource);
 app.post('/api/resources/:id/download', resourcesController.downloadResource);
 app.post('/api/resources/:id/download-track', resourcesController.downloadResource);
@@ -1636,10 +1770,25 @@ app.post(
 
 // Admin resource management
 app.get('/api/admin/resources', adminAuth, resourcesController.listResources);
-app.post('/api/admin/resources', validate(indexSchemas.createResourceSchema), adminAuth, resourcesController.createResource);
-app.put('/api/admin/resources/:id', validate(indexSchemas.updateResourceSchema), adminAuth, resourcesController.updateResource);
+app.post(
+  '/api/admin/resources',
+  validate(indexSchemas.createResourceSchema),
+  adminAuth,
+  resourcesController.createResource
+);
+app.put(
+  '/api/admin/resources/:id',
+  validate(indexSchemas.updateResourceSchema),
+  adminAuth,
+  resourcesController.updateResource
+);
 app.delete('/api/admin/resources/:id', adminAuth, resourcesController.deleteResource);
-app.patch('/api/admin/resources/:id/moderate', validate(indexSchemas.moderateResourceSchema), adminAuth, resourcesController.moderateResource);
+app.patch(
+  '/api/admin/resources/:id/moderate',
+  validate(indexSchemas.moderateResourceSchema),
+  adminAuth,
+  resourcesController.moderateResource
+);
 // Must be registered after all routes.
 app.use(notFoundHandler);
 addSentryErrorHandler(app);
