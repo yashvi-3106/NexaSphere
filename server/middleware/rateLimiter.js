@@ -190,8 +190,6 @@ export const portfolioRateLimiter = rateLimit({
   ),
 });
 
-
-
 // Event registration rate limiter — 10 requests per IP per hour
 export const eventRegistrationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

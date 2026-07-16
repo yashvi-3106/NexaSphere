@@ -24,24 +24,26 @@ import { studentAuthService } from '../services/studentAuthService.js';
 import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
 import * as sponsorshipsController from '../controllers/sponsorshipsController.js';
 import * as subscriptionsController from '../controllers/subscriptionsController.js';
+import * as followsController from '../controllers/followsController.js';
 import * as portfolioAnalyticsController from '../controllers/portfolioAnalyticsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
-import announcementPriorityRouter from "./announcementPriority.js";
-import eventConflictRouter from "./eventConflict.js";
-import waitlistRoutes from "./waitlist.js";
+import announcementPriorityRouter from './announcementPriority.js';
+import eventConflictRouter from './eventConflict.js';
+import waitlistRoutes from './waitlist.js';
+import recommendationEngine from './recommendationEngine.js';
+import platformAnalyticsRoutes from './platformAnalytics.js';
 import * as localAuthController from '../controllers/localAuthController.js';
 import * as whiteboardController from '../controllers/whiteboardController.js';
-import * as followsController from '../controllers/followsController.js';
-import bookmarkRoutes from "./bookmark.js";
-import recommendationEngine from "./recommendationEngine.js";
-import operationalInsightsRoutes from "./operationalInsights.js";
-import platformAnalyticsRoutes from "./platformAnalytics.js";
+import bookmarkRoutes from './bookmark.js';
+import operationalInsightsRoutes from './operationalInsights.js';
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
 import multer from 'multer';
+import * as analyticsController from '../controllers/analyticsController.js';
 const router = Router();
+const apiAnalyticsRoutes = require("./apiAnalytics");
 
 router.use(rateLimitAdminRoutes);
 router.use(throttleMiddleware);
@@ -49,6 +51,9 @@ router.use(throttleMiddleware);
 const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
+const budgetRoutes = require("./budget");
+const router = Router();
+
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
 router.post(
@@ -257,10 +262,22 @@ router.post(
 );
 
 // Banners Admin
-router.get('/api/admin/banners', adminAuthMiddleware.requireAdmin, bannersController.listAllBanners);
+router.get(
+  '/api/admin/banners',
+  adminAuthMiddleware.requireAdmin,
+  bannersController.listAllBanners
+);
 router.post('/api/admin/banners', adminAuthMiddleware.requireAdmin, bannersController.createBanner);
-router.put('/api/admin/banners/:id', adminAuthMiddleware.requireAdmin, bannersController.updateBanner);
-router.delete('/api/admin/banners/:id', adminAuthMiddleware.requireAdmin, bannersController.deleteBanner);
+router.put(
+  '/api/admin/banners/:id',
+  adminAuthMiddleware.requireAdmin,
+  bannersController.updateBanner
+);
+router.delete(
+  '/api/admin/banners/:id',
+  adminAuthMiddleware.requireAdmin,
+  bannersController.deleteBanner
+);
 
 router.post(
   '/api/admin/subscriptions/:userId/cancel',
@@ -319,10 +336,7 @@ router.get(
   portfolioAnalyticsController.getPortfolioAnalytics
 );
 
-router.post(
-  '/api/portfolio/:username/visit',
-  portfolioAnalyticsController.recordPortfolioVisit
-);
+router.post('/api/portfolio/:username/visit', portfolioAnalyticsController.recordPortfolioVisit);
 
 router.get(
   '/api/portfolio/:username/monthly-report',
@@ -416,17 +430,13 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   const active = impersonationService.getActive(req.adminSession.token);
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
-router.use(
-  "/api/announcements",
-  announcementPriorityRouter
-);
 
-router.use("/api/events", eventConflictRouter);
+router.use("/budgets", budgetRoutes);
+router.use('/api/announcements', announcementPriorityRouter);
 
-router.use(
-  "/api/admin/waitlist",
-  waitlistRoutes
-);
+router.use('/api/events', eventConflictRouter);
+
+router.use('/api/admin/waitlist', waitlistRoutes);
 
 // Audit Log Viewer APIs
 router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
@@ -436,10 +446,7 @@ router.get(
   adminAuthMiddleware.requireAdmin,
   auditLogController.getStats
 );
-router.use(
-  "/recommendations",
-  recommendationEngine
-);
+router.use('/recommendations', recommendationEngine);
 
 // Follows/User Following System APIs
 // Follow/Unfollow operations
@@ -495,6 +502,8 @@ router.get(
 );
 
 // Platform Analytics APIs
-router.use("/api/analytics", platformAnalyticsRoutes);
+router.use('/api/analytics', platformAnalyticsRoutes);
+
+router.use("/api-analytics", apiAnalyticsRoutes);
 
 export default router;

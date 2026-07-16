@@ -1,10 +1,5 @@
+import { wrapAsync } from '../middleware/asyncHandler.js';
 import { bannersService } from '../services/bannersService.js';
-
-function wrapAsync(fn) {
-  return function (req, res, next) {
-    fn(req, res, next).catch(next);
-  };
-}
 
 export const listAllBanners = wrapAsync(async (req, res) => {
   const banners = await bannersService.listAllBanners();

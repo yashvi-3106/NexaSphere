@@ -39,9 +39,9 @@ export const activityTimelineService = {
 
     return {
       totalActivities: list.length,
-      eventRegistrations: list.filter(a => a.type === "event").length,
-      portfolioUpdates: list.filter(a => a.type === "portfolio").length,
-      achievements: list.filter(a => a.type === "achievement").length,
+      eventRegistrations: list.filter((a) => a.type === 'event').length,
+      portfolioUpdates: list.filter((a) => a.type === 'portfolio').length,
+      achievements: list.filter((a) => a.type === 'achievement').length,
     };
   },
 

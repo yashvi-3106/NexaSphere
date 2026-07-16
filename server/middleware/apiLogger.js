@@ -8,9 +8,20 @@ const LOG_DIR = path.join(__dirname, '..', 'logs');
 const LOG_FILE = path.join(LOG_DIR, 'api-requests.log');
 
 const SENSITIVE_FIELDS = new Set([
-  'password', 'passkey', 'token', 'secret', 'authorization',
-  'cookie', 'session', 'key', 'apiKey', 'apikey', 'accessToken',
-  'refreshToken', 'jwt', 'auth',
+  'password',
+  'passkey',
+  'token',
+  'secret',
+  'authorization',
+  'cookie',
+  'session',
+  'key',
+  'apiKey',
+  'apikey',
+  'accessToken',
+  'refreshToken',
+  'jwt',
+  'auth',
 ]);
 
 function sanitize(obj) {

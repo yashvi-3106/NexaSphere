@@ -19,9 +19,7 @@ if (process.env.REDIS_URL) {
 
 export const bulkOperationsQueueName = 'bulk-operations';
 
-export const bulkOperationsQueue = connection
-  ? new Queue(bulkOperationsQueueName, { connection })
-  : null;
+const bulkOperationsQueue = connection ? new Queue(bulkOperationsQueueName, { connection }) : null;
 
 class BulkOperationsService {
   constructor() {
@@ -146,7 +144,13 @@ class BulkOperationsService {
         '[bulkOperationsService] Redis not configured, falling back to setTimeout processing'
       );
       // Fallback if Redis is not available
-      setTimeout(() => this.processImportUsersJob(job.id, csvText, adminId).catch(err => logger.error('[bulkOperationsService] Fallback import job failed:', err.message)), 0);
+      setTimeout(
+        () =>
+          this.processImportUsersJob(job.id, csvText, adminId).catch((err) =>
+            logger.error('[bulkOperationsService] Fallback import job failed:', err.message)
+          ),
+        0
+      );
     }
 
     return job;
@@ -206,54 +210,56 @@ class BulkOperationsService {
                 `UPDATE users 
                  SET display_name = $1, username = $2, role = $3, admin_roles = $3, status = $4, major = $5, year = $6, tags = $7, updated_at = NOW()
                  WHERE id = $8 RETURNING *`,
-              [
-                user.display_name || existing.display_name,
-                user.username,
-                user.role,
-                user.status,
-                user.major || null,
-                user.year || null,
-                updatedTags,
-                existing.id,
-              ]
-            );
-            newState.push({
-              type: 'update',
-              table: 'users',
-              key: existing.id,
-              data: updatedRows[0],
-            });
-          } else {
-            // Create new user with password
-            const id = `user-${crypto.randomUUID()}`;
-            const updatedTags = JSON.stringify(user.tags);
-            const plainPassword = crypto.randomBytes(4).toString('hex'); // 8 char temp password
-            const passwordHash = await bcrypt.hash(plainPassword, 10);
-            const { rows: insertedRows } = await client.query(
-              `INSERT INTO users (id, username, display_name, email, role, admin_roles, status, major, year, tags, password_hash, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9, $10, NOW(), NOW()) RETURNING *`,
-              [
-                id,
-                user.username,
-                user.display_name,
-                user.email,
-                user.role,
-                user.status,
-                user.major || null,
-                user.year || null,
-                updatedTags,
-                passwordHash,
-              ]
-            );
+                [
+                  user.display_name || existing.display_name,
+                  user.username,
+                  user.role,
+                  user.status,
+                  user.major || null,
+                  user.year || null,
+                  updatedTags,
+                  existing.id,
+                ]
+              );
+              newState.push({
+                type: 'update',
+                table: 'users',
+                key: existing.id,
+                data: updatedRows[0],
+              });
+            } else {
+              // Create new user with password
+              const id = `user-${crypto.randomUUID()}`;
+              const updatedTags = JSON.stringify(user.tags);
+              const plainPassword = crypto.randomBytes(4).toString('hex'); // 8 char temp password
+              const passwordHash = await bcrypt.hash(plainPassword, 10);
 
-            emailsToSend.push({
-              email: user.email,
-              displayName: user.display_name,
-              plainPassword,
-            });
-            oldState.push({ type: 'insert', table: 'users', key: id, data: null });
-            newState.push({ type: 'insert', table: 'users', key: id, data: insertedRows[0] });
-          }
+              const { rows: insertedRows } = await client.query(
+                `INSERT INTO users (id, username, display_name, email, role, admin_roles, status, major, year, tags, password_hash, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9, $10, NOW(), NOW()) RETURNING *`,
+                [
+                  id,
+                  user.username,
+                  user.display_name,
+                  user.email,
+                  user.role,
+                  user.status,
+                  user.major || null,
+                  user.year || null,
+                  updatedTags,
+                  passwordHash,
+                ]
+              );
+
+              emailsToSend.push({
+                email: user.email,
+                displayName: user.display_name,
+                plainPassword,
+              });
+
+              oldState.push({ type: 'insert', table: 'users', key: id, data: null });
+              newState.push({ type: 'insert', table: 'users', key: id, data: insertedRows[0] });
+            }
             processed++;
             this.updateJobProgress(jobId, processed, []);
           }
@@ -263,6 +269,20 @@ class BulkOperationsService {
           throw err;
         }
       });
+
+      // Log to audit log
+      if (oldState.length > 0 || newState.length > 0) {
+        try {
+          await auditLogRepository.insertAuditLog({
+            adminId,
+            action: 'BULK_USER_IMPORT',
+            oldState: { operations: oldState },
+            newState: { operations: newState },
+          });
+        } catch (err) {
+          jobErrors.push(`Audit log error - ${err.message}`);
+        }
+      }
     } catch (err) {
       jobErrors.push(`Database error - ${err.message}`);
     }
@@ -284,7 +304,9 @@ class BulkOperationsService {
             }
           );
         } catch (emailErr) {
-          logger.error(`[bulkOperationsService] Failed to queue welcome email for ${item.email}: ${emailErr.message}`);
+          logger.error(
+            `[bulkOperationsService] Failed to queue welcome email for ${item.email}: ${emailErr.message}`
+          );
         }
       } else {
         // Fallback to sending in background via setTimeout

@@ -163,6 +163,6 @@ const redisMock = {
   del: async (key) => {
     const client = getRedisClient();
     return client ? client.del(key) : null;
-  }
+  },
 };
 export default redisMock;

@@ -1,7 +1,7 @@
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import logger from '../utils/logger.js';
-import { bulkOperationsQueue, bulkOperationsService } from '../services/bulkOperationsService.js';
+import { bulkOperationsService, bulkOperationsQueue } from '../services/bulkOperationsService.js';
 import { sendEmail } from '../services/emailService.js';
 
 let connection;

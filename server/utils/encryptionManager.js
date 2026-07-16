@@ -4,7 +4,7 @@ const ALGORITHM = 'aes-256-cbc';
 let ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 if (!ENCRYPTION_KEY) {
   if (process.env.NODE_ENV === 'test') {
-    ENCRYPTION_KEY = '12345678901234567890123456789012';
+    ENCRYPTION_KEY = 'a'.repeat(32);
   } else {
     throw new Error('FATAL: ENCRYPTION_KEY environment variable is not set.');
   }

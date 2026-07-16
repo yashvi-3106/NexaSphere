@@ -46,10 +46,7 @@ export const coreTeamApplicationsRepository = {
   async findById(id) {
     if (!HAS_SUPABASE) return null;
     return withDb(async (client) => {
-      const result = await client.query(
-        `SELECT * FROM core_team_applications WHERE id = $1`,
-        [id]
-      );
+      const result = await client.query(`SELECT * FROM core_team_applications WHERE id = $1`, [id]);
       return result.rows[0] ?? null;
     });
   },
