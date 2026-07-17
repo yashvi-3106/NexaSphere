@@ -1,4 +1,4 @@
-const apiAnalyticsService = require("../services/apiAnalyticsService");
+import * as apiAnalyticsService from '../services/apiAnalyticsService.js';
 
 // Dashboard
 const getDashboard = async (req, res) => {
@@ -12,7 +12,7 @@ const getDashboard = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch API dashboard.",
+      message: 'Failed to fetch API dashboard.',
       error: error.message,
     });
   }
@@ -30,7 +30,7 @@ const getRequestAnalytics = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch request analytics.",
+      message: 'Failed to fetch request analytics.',
       error: error.message,
     });
   }
@@ -48,7 +48,7 @@ const getResponseTimes = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch response times.",
+      message: 'Failed to fetch response times.',
       error: error.message,
     });
   }
@@ -66,7 +66,7 @@ const getErrorAnalytics = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch error analytics.",
+      message: 'Failed to fetch error analytics.',
       error: error.message,
     });
   }
@@ -84,7 +84,7 @@ const getDocumentation = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch API documentation.",
+      message: 'Failed to fetch API documentation.',
       error: error.message,
     });
   }
@@ -102,7 +102,7 @@ const getSDKDocs = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch SDK documentation.",
+      message: 'Failed to fetch SDK documentation.',
       error: error.message,
     });
   }
@@ -120,7 +120,7 @@ const getChangelog = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch changelog.",
+      message: 'Failed to fetch changelog.',
       error: error.message,
     });
   }
@@ -138,7 +138,7 @@ const getVersions = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch API versions.",
+      message: 'Failed to fetch API versions.',
       error: error.message,
     });
   }
@@ -156,7 +156,7 @@ const getApiKeys = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch API keys.",
+      message: 'Failed to fetch API keys.',
       error: error.message,
     });
   }
@@ -168,13 +168,13 @@ const generateApiKey = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "API key generated successfully.",
+      message: 'API key generated successfully.',
       data: key,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to generate API key.",
+      message: 'Failed to generate API key.',
       error: error.message,
     });
   }
@@ -186,13 +186,13 @@ const revokeApiKey = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "API key revoked successfully.",
+      message: 'API key revoked successfully.',
       data: key,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to revoke API key.",
+      message: 'Failed to revoke API key.',
       error: error.message,
     });
   }
@@ -210,7 +210,7 @@ const getRateLimits = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch rate limits.",
+      message: 'Failed to fetch rate limits.',
       error: error.message,
     });
   }
@@ -228,7 +228,7 @@ const getSandbox = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch testing sandbox.",
+      message: 'Failed to fetch testing sandbox.',
       error: error.message,
     });
   }
@@ -246,13 +246,13 @@ const getAnnouncements = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch developer announcements.",
+      message: 'Failed to fetch developer announcements.',
       error: error.message,
     });
   }
 };
 
-module.exports = {
+export {
   getDashboard,
   getRequestAnalytics,
   getResponseTimes,

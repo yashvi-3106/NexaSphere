@@ -13,11 +13,11 @@ import {
   Folder,
   MessageSquare,
 } from 'lucide-react';
-import { useSearch } from '../hooks/useSearch';
+import { useEventSearch as useSearch } from '../hooks/useEventSearch';
 
 function Highlight({ text, query }) {
   if (!text) return null;
-  
+
   // If the text contains Typesense highlight <mark> tags, render it as HTML safely
   if (String(text).includes('<mark>')) {
     return <span dangerouslySetInnerHTML={{ __html: text }} />;

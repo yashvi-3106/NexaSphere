@@ -6,7 +6,7 @@
 const budgets = [
   {
     id: 1,
-    event: "Tech Fest 2026",
+    event: 'Tech Fest 2026',
     totalBudget: 100000,
     spent: 25000,
     remaining: 75000,
@@ -19,8 +19,8 @@ const expenses = [];
 const vendors = [
   {
     id: 1,
-    name: "ABC Printers",
-    category: "Printing",
+    name: 'ABC Printers',
+    category: 'Printing',
   },
 ];
 
@@ -34,8 +34,7 @@ const history = [];
 const getAllBudgets = async () => budgets;
 
 // Get Budget By ID
-const getBudgetById = async (id) =>
-  budgets.find((budget) => budget.id === Number(id));
+const getBudgetById = async (id) => budgets.find((budget) => budget.id === Number(id));
 
 // Create Budget
 const createBudget = async (data) => {
@@ -53,9 +52,7 @@ const createBudget = async (data) => {
 
 // Update Budget
 const updateBudget = async (id, data) => {
-  const index = budgets.findIndex(
-    (budget) => budget.id === Number(id)
-  );
+  const index = budgets.findIndex((budget) => budget.id === Number(id));
 
   if (index === -1) return null;
 
@@ -70,9 +67,7 @@ const updateBudget = async (id, data) => {
 
 // Delete Budget
 const deleteBudget = async (id) => {
-  const index = budgets.findIndex(
-    (budget) => budget.id === Number(id)
-  );
+  const index = budgets.findIndex((budget) => budget.id === Number(id));
 
   if (index === -1) return null;
 
@@ -85,15 +80,13 @@ const addExpense = async (budgetId, data) => {
     id: expenses.length + 1,
     budgetId: Number(budgetId),
     createdAt: new Date().toISOString(),
-    status: "Pending",
+    status: 'Pending',
     ...data,
   };
 
   expenses.push(expense);
 
-  const budget = budgets.find(
-    (item) => item.id === Number(budgetId)
-  );
+  const budget = budgets.find((item) => item.id === Number(budgetId));
 
   if (budget) {
     budget.spent += Number(data.amount || 0);
@@ -105,9 +98,7 @@ const addExpense = async (budgetId, data) => {
 
 // Get Expenses
 const getExpenses = async (budgetId) =>
-  expenses.filter(
-    (expense) => expense.budgetId === Number(budgetId)
-  );
+  expenses.filter((expense) => expense.budgetId === Number(budgetId));
 
 // Upload Invoice
 const uploadInvoice = async (budgetId, data) => ({
@@ -126,9 +117,7 @@ const approveExpense = async (budgetId) => ({
 
 // Remaining Budget
 const getRemainingBudget = async (budgetId) => {
-  const budget = budgets.find(
-    (item) => item.id === Number(budgetId)
-  );
+  const budget = budgets.find((item) => item.id === Number(budgetId));
 
   return budget
     ? {
@@ -141,16 +130,13 @@ const getRemainingBudget = async (budgetId) => {
 
 // Category-wise Spending
 const getCategorySpending = async (budgetId) => {
-  const budgetExpenses = expenses.filter(
-    (expense) => expense.budgetId === Number(budgetId)
-  );
+  const budgetExpenses = expenses.filter((expense) => expense.budgetId === Number(budgetId));
 
   const categories = {};
 
   budgetExpenses.forEach((expense) => {
     categories[expense.category] =
-      (categories[expense.category] || 0) +
-      Number(expense.amount || 0);
+      (categories[expense.category] || 0) + Number(expense.amount || 0);
   });
 
   return categories;
@@ -177,15 +163,15 @@ const getBudgetAlerts = async () => alerts;
 
 // Export Statements
 const exportStatements = async () => ({
-  format: "PDF",
+  format: 'PDF',
   generatedAt: new Date().toISOString(),
-  downloadUrl: "/exports/budget-report.pdf",
+  downloadUrl: '/exports/budget-report.pdf',
 });
 
 // Budget History
 const getBudgetHistory = async () => history;
 
-module.exports = {
+export {
   getAllBudgets,
   getBudgetById,
   createBudget,
