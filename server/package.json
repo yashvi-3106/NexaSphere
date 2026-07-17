@@ -87,7 +87,8 @@
     "form-data": "^4.0.1",
     "dompurify": "^3.4.9",
     "engine.io-client": "^6.6.2",
-    "undici": "^7.28.0"
+    "undici": "^7.28.0",
+    "websocket-driver": "0.7.5"
   },
   "devDependencies": {
     "prisma": "^6.4.0"
