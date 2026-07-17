@@ -1,6 +1,4 @@
-﻿-- Migration: Create core_team_applications table
--- Issue: #1510 - Core Team Approval Workflow
-
+-- Up Migration
 CREATE TABLE IF NOT EXISTS core_team_applications (
   id            SERIAL PRIMARY KEY,
   student_id    TEXT        NOT NULL,
@@ -21,3 +19,6 @@ CREATE TABLE IF NOT EXISTS core_team_applications (
 
 CREATE INDEX IF NOT EXISTS idx_cta_student_id ON core_team_applications (student_id);
 CREATE INDEX IF NOT EXISTS idx_cta_status     ON core_team_applications (status);
+
+-- Down Migration
+DROP TABLE IF EXISTS core_team_applications CASCADE;

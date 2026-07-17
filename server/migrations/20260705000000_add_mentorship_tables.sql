@@ -1,5 +1,4 @@
--- server/migrations/xxxx_add_mentorship_tables.sql
-
+-- Up Migration
 -- 1. Mentorship Profiles Table
 CREATE TABLE IF NOT EXISTS mentorship_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -37,3 +36,8 @@ CREATE TABLE IF NOT EXISTS mentorship_milestones (
     is_completed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Down Migration
+DROP TABLE IF EXISTS mentorship_milestones CASCADE;
+DROP TABLE IF EXISTS mentorship_pairs CASCADE;
+DROP TABLE IF EXISTS mentorship_profiles CASCADE;
