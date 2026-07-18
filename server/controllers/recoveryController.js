@@ -95,8 +95,8 @@ export const recoveryController = {
           );
         });
 
-        // Mock sending email
-        console.log(`Password reset token for ${email}: ${token}`);
+        // TODO: Implement actual email delivery here
+        // The token should be sent via email, never logged
       }
 
       // Always return success to prevent email enumeration
