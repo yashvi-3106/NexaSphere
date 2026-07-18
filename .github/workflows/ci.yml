@@ -126,11 +126,28 @@ jobs:
         env:
           NODE_ENV: test
           ADMIN_USERNAME: test-admin
-          ADMIN_PASSWORD: 'Ci_test_password_stub1!'
-          ADMIN_EVENT_PASSWORD: 'Ci_test_event_password_stub1!'
+          ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD || 'ci_test_password_stub' }}
+          ADMIN_EVENT_PASSWORD: ${{ secrets.CI_ADMIN_EVENT_PASSWORD || 'ci_test_event_password_stub' }}
           PORT: 8787
           CORS_ORIGIN: 'http://localhost,http://127.0.0.1'
 
+      - name: Generate coverage report
+        run: npm run test:coverage || true
+        env:
+          NODE_ENV: test
+          ADMIN_USERNAME: test-admin
+          ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD || 'ci_test_password_stub' }}
+          ADMIN_EVENT_PASSWORD: ${{ secrets.CI_ADMIN_EVENT_PASSWORD || 'ci_test_event_password_stub' }}
+          PORT: 8787
+          CORS_ORIGIN: 'http://localhost,http://127.0.0.1'
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage-report
+          path: server/coverage.lcov
+          retention-days: 7
 
   report:
     name: CI Summary Report
