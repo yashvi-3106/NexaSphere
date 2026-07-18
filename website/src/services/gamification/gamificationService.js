@@ -17,6 +17,7 @@ export const XP_VALUES = {
   LEARNING_PATH_COMPLETE: 1000,
   COMMENT_POSTED: 5, // for dashboard/tests
   REFERRAL: 100, // for dashboard
+  SKILL_VERIFIED: 200, // XP for verifying a skill
 };
 
 // Achievement tiers and requirements
@@ -295,6 +296,7 @@ class GamificationService {
         special_tags: [],
         longest_streak: 0,
         last_active: null,
+        verified_skills: [], // Array of verified skill names
       },
       badges: [],
       streak_freeze_count: 1,
@@ -599,6 +601,43 @@ class GamificationService {
     const currentLevel = this.userData.level;
     const levelObj = LEVEL_THRESHOLDS.find((l) => l.level === currentLevel);
     return levelObj ? levelObj.xpRequired : 0;
+  }
+
+  // Handle skill verification
+  verifySkill(skill) {
+    if (this.userData.stats.verified_skills?.includes(skill)) {
+      return { success: false, message: 'Skill already verified' };
+    }
+
+    // Add skill to verified list
+    if (!this.userData.stats.verified_skills) {
+      this.userData.stats.verified_skills = [];
+    }
+    this.userData.stats.verified_skills.push(skill);
+
+    // Track action
+    this.addXP(XP_VALUES.SKILL_VERIFIED);
+    this.updateStreak();
+
+    // Create a special verified badge
+    const badge = {
+      id: `verified_${skill.toLowerCase().replace(/\s+/g, '_')}`,
+      title: `Verified: ${skill}`,
+      description: `Passed the ${skill} Skill Verification Quest`,
+      icon: '✅',
+      tier: 'gold',
+      unlockedAt: new Date().toISOString(),
+    };
+    this.userData.badges.push(badge);
+
+    this.userData.notifications.push({
+      type: 'achievement',
+      message: `🎉 Skill Verified: ${skill}! +${XP_VALUES.SKILL_VERIFIED} XP`,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.saveUserData();
+    return { success: true, xpEarned: XP_VALUES.SKILL_VERIFIED, badge };
   }
 
   getUserStats() {
