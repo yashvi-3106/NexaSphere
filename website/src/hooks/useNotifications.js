@@ -193,7 +193,9 @@ export function useNotifications() {
                 suppressedReason: !channelEnabled ? 'channel' : dnd ? 'dnd' : 'quiet',
               });
               localStorage.setItem(key, JSON.stringify(arr));
-            } catch (e) {}
+            } catch (e) {
+              console.error('[useNotifications] Failed to queue digest:', e);
+            }
             return;
           }
 
@@ -339,7 +341,9 @@ export function useNotifications() {
           body: JSON.stringify({ id }),
         });
         analytics.trackNotificationOpened({ id });
-      } catch (e) {}
+      } catch (e) {
+        console.error('[useNotifications] Failed to mark as read:', e);
+      }
     })();
   }, []);
 
@@ -355,7 +359,9 @@ export function useNotifications() {
           method: 'POST',
           headers: getAuthHeaders(),
         });
-      } catch (e) {}
+      } catch (e) {
+        console.error('[useNotifications] Failed to mark all as read:', e);
+      }
     })();
   }, []);
 
@@ -367,7 +373,9 @@ export function useNotifications() {
           method: 'DELETE',
           headers: getAuthHeaders(),
         });
-      } catch (e) {}
+      } catch (e) {
+        console.error('[useNotifications] Failed to clear notifications:', e);
+      }
     })();
   }, []);
 
