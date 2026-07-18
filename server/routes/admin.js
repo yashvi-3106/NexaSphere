@@ -306,4 +306,67 @@ router.get('/sessions', adminAuth, adminAuthMiddleware.getSecurityOverview);
 router.delete('/sessions/:sessionId', adminAuth, adminAuthMiddleware.revokeSession);
 router.delete('/sessions', adminAuth, adminAuthMiddleware.logoutOtherSessions);
 
+/**
+ * @swagger
+ * /api/admin/stats:
+ *   get:
+ *     summary: Get platform summary statistics
+ *     description: Returns at-a-glance counts for the admin dashboard home page.
+ *     tags: [Admin]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Platform stats
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalEvents:
+ *                   type: integer
+ *                 activeEvents:
+ *                   type: integer
+ *                 totalTeamMembers:
+ *                   type: integer
+ *                 pendingMemberships:
+ *                   type: integer
+ *                 pendingRecruitments:
+ *                   type: integer
+ *                 totalApplications:
+ *                   type: integer
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/admin/stats', requireAuth, async (req, res) => {
+  try {
+    // These calls use whatever DB/repository layer the project already uses.
+    // Adjust the method names to match what exists in your controllers/repositories.
+    const [events, teamMembers, memberships, recruitments] = await Promise.all([
+      eventsRepository.findAll(),
+      coreTeamRepository.findAll(),
+      membershipFormsRepository.findAll(),
+      recruitmentFormsRepository.findAll(),
+    ]);
+
+    const now = new Date();
+
+    const stats = {
+      totalEvents: events.length,
+      // Active = events whose date is today or in the future
+      activeEvents: events.filter((e) => new Date(e.date) >= now).length,
+      totalTeamMembers: teamMembers.length,
+      // Count submissions with a "pending" status field
+      pendingMemberships: memberships.filter((m) => m.status === 'pending').length,
+      pendingRecruitments: recruitments.filter((r) => r.status === 'pending').length,
+      totalApplications: memberships.length + recruitments.length,
+    };
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching admin stats:', error);
+    res.status(500).json({ error: 'Failed to fetch platform statistics' });
+  }
+});
+
 export default router;

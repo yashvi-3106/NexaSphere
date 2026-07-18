@@ -5,38 +5,20 @@ import { api, auth } from '../services/api';
 import { Skeleton } from '../components/Skeleton';
 import { AdminIcon } from '../components/AdminIcon';
 import { PermissionGuard } from '../components/PermissionGuard';
-import { useNavigate } from 'react-router-dom';
+import { StatsGrid } from '../components/StatsGrid';
 
-const QUICK_ACTIONS = [
-  {
-    label: 'Create Event',
-    description: 'Jump to the event workspace',
-    icon: 'Calendar',
-    to: '/dashboard/events',
-    requiredScope: 'events:write',
-  },
-  {
-    label: 'Send Email',
-    description: 'Open SSO invites for email outreach',
-    icon: 'UserPlus',
-    to: '/dashboard/sso-invites',
-    requiredScope: 'settings:admin',
-  },
-  {
-    label: 'Create Announcement',
-    description: 'Publish a new announcement',
-    icon: 'Megaphone',
-    to: '/dashboard/announcements',
-    requiredScope: 'settings:admin',
-  },
-  {
-    label: 'Export Data',
-    description: 'Review backups and exports',
-    icon: 'FileText',
-    to: '/dashboard/backups',
-    requiredScope: 'settings:admin',
-  },
-];
+function Dashboard() {
+  return (
+    <div className="admin-home">
+      <h1>NexaSphere Dashboard</h1>
+
+      {/* Stats overview — shows at-a-glance platform health */}
+      <StatsGrid />
+
+      {/* ...rest of the existing dashboard content... */}
+    </div>
+  );
+}
 
 export function DashboardHome() {
   const [stats, setStats] = useState(null);
