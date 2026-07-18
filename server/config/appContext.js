@@ -69,7 +69,7 @@ if (!pg.Client.prototype.query[PG_PATCH_APPLIED]) {
 // Export a wrapped fetch for call sites to use explicitly, instead of
 // patching global.fetch. This avoids import-order races with OTel/undici
 // patching the global fetch themselves.
-// Forwards X-Request-ID whenever called inside an appContext.run(...) scope
+// Forwards X-Correlation-ID whenever called inside an appContext.run(...) scope
 // (e.g. during request handling, after tracingMiddleware has populated the
 // store).
 export async function tracedFetch(url, options = {}) {
@@ -82,7 +82,7 @@ export async function tracedFetch(url, options = {}) {
     Object.entries(options.headers).forEach(([k, v]) => headers.set(k, v));
   }
 
-  if (store?.reqId) headers.set('X-Request-ID', store.reqId);
+  if (store?.reqId) headers.set('X-Correlation-ID', store.reqId);
 
   const urlString = getUrlString(url);
   if (isInternalUrl(urlString)) {

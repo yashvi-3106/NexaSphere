@@ -16,7 +16,7 @@ export function getLogContext(extra = {}) {
 
   return {
     service: process.env.OTEL_SERVICE_NAME || 'nexasphere-api',
-    reqId: store.reqId || null,
+    correlationId: store.reqId || null,
     traceId,
     ...extra,
   };
