@@ -178,33 +178,20 @@ export default function UserManager() {
   }
 
   async function handleDeactivate(id) {
-    if (!confirm('Deactivate this user?')) return;
-    const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE', credentials: 'include' });
-    if (res.ok) fetchUsers();
-    else {
-      const d = await res.json();
-      alert(d.error);
-    }
-  }
-
-  async function handleAwardBadge() {
-    const res = await fetch(`/api/admin/users/${awardBadgeUser.id}/badges`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        ...badgeForm,
-        isCustom: true,
-        earnedAt: new Date(),
-      }),
-    });
-    if (res.ok) {
-      setAwardBadgeUser(null);
-      setBadgeForm({ name: '', description: '', icon: 'Award' });
-      fetchUsers();
-    } else {
-      const d = await res.json();
-      alert(d.error || 'Failed to award badge');
+    if (!window.confirm('Deactivate this user?')) return;
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (res.ok) fetchUsers();
+      else {
+        const d = await res.json();
+        alert(d.error);
+      }
+    } finally {
+      setDeleting(null);
     }
   }
 
@@ -235,7 +222,7 @@ export default function UserManager() {
   }
 
   async function handleUnlock(id) {
-    if (!confirm('Unlock this user account?')) return;
+    if (!window.confirm('Unlock this user account?')) return;
     try {
       const res = await fetch(`/api/admin/users/${id}/unlock`, {
         method: 'POST',
