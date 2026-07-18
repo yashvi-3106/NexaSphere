@@ -24,15 +24,18 @@ const ALGORITHM = 'aes-256-gcm';
 
 /**
  * Derive the encryption passphrase from environment variables.
- * Falls back to a combination of available secrets so that backups work
- * out-of-the-box in dev/test without a dedicated ENCRYPTION_KEY env var.
+ * Requires ENCRYPTION_KEY to be set — fails fast if missing to prevent
+ * using weak/guessable fallback keys for encrypted backups.
  */
 function getEncryptionPassphrase() {
-  if (process.env.ENCRYPTION_KEY) return process.env.ENCRYPTION_KEY;
-  // Derive a deterministic passphrase from available secrets
-  const secret =
-    process.env.JWT_SECRET || process.env.DATABASE_URL || process.env.NODE_ENV || 'dev';
-  return crypto.createHash('sha256').update(secret).digest('hex');
+  if (!process.env.ENCRYPTION_KEY) {
+    throw new Error(
+      'ENCRYPTION_KEY environment variable is required for backup encryption. ' +
+      'Set it to a strong, random value (minimum 32 characters). ' +
+      'Example: openssl rand -hex 32'
+    );
+  }
+  return process.env.ENCRYPTION_KEY;
 }
 
 // Initialize S3 clients dynamically
