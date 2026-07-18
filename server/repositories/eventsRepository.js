@@ -94,8 +94,7 @@ export const eventsRepository = {
 
   async update(id, patch) {
     return withDb(async (client) => {
-      // Filter out any omitted fields (undefined) while keeping explicit nulls or empty values
-      const keys = Object.keys(patch).filter(key => patch[key] !== undefined);
+      const keys = Object.keys(patch);
       
       // If no valid update fields are provided, skip the DB call and return the current record
       if (keys.length === 0) {
@@ -146,11 +145,8 @@ export const eventsRepository = {
 
       const { rows } = await client.query(queryText, values);
       if (!rows.length) return null;
-      const mapped = mapRow(rows[0]);
-      import('../services/searchIndexer.js')
-        .then(({ searchIndexer }) => searchIndexer.indexEvent(mapped))
-        .catch((err) => logger.error('Failed to index event in search', { err, eventId: mapped?.id }));
-      return mapped;
+      
+      return mapRow(rows[0]);
     });
   },
 
