@@ -68,6 +68,7 @@ const upload = multer({
 });
 const budgetRoutes = require('./budget');
 const resourceDiscoveryRoutes = require("./resourceDiscovery");
+const notificationCampaignRoutes = require("./notificationCampaign");
 const router = Router();
 
 // Public
@@ -643,5 +644,6 @@ router.get(
 router.use('/api/analytics', platformAnalyticsRoutes);
 
 router.use('/api-analytics', apiAnalyticsRoutes);
+router.use("/notification-campaigns", notificationCampaignRoutes);
 
 export default router;

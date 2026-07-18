@@ -1149,6 +1149,9 @@
  *     summary: Add activity to timeline
  *     requestBody:
  *         description: Activity added successfully
+ */
+/**
+ * @swagger
  * /api/resource-discovery/analytics:
  *     summary: Get resource analytics
  *         description: Resource analytics retrieved successfully
@@ -1181,6 +1184,24 @@
  *   name: Workflow Automation
  *   description: APIs for managing approval workflows, requests, analytics, and audit logs.
  */
+/**
+ * @swagger
+ * /api/activity-timeline/{userId}/stats:
+ *   get:
+ *     summary: Activity statistics
+ *       - Activity Timeline
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Activity statistics
+ *   - name: Notification Campaigns
+ *     description: Intelligent Notification Scheduling & Campaign Management
+ */
 
 /**
  * @swagger
@@ -1198,6 +1219,14 @@
  *     responses:
  *       201:
  *         description: Workflow created successfully
+ * /api/notification-campaigns:
+ *     summary: Get all notification campaigns
+ *     tags: [Notification Campaigns]
+ *         description: Campaigns retrieved successfully
+ *     summary: Create a notification campaign
+ *     requestBody:
+ *       required: true
+ *         description: Campaign created successfully
  */
 
 /**
@@ -1206,6 +1235,9 @@
  *   get:
  *     summary: Get workflow by ID
  *     tags: [Workflow Automation]
+ * /api/notification-campaigns/{id}:
+ *     summary: Get campaign by ID
+ *     tags: [Notification Campaigns]
  *     parameters:
  *       - in: path
  *         name: id
@@ -1219,6 +1251,9 @@
  *   put:
  *     summary: Update workflow
  *     tags: [Workflow Automation]
+ *         description: Campaign retrieved successfully
+ *     summary: Update campaign
+ *     tags: [Notification Campaigns]
  *     parameters:
  *       - in: path
  *         name: id
@@ -1232,6 +1267,11 @@
  *   delete:
  *     summary: Delete workflow
  *     tags: [Workflow Automation]
+ *     requestBody:
+ *       required: true
+ *         description: Campaign updated successfully
+ *     summary: Delete campaign
+ *     tags: [Notification Campaigns]
  *     parameters:
  *       - in: path
  *         name: id
@@ -1241,6 +1281,7 @@
  *     responses:
  *       200:
  *         description: Workflow deleted successfully
+ *         description: Campaign deleted successfully
  */
 
 /**
@@ -1252,6 +1293,18 @@
  *     responses:
  *       201:
  *         description: Request submitted successfully
+ * /api/notification-campaigns/{id}/schedule:
+ *     summary: Schedule a notification campaign
+ *     tags: [Notification Campaigns]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       200:
+ *         description: Campaign scheduled successfully
  */
 
 /**
@@ -1260,6 +1313,10 @@
  *   put:
  *     summary: Approve a workflow request
  *     tags: [Workflow Automation]
+ * /api/notification-campaigns/{id}/send:
+ *   post:
+ *     summary: Send campaign immediately
+ *     tags: [Notification Campaigns]
  *     parameters:
  *       - in: path
  *         name: id
@@ -1269,6 +1326,7 @@
  *     responses:
  *       200:
  *         description: Request approved successfully
+ *         description: Campaign sent successfully
  */
 
 /**
@@ -1277,6 +1335,10 @@
  *   put:
  *     summary: Reject a workflow request
  *     tags: [Workflow Automation]
+ * /api/notification-campaigns/{id}/pause:
+ *   post:
+ *     summary: Pause a campaign
+ *     tags: [Notification Campaigns]
  *     parameters:
  *       - in: path
  *         name: id
@@ -1286,6 +1348,7 @@
  *     responses:
  *       200:
  *         description: Request rejected successfully
+ *         description: Campaign paused successfully
  */
 
 /**
@@ -1297,6 +1360,16 @@
  *     responses:
  *       200:
  *         description: Requests approved successfully
+ * /api/notification-campaigns/{id}/resume:
+ *     summary: Resume a campaign
+ *     tags: [Notification Campaigns]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Campaign resumed successfully
  */
 
 /**
@@ -1308,6 +1381,10 @@
  *     responses:
  *       200:
  *         description: Pending requests retrieved successfully
+ * /api/notification-campaigns/history:
+ *     summary: Get campaign history
+ *     tags: [Notification Campaigns]
+ *         description: Campaign history retrieved successfully
  */
 
 /**
@@ -1352,6 +1429,16 @@
  *     responses:
  *       200:
  *         description: Pending requests escalated successfully
+ * /api/notification-campaigns/templates:
+ *     summary: Get notification templates
+ *     tags: [Notification Campaigns]
+ *         description: Templates retrieved successfully
+ *
+ *     summary: Create a notification template
+ *     requestBody:
+ *       required: true
+ *       201:
+ *         description: Template created successfully
  */
 
 /**
@@ -1364,5 +1451,25 @@
  *       200:
  *         description: Audit logs retrieved successfully
  */
-
+ * /api/notification-campaigns/segments:
+ *     summary: Get audience segments
+ *     tags: [Notification Campaigns]
+ *         description: Audience segments retrieved successfully
+/**
+ * @swagger
+ * /api/notification-campaigns/analytics/{id}:
+ *     summary: Get campaign analytics
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Campaign analytics retrieved successfully
+ * /api/notification-campaigns/ab-test:
+ *   post:
+ *     summary: Create an A/B test
+ *     requestBody:
+ *       201:
+ *         description: A/B test created successfully
 export default {};
