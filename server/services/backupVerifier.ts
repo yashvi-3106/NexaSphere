@@ -2,14 +2,22 @@
 import { S3Client, HeadObjectCommand } from '@aws-sdk/client-s3';
 import fs from 'fs/promises';
 import crypto from 'crypto';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import util from 'util';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const execAsync = util.promisify(exec);
+const execFileAsync = util.promisify(execFile);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+/**
+ * Validate that a file path contains only safe characters.
+ * Allows alphanumeric, hyphens, underscores, dots, forward slashes, and spaces.
+ */
+function isValidFilePath(filePath: string): boolean {
+  return /^[a-zA-Z0-9._/\s-]+$/.test(filePath);
+}
 
 export class BackupVerifierService {
   private client: S3Client;
@@ -63,11 +71,17 @@ export class BackupVerifierService {
   async verifyIntegrity(localFilePath: string): Promise<boolean> {
     console.log(`Running deep integrity check on ${localFilePath}...`);
     try {
+      // Validate file path to prevent command injection
+      if (!isValidFilePath(localFilePath)) {
+        throw new Error('Invalid file path: contains unsafe characters');
+      }
+
       // The script is located at the root of the server directory
       const scriptPath = path.resolve(__dirname, '../../verify-backup-integrity.sh');
-
-      // Use bash explicitly in case it's not executable
-      const { stdout, stderr } = await execAsync(`bash "${scriptPath}" "${localFilePath}"`);
+      
+      // Use execFile with argument array to prevent command injection
+      const { stdout, stderr } = await execFileAsync('bash', [scriptPath, localFilePath]);
+      
       console.log('Integrity check output:', stdout);
       if (stderr) {
         console.warn('Integrity check stderr:', stderr);

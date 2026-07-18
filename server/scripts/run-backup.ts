@@ -1,12 +1,12 @@
 // server/scripts/run-backup.ts
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import util from 'util';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { BackupStorageService } from '../services/backupStorage';
 import { BackupVerifierService } from '../services/backupVerifier';
 
-const execAsync = util.promisify(exec);
+const execFileAsync = util.promisify(execFile);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,7 +38,7 @@ async function run() {
   try {
     // 1. Run the bash script to dump, compress, and encrypt
     const scriptPath = path.resolve(__dirname, '../../scripts/backup-database.sh');
-    const { stdout, stderr } = await execAsync(scriptPath);
+    const { stdout, stderr } = await execFileAsync(scriptPath);
 
     if (stderr) {
       console.log('Script output:', stderr);
