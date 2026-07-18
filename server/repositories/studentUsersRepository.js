@@ -54,7 +54,25 @@ export const studentUsersRepository = {
       `);
       await client.query(`
         ALTER TABLE student_users ADD COLUMN IF NOT EXISTS theme VARCHAR(10) DEFAULT NULL;
-
+      `);
+      await client.query(`
+        ALTER TABLE student_users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT NULL;
+      `);
+      await client.query(`
+        ALTER TABLE student_users ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '{}'::jsonb;
+      `);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS xp_transactions (
+          id SERIAL PRIMARY KEY,
+          student_user_id INTEGER REFERENCES student_users(id) ON DELETE CASCADE,
+          amount INTEGER NOT NULL,
+          action VARCHAR(100) NOT NULL,
+          description TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_xp_transactions_user_id ON xp_transactions(student_user_id)
       `);
     });
   },
@@ -178,10 +196,10 @@ export const studentUsersRepository = {
     });
   },
 
-  async awardXP(userId, amount) {
+  async awardXP(userId, amount, action = 'generic', description = null) {
     if (!HAS_SUPABASE) return null;
     return withDb(async (client) => {
-      // Get current XP & Level
+
       const userRes = await client.query(
         'SELECT xp, level, badges FROM student_users WHERE id = $1',
         [userId]
@@ -205,6 +223,12 @@ export const studentUsersRepository = {
       if (newLevel >= 4 && !badges.includes('expert')) badges.push('expert');
       if (newLevel >= 5 && !badges.includes('legend')) badges.push('legend');
 
+      await client.query(
+        `INSERT INTO xp_transactions (student_user_id, amount, action, description)
+         VALUES ($1, $2, $3, $4)`,
+        [userId, amount, action, description]
+      );
+
       const { rows } = await client.query(
         `UPDATE student_users 
          SET xp = $1, level = $2, badges = $3::jsonb, updated_at = NOW() 
@@ -213,6 +237,20 @@ export const studentUsersRepository = {
         [newXP, newLevel, JSON.stringify(badges), userId]
       );
       return rows[0];
+    });
+  },
+
+  async getXPHistory(userId) {
+    if (!HAS_SUPABASE) return [];
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        `SELECT id, amount, action, description, created_at
+         FROM xp_transactions
+         WHERE student_user_id = $1
+         ORDER BY created_at DESC`,
+        [userId]
+      );
+      return rows;
     });
   },
 
@@ -240,6 +278,50 @@ export const studentUsersRepository = {
       return rows[0] || null;
     });
 
+  async updateProfile(id, updates) {
+    if (!HAS_SUPABASE) return null;
+    return withDb(async (client) => {
+      const setClauses = [];
+      const values = [];
+      let idx = 1;
+
+      if (updates.full_name !== undefined) {
+        setClauses.push(`full_name = $${idx++}`);
+        values.push(updates.full_name);
+      }
+      if (updates.bio !== undefined) {
+        setClauses.push(`bio = $${idx++}`);
+        values.push(updates.bio);
+      }
+      if (updates.social_links !== undefined) {
+        setClauses.push(`social_links = $${idx++}::jsonb`);
+        values.push(
+          typeof updates.social_links === 'string'
+            ? updates.social_links
+            : JSON.stringify(updates.social_links)
+        );
+      }
+      if (updates.phone_number !== undefined) {
+        setClauses.push(`phone_number = $${idx++}`);
+        values.push(updates.phone_number);
+      }
+
+      if (setClauses.length === 0) {
+        const { rows } = await client.query('SELECT * FROM student_users WHERE id = $1 LIMIT 1', [
+          id,
+        ]);
+        return rows[0] || null;
+      }
+
+      setClauses.push(`updated_at = NOW()`);
+      values.push(id);
+
+      const { rows } = await client.query(
+        `UPDATE student_users SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING *`,
+        values
+      );
+      return rows[0] || null;
+    });
   },
 
   async listAll() {

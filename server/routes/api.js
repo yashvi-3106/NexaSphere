@@ -58,6 +58,7 @@ import * as gamificationController from '../controllers/gamificationController.j
 import multer from 'multer';
 import * as analyticsController from '../controllers/analyticsController.js';
 const router = Router();
+const apiAnalyticsRoutes = require('./apiAnalytics');
 
 router.use(rateLimitAdminRoutes);
 router.use(throttleMiddleware);
@@ -65,9 +66,11 @@ router.use(throttleMiddleware);
 const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
+const budgetRoutes = require('./budget');
 
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
+router.get('/api/dashboard/xp-history', gamificationController.getXPHistory);
 router.post(
   '/api/dashboard/xp',
   protectedActionRateLimiter,

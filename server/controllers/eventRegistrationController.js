@@ -306,5 +306,27 @@ export const leaveWaitlist = wrapAsync(async (req, res) => {
     return res.status(404).json({ error: 'No waitlist entry found for this email' });
   }
 
-  return res.status(200).json({ removed: true });
+  return res.status(200).json({ success: true, message: 'Removed from waitlist' });
+});
+
+export const confirmWaitlistSpot = wrapAsync(async (req, res) => {
+  const eventId = String(req.params.eventId || '').trim();
+  const sanitizedEmail = String(req.body.email || '')
+    .trim()
+    .toLowerCase()
+    .slice(0, 140);
+
+  if (!eventId || !EVENT_ID_REGEX.test(eventId)) {
+    return res.status(400).json({ error: 'Invalid event ID' });
+  }
+  if (!sanitizedEmail || !EMAIL_REGEX.test(sanitizedEmail)) {
+    return res.status(400).json({ error: 'Valid email address is required' });
+  }
+
+  const confirmed = await registrationsRepository.confirmWaitlistSpot(eventId, sanitizedEmail);
+  if (!confirmed) {
+    return res.status(404).json({ error: 'No pending waitlist promotion found for this email' });
+  }
+
+  return res.status(200).json({ success: true, message: 'Spot confirmed successfully' });
 });

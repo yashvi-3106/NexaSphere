@@ -1389,6 +1389,28 @@ createBullBoard({
 app.use('/api/admin/queues', adminAuth, serverAdapter.getRouter());
 
 // OAuth / SSO Student Auth Endpoints
+app.get('/api/auth/mock-login', async (req, res, next) => {
+  try {
+    const { studentAuthService } = await import('./services/studentAuthService.js');
+    const user = await studentUsersRepository.upsertFromOAuth({
+      provider: 'google',
+      providerId: 'mock-student-id-123',
+      email: 'teststudent@glbajaj.org',
+      fullName: 'Test Student',
+      avatarUrl: '👤',
+    });
+    const token = studentAuthService.generateToken(user);
+    res.cookie('ns_student_token', token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    return res.redirect('/dashboard');
+  } catch (err) {
+    next(err);
+  }
+});
 app.get('/api/auth/google', studentAuthController.googleAuth);
 app.get('/api/auth/google/callback', studentAuthController.googleCallback);
 app.get('/api/auth/github', studentAuthController.githubAuth);

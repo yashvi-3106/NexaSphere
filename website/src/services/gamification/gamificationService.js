@@ -664,6 +664,35 @@ class GamificationService {
     }
   }
 
+  async getXPHistory(userId) {
+    const MOCK_HISTORY = [
+      {
+        id: 1,
+        amount: 50,
+        action: 'ATTEND_EVENT',
+        description: 'Attended Web Development Workshop',
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 2,
+        amount: 100,
+        action: 'ADD_PORTFOLIO_PROJECT',
+        description: 'Added first project',
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+      },
+    ];
+    const base = getApiBase();
+    if (!base) return MOCK_HISTORY;
+
+    try {
+      const res = await fetch(`${base}/api/dashboard/xp-history?userId=${userId}`);
+      if (!res.ok) return MOCK_HISTORY;
+      return await res.json();
+    } catch {
+      return MOCK_HISTORY;
+    }
+  }
+
   getTierColor(tier) {
     switch (tier) {
       case 'bronze':

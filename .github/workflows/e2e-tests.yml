@@ -113,7 +113,7 @@ jobs:
           exit 1
 
       - name: Run E2E tests (${{ matrix.browser }})
-        run: npx playwright test e2e/auth.spec.ts e2e/main.spec.ts e2e/prompt-history.spec.ts --project=${{ matrix.browser }}
+        run: npx playwright test e2e/auth.spec.ts e2e/main.spec.ts e2e/prompt-history.spec.ts e2e/student-flows.spec.ts --project=${{ matrix.browser }}
         timeout-minutes: 50
         env:
           PWTEST_HEADLESS: true

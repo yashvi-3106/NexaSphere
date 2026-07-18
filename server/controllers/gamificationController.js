@@ -56,3 +56,20 @@ export async function awardXP(req, res, next) {
     return res.status(500).json({ error: 'Failed to award XP.' });
   }
 }
+
+/**
+ * Get XP History logs for a student user
+ */
+export async function getXPHistory(req, res, next) {
+  try {
+    const userId = req.user?.id || req.query.userId;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    const history = await studentUsersRepository.getXPHistory(parseInt(userId, 10));
+    return res.json(history);
+  } catch (error) {
+    console.error('Failed to get XP history:', error);
+    return res.status(500).json({ error: 'Failed to retrieve XP history.' });
+  }
+}
