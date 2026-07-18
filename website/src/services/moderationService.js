@@ -247,7 +247,11 @@ class ModerationService {
   getFlaggedContent(status = 'pending') {
     const stored = localStorage.getItem('moderation_flagged');
     if (stored) {
-      this.flaggedContent = JSON.parse(stored);
+      try {
+        this.flaggedContent = JSON.parse(stored);
+      } catch (err) {
+        this.flaggedContent = [];
+      }
     }
     return status ? this.flaggedContent.filter((f) => f.status === status) : this.flaggedContent;
   }
