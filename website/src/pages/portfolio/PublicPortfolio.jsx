@@ -56,7 +56,7 @@ export default function PublicPortfolio({ username, onBack }) {
 
   const portfolioRef = useRef();
 
-  const { handlePrint, isExporting } = useCertificateExport({
+  const { handlePrint, isExporting, exportError } = useCertificateExport({
     content: () => portfolioRef.current,
     documentTitle: `${username}_Portfolio`,
     removeAfterPrint: true,
@@ -256,6 +256,12 @@ export default function PublicPortfolio({ username, onBack }) {
           Build Yours
         </button>
       </div>
+
+      {exportError && (
+        <div className="no-print" style={{ color: '#ef4444', textAlign: 'center', margin: '1rem auto', padding: '0.5rem', background: '#fee2e2', borderRadius: '8px', border: '1px solid #f87171', maxWidth: '800px' }}>
+          {exportError}
+        </div>
+      )}
 
       {/* Main presentation sheet */}
       <div className="portfolio-shell">

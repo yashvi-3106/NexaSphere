@@ -13,6 +13,7 @@ export interface UseCertificateExportOptions {
 
 export const useCertificateExport = (options: UseCertificateExportOptions) => {
   const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const isIOSDevice = isIOS();
 
   // Setup standard react-to-print hook for non-iOS devices
@@ -55,6 +56,7 @@ export const useCertificateExport = (options: UseCertificateExportOptions) => {
 
     try {
       setIsExporting(true);
+      setExportError(null);
       if (options.onBeforeGetContent) {
         await options.onBeforeGetContent();
       }
@@ -65,7 +67,7 @@ export const useCertificateExport = (options: UseCertificateExportOptions) => {
       await generatePDFBlob(element, `${options.documentTitle || 'export'}.pdf`);
     } catch (error) {
       console.error('PDF generation failed:', error);
-      // Could show a toast notification here in a real app
+      setExportError(error instanceof Error ? error.message : 'Failed to generate PDF');
     } finally {
       setIsExporting(false);
       if (options.onAfterPrint) {
@@ -77,5 +79,6 @@ export const useCertificateExport = (options: UseCertificateExportOptions) => {
   return {
     handlePrint,
     isExporting,
+    exportError,
   };
 };
