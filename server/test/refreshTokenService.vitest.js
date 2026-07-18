@@ -34,26 +34,28 @@ vi.mock('../repositories/refreshTokenRepository.js', () => {
   return {
     hashToken,
 
-    createRefreshToken: vi.fn(async ({ rawToken, userId, familyId, deviceId, ipAddress, userAgent }) => {
-      const hash = hashToken(rawToken);
-      const row = {
-        id: crypto.randomUUID(),
-        token_hash: hash,
-        user_id: userId,
-        family_id: familyId ?? crypto.randomUUID(),
-        device_id: deviceId ?? null,
-        ip_address: ipAddress ?? null,
-        user_agent: userAgent ?? null,
-        is_revoked: false,
-        revoked_at: null,
-        revoke_reason: null,
-        issued_at: new Date(),
-        expires_at: new Date(Date.now() + 30 * 86_400_000),
-        last_used_at: new Date(),
-      };
-      mockStore.set(hash, row);
-      return row;
-    }),
+    createRefreshToken: vi.fn(
+      async ({ rawToken, userId, familyId, deviceId, ipAddress, userAgent }) => {
+        const hash = hashToken(rawToken);
+        const row = {
+          id: crypto.randomUUID(),
+          token_hash: hash,
+          user_id: userId,
+          family_id: familyId ?? crypto.randomUUID(),
+          device_id: deviceId ?? null,
+          ip_address: ipAddress ?? null,
+          user_agent: userAgent ?? null,
+          is_revoked: false,
+          revoked_at: null,
+          revoke_reason: null,
+          issued_at: new Date(),
+          expires_at: new Date(Date.now() + 30 * 86_400_000),
+          last_used_at: new Date(),
+        };
+        mockStore.set(hash, row);
+        return row;
+      }
+    ),
 
     findByRawToken: vi.fn(async (rawToken) => {
       const hash = hashToken(rawToken);
@@ -204,7 +206,8 @@ describe('refreshTokenService', () => {
     });
 
     it('invalidates the old refresh token after rotation', async () => {
-      const { findByRawToken, revokeToken } = await import('../repositories/refreshTokenRepository.js');
+      const { findByRawToken, revokeToken } =
+        await import('../repositories/refreshTokenRepository.js');
       const issued = await refreshTokenService.issueTokenPair(mockUser, mockMeta);
       await refreshTokenService.rotate(issued.refreshToken, mockUser, mockMeta);
 
@@ -302,9 +305,7 @@ describe('refreshTokenService', () => {
     });
 
     it('is a no-op for a non-existent token', async () => {
-      await expect(
-        refreshTokenService.revokeRefreshToken('ghost-token')
-      ).resolves.not.toThrow();
+      await expect(refreshTokenService.revokeRefreshToken('ghost-token')).resolves.not.toThrow();
     });
   });
 
