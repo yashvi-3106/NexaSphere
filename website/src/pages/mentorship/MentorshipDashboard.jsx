@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 // Validates a date value before formatting — avoids rendering literal
 // "Invalid Date" text when the API returns a null or malformed timestamp.
@@ -55,10 +55,18 @@ function MentorshipDashboard() {
   const [sessionForm, setSessionForm] = useState({ title: '', notes: '', duration_minutes: '' });
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
 
   const showToast = useCallback((message, type) => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => setToast(null), 4000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    };
   }, []);
 
   const fetchMentorships = useCallback(async () => {
