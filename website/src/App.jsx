@@ -46,7 +46,12 @@ import {
 } from './shared/MotionLayer';
 import { activityPages } from './data/activities/index';
 
-import { useStudentAuth } from './context/StudentAuthContext';
+const isPlaywright =
+  typeof window !== 'undefined' && window.navigator.userAgent.includes('Playwright');
+
+import { BookmarkProvider } from './context/BookmarkContext';
+import { StudentAuthProvider, useStudentAuth } from './context/StudentAuthContext';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import { WalkthroughOverlay } from './components/walkthrough/WalkthroughOverlay';
 import { useWalkthroughStore } from './store/useWalkthroughStore';
 import { useAnalytics } from './hooks/useAnalytics';
