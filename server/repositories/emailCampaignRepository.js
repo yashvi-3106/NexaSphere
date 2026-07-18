@@ -1,5 +1,13 @@
 import { withDb } from './db.js';
 
+function safeParseJSON(str, fallback = {}) {
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    return fallback;
+  }
+}
+
 function mapCampaignRow(row) {
   if (!row) return null;
   return {
@@ -7,10 +15,10 @@ function mapCampaignRow(row) {
     name: row.name,
     subject: row.subject,
     templateName: row.template_name,
-    content: typeof row.content === 'string' ? JSON.parse(row.content) : (row.content ?? {}),
+    content: typeof row.content === 'string' ? safeParseJSON(row.content) : (row.content ?? {}),
     segmentCriteria:
       typeof row.segment_criteria === 'string'
-        ? JSON.parse(row.segment_criteria)
+        ? safeParseJSON(row.segment_criteria)
         : (row.segment_criteria ?? {}),
     status: row.status,
     scheduledAt: row.scheduled_at,
