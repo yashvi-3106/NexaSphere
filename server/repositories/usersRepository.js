@@ -1,42 +1,57 @@
 import { withDb } from './db.js';
 
+function buildUserListQuery({ includeEmail = false, page = 1, limit = 20, role }) {
+  const selectColumns = [
+    'id',
+    'username',
+    'display_name',
+    'avatar_url',
+    'bio',
+    'phone_number',
+    'created_at as joined_at',
+  ];
+
+  if (includeEmail) {
+    selectColumns.push('email', 'admin_roles', 'last_login');
+  }
+
+  const params = [limit, (page - 1) * limit];
+  const conditions = [];
+
+  if (role) {
+    params.push(role);
+    conditions.push(`(role = $${params.length} OR admin_roles = $${params.length})`);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  return {
+    text: `
+      SELECT
+        ${selectColumns.join(',\n        ')}
+      FROM users
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT $1
+      OFFSET $2
+    `,
+    values: params,
+  };
+}
+
 export const usersRepository = {
-  async getAllPublicUsers() {
+  async getAllPublicUsers({ page = 1, limit = 20, role } = {}) {
     return withDb(async (client) => {
-      const { rows } = await client.query(`
-        SELECT 
-          id, 
-          username, 
-          display_name, 
-          avatar_url, 
-          bio, 
-          phone_number,
-          created_at as joined_at
-        FROM users
-        ORDER BY created_at DESC
-        LIMIT 100
-      `);
+      const { text, values } = buildUserListQuery({ page, limit, role });
+      const { rows } = await client.query(text, values);
       return rows;
     });
   },
 
-  async getAllUsersAdmin() {
+  async getAllUsersAdmin({ page = 1, limit = 20, role } = {}) {
     return withDb(async (client) => {
-      const { rows } = await client.query(`
-        SELECT 
-          id, 
-          username, 
-          display_name, 
-          avatar_url, 
-          bio, 
-          phone_number,
-          created_at as joined_at,
-          email,
-          admin_roles,
-          last_login
-        FROM users
-        ORDER BY created_at DESC
-      `);
+      const { text, values } = buildUserListQuery({ includeEmail: true, page, limit, role });
+      const { rows } = await client.query(text, values);
       return rows;
     });
   },

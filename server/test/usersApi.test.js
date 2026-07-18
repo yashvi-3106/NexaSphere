@@ -3,6 +3,7 @@ import test from 'node:test';
 import { toPublicUserDTO, toAdminUserDTO } from '../utils/userSerializer.js';
 import { getPublicUsers, getAdminUsers } from '../controllers/usersController.js';
 import { usersRepository } from '../repositories/usersRepository.js';
+import { setWithDbOverride } from '../repositories/db.js';
 
 const mockRawUser = {
   id: 'user-123',
@@ -44,12 +45,16 @@ test('Scenario 5: Admin endpoint - Privileged fields only', () => {
   assert.equal(adminDto.reset_token, undefined);
 });
 
-test('Controller handles public API responses correctly', async () => {
-  const originalGetAll = usersRepository.getAllPublicUsers;
-  usersRepository.getAllPublicUsers = async () => [mockRawUser];
+test('Controller handles admin API responses correctly', async () => {
+  const originalGetAll = usersRepository.getAllUsersAdmin;
+  let receivedArgs;
+  usersRepository.getAllUsersAdmin = async (args) => {
+    receivedArgs = args;
+    return [mockRawUser];
+  };
 
   let jsonRes;
-  const req = {};
+  const req = { query: { page: '2', limit: '5', role: 'moderator' } };
   const res = {
     json: (data) => {
       jsonRes = data;
@@ -58,15 +63,45 @@ test('Controller handles public API responses correctly', async () => {
     status: () => res,
   };
 
-  await getPublicUsers(req, res);
+  await getAdminUsers(req, res);
 
-  assert.ok(Array.isArray(jsonRes));
-  assert.equal(jsonRes.length, 1);
-  assert.equal(jsonRes[0].username, 'hacker123');
-  assert.equal(jsonRes[0].password_hash, undefined);
-  assert.equal(jsonRes[0].reset_token, undefined);
-  assert.equal(jsonRes[0].email, undefined);
+  assert.deepEqual(receivedArgs, { page: 2, limit: 5, role: 'moderator' });
+  assert.equal(jsonRes.page, 2);
+  assert.equal(jsonRes.limit, 5);
+  assert.ok(Array.isArray(jsonRes.users));
+  assert.equal(jsonRes.users.length, 1);
+  assert.equal(jsonRes.users[0].username, 'hacker123');
+  assert.equal(jsonRes.users[0].password_hash, undefined);
+  assert.equal(jsonRes.users[0].reset_token, undefined);
+  assert.equal(jsonRes.users[0].email, 'hacker@example.com');
 
   // Restore mock
-  usersRepository.getAllPublicUsers = originalGetAll;
+  usersRepository.getAllUsersAdmin = originalGetAll;
+});
+
+test('Repository applies pagination and role filters to user list queries', async () => {
+  let capturedQuery = null;
+
+  setWithDbOverride(async (fn) =>
+    fn({
+      query: async (text, values) => {
+        capturedQuery = { text, values };
+        return { rows: [mockRawUser] };
+      },
+    })
+  );
+
+  try {
+    const rows = await usersRepository.getAllUsersAdmin({ page: 3, limit: 7, role: 'moderator' });
+
+    assert.equal(rows.length, 1);
+    assert.ok(capturedQuery);
+    assert.match(capturedQuery.text, /LIMIT \$1/);
+    assert.match(capturedQuery.text, /OFFSET \$2/);
+    assert.match(capturedQuery.text, /role = \$3/);
+    assert.match(capturedQuery.text, /admin_roles = \$3/);
+    assert.deepEqual(capturedQuery.values, [7, 14, 'moderator']);
+  } finally {
+    setWithDbOverride(null);
+  }
 });
