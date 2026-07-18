@@ -81,8 +81,7 @@
     "ws": "^8.20.2",
     "form-data": "^4.0.6",
     "@prisma/client": "^6.4.0",
-    "next-intl": "^4.13.0"
-    "form-data": "^4.0.1",
+    "next-intl": "^4.13.2",
     "dompurify": "^3.4.9",
     "engine.io-client": "^6.6.2"
   }

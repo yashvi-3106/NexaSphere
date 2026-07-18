@@ -86,6 +86,5 @@
     "workbox-precaching": "^7.4.1",
     "workbox-routing": "^7.4.1",
     "workbox-strategies": "^7.4.1"
-    "vitest": "^4.1.9"
   }
 }
