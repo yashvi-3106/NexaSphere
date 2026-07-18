@@ -1,5 +1,17 @@
 import { withDb } from './db.js';
 
+function parsePostgresArray(val) {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      const content = trimmed.slice(1, -1).trim();
+      return content ? content.split(',').map(item => item.trim().replace(/^"|"$/g, '')) : [];
+    }
+  }
+  return [];
+}
+
 function mapRow(row) {
   return {
     id: row.id,
@@ -9,12 +21,7 @@ function mapRow(row) {
     description: row.description,
     status: row.status,
     icon: row.icon,
-    tags: Array.isArray(row.tags) ? row.tags : (row.tags ?? []),
-    restrictedGroups:
-      typeof row.restricted_groups === 'string'
-        ? JSON.parse(row.restricted_groups)
-        : (row.restricted_groups ?? []),
-
+    tags: parsePostgresArray(row.tags),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -32,97 +39,17 @@ export const eventsRepository = {
     search,
   } = {}) {
     return withDb(async (client) => {
-      await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ');
-
-      try {
-        const offset = (page - 1) * limit;
-
-        let query = 'select * from events ';
-        const params = [];
-        let conditions = [];
-
-        if (status) {
-          conditions.push(`status = $${params.length + 1}`);
-          params.push(status);
-        }
-
-        if (category) {
-          conditions.push(`LOWER(array_to_string(tags, ',')) LIKE LOWER($${params.length + 1})`);
-          params.push(`%${category}%`);
-        }
-
-        if (location) {
-          conditions.push(`LOWER(description) LIKE LOWER($${params.length + 1})`);
-          params.push(`%${location}%`);
-        }
-
-        if (search) {
-          conditions.push(
-            `(LOWER(name) LIKE LOWER($${params.length + 1})
-      OR LOWER(description) LIKE LOWER($${params.length + 2}))`
-          );
-
-          params.push(`%${search}%`);
-          params.push(`%${search}%`);
-        }
-
-        if (startDate) {
-          conditions.push(`date_text >= $${params.length + 1}`);
-          params.push(startDate);
-        }
-
-        if (endDate) {
-          conditions.push(`date_text <= $${params.length + 1}`);
-          params.push(endDate);
-        }
-
-        if (studentGroups === undefined) {
-          // If no groups provided, only show public events
-          conditions.push(
-            `(restricted_groups IS NULL OR jsonb_array_length(restricted_groups) = 0 OR restricted_groups = '[]'::jsonb)`
-          );
-        } else {
-          // Show public events OR events where restricted_groups overlaps with studentGroups
-          conditions.push(
-            `(restricted_groups IS NULL OR jsonb_array_length(restricted_groups) = 0 OR restricted_groups = '[]'::jsonb OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(restricted_groups) AS g WHERE g = ANY($${params.length + 1})))`
-          );
-          params.push(studentGroups.length > 0 ? studentGroups : ['-1']);
-        }
-
-        if (conditions.length > 0) {
-          query += ' where ' + conditions.join(' and ');
-        }
-
-        query += ` order by created_at desc limit $1 offset $2`;
-        params.push(limit, offset);
-
-        const { rows } = await client.query(query, params);
-
-        const countQuery =
-          'select count(*)::int as total from events ' +
-          (conditions.length > 0 ? ' where ' + conditions.join(' and ') : '');
-        const countResult = await client.query(countQuery, params.slice(0, params.length - 2));
-
-        const total = countResult.rows[0]?.total ?? 0;
-
-        await client.query('COMMIT');
-
-        return {
-          rows: rows.map(mapRow),
-          total,
-        };
-      } catch (e) {
-        await client.query('ROLLBACK');
-        throw e;
-      }
-    });
-  },
-
-  async getById(id) {
-    return withDb(async (client) => {
-      const { rows } = await client.query('select * from events where id = $1', [id]);
-      if (!rows.length) return null;
-      return mapRow(rows[0]);
+      const offset = (page - 1) * limit;
+      const { rows } = await client.query(
+        `select *, count(*) over()::int as total 
+         from events 
+         order by created_at desc 
+         limit $1 offset $2`,
+        [limit, offset],
+      );
+      
+      const total = rows.length > 0 ? rows[0].total : 0;
+      return { rows: rows.map(mapRow), total };
     });
   },
 
@@ -166,39 +93,60 @@ export const eventsRepository = {
 
   async update(id, patch) {
     return withDb(async (client) => {
-      const { rows } = await client.query(
-        `update events set
-           name = coalesce($2, name),
-           short_name = coalesce($3, short_name),
-           date_text = coalesce($4, date_text),
-           description = coalesce($5, description),
-           status = coalesce($6, status),
-           icon = coalesce($7, icon),
-           tags = coalesce($8, tags),
-           restricted_groups = coalesce($9, restricted_groups),
+      // Filter out any omitted fields (undefined) while keeping explicit nulls or empty values
+      const keys = Object.keys(patch).filter(key => patch[key] !== undefined);
+      
+      // If no valid update fields are provided, skip the DB call and return the current record
+      if (keys.length === 0) {
+        const { rows } = await client.query('select * from events where id = $1', [id]);
+        return rows.length ? mapRow(rows[0]) : null;
+      }
 
-           updated_at = now()
-         where id = $1
-         returning *`,
-        [
-          id,
-          patch.name ?? null,
-          patch.shortName ?? null,
-          patch.date ?? null,
-          patch.description ?? null,
-          patch.status ?? null,
-          patch.icon ?? null,
-          patch.tags ?? null,
-          patch.restrictedGroups ? JSON.stringify(patch.restrictedGroups) : null,
+      // Map JavaScript camelCase properties back to database snake_case columns
+      const fieldMap = {
+        name: 'name',
+        shortName: 'short_name',
+        date: 'date_text',
+        description: 'description',
+        status: 'status',
+        icon: 'icon',
+        tags: 'tags'
+      };
 
-        ]
-      );
+      const setClauses = [];
+      const values = [id]; // $1 is always the ID for the WHERE clause
+      let paramIndex = 2;   // Dynamic parameters start at $2
+
+      for (const key of keys) {
+        if (fieldMap[key] !== undefined) {
+          setClauses.push(`${fieldMap[key]} = $${paramIndex}`);
+          
+          // Ensure arrays are passed in a format pg-driver handles natively or as clean nulls
+          let val = patch[key];
+          if (key === 'tags' && Array.isArray(val)) {
+            // Converts JS array directly to PG array format if driver needs it, 
+            // or lets the driver serialize it safely.
+            val = val; 
+          }
+          
+          values.push(val);
+          paramIndex++;
+        }
+      }
+
+      // Always append the updated timestamp
+      setClauses.push(`updated_at = now()`);
+
+      const queryText = `
+        update events 
+        set ${setClauses.join(', ')} 
+        where id = $1 
+        returning *`;
+
+      const { rows } = await client.query(queryText, values);
       if (!rows.length) return null;
-      const mapped = mapRow(rows[0]);
-      import('../services/searchIndexer.js')
-        .then(({ searchIndexer }) => searchIndexer.indexEvent(mapped))
-        .catch(() => {});
-      return mapped;
+      
+      return mapRow(rows[0]);
     });
   },
 
