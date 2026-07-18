@@ -45,6 +45,16 @@ if not ADMIN_SECRET:
         "Set it in your .env file or environment before starting the server."
     )
 
+# Secret used to derive certificate IDs. Must be kept server-side only —
+# anyone with this value could compute valid certificate IDs offline, so it
+# must never be the same value as ADMIN_SECRET or reused elsewhere.
+CERT_ID_SECRET = os.getenv("CERT_ID_SECRET")
+if not CERT_ID_SECRET:
+    raise RuntimeError(
+        "CERT_ID_SECRET environment variable is required to derive certificate IDs. "
+        "Set it in your .env file or environment before starting the server."
+    )
+
 
 def _require_admin(x_admin_secret: Optional[str] = Header(default=None)) -> None:
     """Dependency that enforces admin authentication via X-Admin-Secret header."""
@@ -102,9 +112,22 @@ class VerifyResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 def _make_certificate_id(student_id: str, event_id: str) -> str:
-    """Deterministic, collision-resistant certificate ID based on student+event."""
+    """
+    Deterministic, collision-resistant certificate ID based on student+event.
+
+    Uses HMAC-SHA256 keyed with a server-side secret (CERT_ID_SECRET) rather
+    than a plain hash. A plain sha256(student_id:event_id) hash is computable
+    by anyone who knows or guesses the pair, which would let a third party
+    predict a certificate ID (and hit the public verify/download endpoints)
+    without ever having been issued that certificate. Keying the digest with
+    a secret only the server holds keeps the ID deterministic for the
+    generation flow's dedup logic, while making it infeasible to compute
+    without server access.
+    """
     seed = f"{student_id}:{event_id}"
-    digest = hashlib.sha256(seed.encode()).hexdigest()[:16]
+    digest = hmac.new(
+        CERT_ID_SECRET.encode(), seed.encode(), hashlib.sha256
+    ).hexdigest()[:16]
     return f"NS-CERT-{digest.upper()}"
 
 
