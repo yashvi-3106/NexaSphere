@@ -16,7 +16,11 @@ if (process.env.REDIS_URL) {
   connection = new IORedis(process.env.REDIS_URL, { maxRetriesPerRequest: null });
 }
 
-export const bulkOperationsQueue = connection ? new Queue('bulk-operations', { connection }) : null;
+export const bulkOperationsQueueName = 'bulk-operations';
+
+export const bulkOperationsQueue = connection
+  ? new Queue(bulkOperationsQueueName, { connection })
+  : null;
 
 class BulkOperationsService {
   constructor() {

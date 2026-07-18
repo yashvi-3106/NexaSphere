@@ -84,6 +84,33 @@ router.post(
 );
 router.get('/api/users', usersController.getPublicUsers);
 router.post('/api/whiteboard/export-pdf', whiteboardController.exportPDF);
+/**
+ * @swagger
+ * /api/events:
+ *   get:
+ *     summary: Get all events
+ *     description: Returns a list of all published events. No authentication required.
+ *     tags: [Events]
+ *     responses:
+ *       200:
+ *         description: List of events
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   title:
+ *                     type: string
+ *                   date:
+ *                     type: string
+ *                     format: date
+ *                   description:
+ *                     type: string
+ */
 router.get('/api/content/events', eventsController.listEvents);
 router.get('/api/content/banners', bannersController.listActiveBanners);
 router.post(
@@ -237,6 +264,35 @@ router.get(
   adminAuthMiddleware.requireScope('events:read'),
   eventAnalyticsController.getEventStats
 );
+/**
+ * @swagger
+ * /api/admin/events:
+ *   post:
+ *     summary: Create a new event (admin only)
+ *     tags: [Events]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [title, date, description]
+ *             properties:
+ *               title:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date
+ *               description:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Event created successfully
+ *       401:
+ *         description: Unauthorized — admin login required
+ */
 router.post(
   '/api/admin/events',
   adminAuthMiddleware.requireScope('events:write'),
@@ -483,7 +539,6 @@ router.use(
   "/api/announcements",
   announcementPriorityRouter
 );
-
 router.use('/budgets', budgetRoutes);
 router.use('/api/announcements', announcementPriorityRouter);
 

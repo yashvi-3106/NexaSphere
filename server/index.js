@@ -10,6 +10,8 @@ import express from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
 import csrf from 'csurf';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger.js';
 import fs, { promises as fsp } from 'fs';
 import { body, validationResult } from 'express-validator';
 import { EventEmitter } from 'events';
@@ -238,6 +240,22 @@ app.use(
     threshold: 1024,
   })
 );
+
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'NexaSphere API Docs',
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  })
+);
+
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 // Middleware to monitor compression ratio
 app.use((req, res, next) => {

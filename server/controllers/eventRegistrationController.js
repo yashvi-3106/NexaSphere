@@ -327,6 +327,5 @@ export const confirmWaitlistSpot = wrapAsync(async (req, res) => {
   if (!confirmed) {
     return res.status(404).json({ error: 'No pending waitlist promotion found for this email' });
   }
-
   return res.status(200).json({ success: true, message: 'Spot confirmed successfully' });
 });
