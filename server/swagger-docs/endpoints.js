@@ -482,6 +482,8 @@
  *     description: Platform-Wide Data Export & Reporting Center
  *   - name: Maintenance
  *     description: Platform-Wide Scheduled Maintenance Management
+ *   - name: Workspaces
+ *     description: Smart Workspace for Club & Team Collaboration
  */
 /**
  * @swagger
@@ -501,6 +503,11 @@
  *         description: Maintenance schedules retrieved successfully
  *
  *     summary: Create maintenance schedule
+ * /api/workspaces:
+ *     summary: Get all workspaces
+ *     tags: [Workspaces]
+ *         description: Workspaces retrieved successfully
+ *     summary: Create a workspace
  *     requestBody:
  *       required: true
  *         description: Data exported successfully
@@ -518,6 +525,7 @@
  *     summary: Save report template
  *         description: Template saved successfully
  *         description: Maintenance created successfully
+ *         description: Workspace created successfully
  */
 /**
  * @swagger
@@ -525,6 +533,9 @@
  *   get:
  *     summary: Get maintenance by ID
  *     tags: [Maintenance]
+ * /api/workspaces/{id}:
+ *     summary: Get workspace by ID
+ *     tags: [Workspaces]
  *     parameters:
  *       - in: path
  *         name: id
@@ -536,6 +547,10 @@
  *         description: Maintenance retrieved successfully
  *   put:
  *     summary: Update maintenance
+ *         description: Workspace retrieved successfully
+ *
+ *     summary: Update workspace
+ *     tags: [Workspaces]
  * /api/notification-preferences/{userId}:
  *   get:
  *     summary: Get notification preferences
@@ -726,6 +741,7 @@
  * ...
  */
 
+
 /**
  * @swagger
  * /api/announcements:
@@ -840,6 +856,9 @@
  *       200:
  *         description: Resource deleted successfully
  *         description: Countdown retrieved successfully
+ *         description: Workspace updated successfully
+ *     summary: Delete workspace
+ *     tags: [Workspaces]
  *           type: string
  *     requestBody:
  *       required: true
@@ -902,7 +921,7 @@
  *           type: integer
  *     responses:
  *       200:
- *         description: Budget deleted successfully
+ *         description: Workspace deleted successfully
  *           type: string
  *     requestBody:
  *       required: true
@@ -1249,6 +1268,21 @@
 /**
  * @swagger
  * /api/resource-discovery/category/{category}:
+ * /api/workspaces/{id}/documents:
+ *   get:
+ *     summary: Get shared documents
+ *     tags: [Workspaces]
+ *     responses:
+ *       200:
+ *         description: Documents retrieved successfully
+ *
+ *   post:
+ *     summary: Upload shared document
+ *     requestBody:
+ *       required: true
+ *       201:
+ *         description: Document uploaded successfully
+ * /api/search/trending:
  *   get:
  *     summary: Get resources by category
  *     tags: [Resource Discovery]
@@ -1388,6 +1422,28 @@
  *         description: Activity statistics
  *   - name: Notification Campaigns
  *     description: Intelligent Notification Scheduling & Campaign Management
+ * /api/workspaces/{id}/discussions:
+ *     summary: Get team discussions
+ *     tags: [Workspaces]
+ *         description: Discussions retrieved successfully
+ *
+ *     summary: Add discussion
+ *     requestBody:
+ *         description: Discussion added successfully
+ * /api/workspaces/{id}/calendar:
+ *     summary: Get shared calendar
+ *         description: Calendar retrieved successfully
+ * /api/workspaces/{id}/tasks:
+ *     summary: Get workspace tasks
+ *         description: Tasks retrieved successfully
+ *     summary: Create task
+ *         description: Task created successfully
+ * /api/workspaces/{id}/notes:
+ *     summary: Add meeting notes
+ *         description: Meeting notes added successfully
+ * /api/workspaces/{id}/polls:
+ *     summary: Create quick poll
+ *         description: Poll created successfully
  */
 
 /**
@@ -1418,6 +1474,16 @@
  *     summary: Get maintenance status banner
  *     tags: [Maintenance]
  *         description: Status banner retrieved successfully
+ * /api/workspaces/{id}/announcements:
+ *     summary: Create team announcement
+ *     tags: [Workspaces]
+ *         description: Announcement created successfully
+ */
+/**
+ * @swagger
+ * /api/workspaces/{id}/timeline:
+ *     summary: Get activity timeline
+ *         description: Timeline retrieved successfully
  */
 
 /**
@@ -1473,6 +1539,10 @@
  *       200:
  *         description: Workflow deleted successfully
  *         description: Campaign deleted successfully
+ * /api/workspaces/{id}/bookmarks:
+ *     summary: Get shared bookmarks
+ *     tags: [Workspaces]
+ *         description: Bookmarks retrieved successfully
  */
 
 /**
@@ -1749,4 +1819,8 @@
  * /api/digital-assets/expiring:
  *     summary: Get expiring assets
  *         description: Expiring assets retrieved
+ * /api/workspaces/{id}/analytics:
+ *     summary: Get workspace analytics
+ *     tags: [Workspaces]
+ *         description: Analytics retrieved successfully
 export default {};

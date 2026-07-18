@@ -105,6 +105,7 @@ const budgetRoutes = require('./budget');
 const resourceDiscoveryRoutes = require("./resourceDiscovery");
 const notificationCampaignRoutes = require("./notificationCampaign");
 const maintenanceRoutes = require("./maintenance");
+const workspaceRoutes = require("./workspace");
 const router = Router();
 
 // Public
@@ -651,6 +652,7 @@ router.use(
 );
 router.use('/budgets', budgetRoutes);
 router.use("/maintenance", maintenanceRoutes);
+router.use("/workspaces", workspaceRoutes);
 router.use('/api/announcements', announcementPriorityRouter);
 router.use(
   "/api/admin/waitlist",
