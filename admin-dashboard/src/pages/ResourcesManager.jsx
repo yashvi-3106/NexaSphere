@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { api, eventEmitter, EVENTS } from '../services/api';
+import { Skeleton } from '../components/Skeleton';
 
 const STATUS_COLORS = {
   pending: { bg: 'rgba(255,193,7,0.15)', color: '#f59e0b' },
@@ -119,7 +120,31 @@ export function ResourcesManager() {
         </select>
       </div>
 
-      {loading && <div className="loading-spinner">Loading resources...</div>}
+      {loading && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="list-item">
+              <div className="list-item-left" style={{ width: '100%', gap: '12px' }}>
+                <Skeleton height={40} width={40} rounded />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <Skeleton height={16} width="38%" />
+                  <div style={{ marginTop: '8px' }}>
+                    <Skeleton height={12} width="68%" />
+                  </div>
+                  <div style={{ marginTop: '8px' }}>
+                    <Skeleton height={12} width="82%" />
+                  </div>
+                </div>
+              </div>
+              <div className="list-item-right" style={{ minWidth: '260px' }}>
+                <Skeleton height={28} width={72} />
+                <Skeleton height={28} width={80} />
+                <Skeleton height={28} width={72} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {!loading && filtered.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#888' }}>
