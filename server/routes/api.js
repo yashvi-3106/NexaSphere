@@ -39,6 +39,10 @@ import smartFormsGlobalRoutes from "./smartFormsGlobalRoutes.js";
 import eventConflictRouter from "./eventConflict.js";
 import waitlistRoutes from "./waitlist.js";
 import * as localAuthController from '../controllers/localAuthController.js';
+import announcementPriorityRouter from './announcementPriority.js';
+import recommendationEngine from './recommendationEngine.js';
+import platformAnalyticsRoutes from './platformAnalytics.js';
+import * as localAuthController from '../controllers/localAuthController.js';
 import * as whiteboardController from '../controllers/whiteboardController.js';
 import bookmarkRoutes from './bookmark.js';
 import operationalInsightsRoutes from './operationalInsights.js';
@@ -83,12 +87,13 @@ import eventRecurringRoutes from "./eventRecurringRoutes.js";
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
-
+import * as whiteboardController from '../controllers/whiteboardController.js';
 import multer from 'multer';
 import * as analyticsController from '../controllers/analyticsController.js';
 const workflowAutomationRoutes = require("./workflowAutomation"); 
 const router = Router();
 const apiAnalyticsRoutes = require('./apiAnalytics');
+const digitalAssetRoutes = require("./digitalAsset");
 
 router.use(rateLimitAdminRoutes);
 router.use(throttleMiddleware);
@@ -111,6 +116,9 @@ router.post(
   validate(awardXPSchema),
   gamificationController.awardXP
 );
+import reportingCenterRoutes from "./reportingCenter.js";
+router.post('/api/dashboard/xp', gamificationController.awardXP);
+router.use("/reporting-center", reportingCenterRoutes);
 router.post(
   '/api/assistant/recommend',
   upload.single('file'),
@@ -642,6 +650,10 @@ router.use(
 );
 router.use('/budgets', budgetRoutes);
 router.use('/api/announcements', announcementPriorityRouter);
+router.use(
+  "/api/admin/waitlist",
+  waitlistRoutes
+); // Audit Log Viewer APIs
 router.use('/api/events', eventConflictRouter);
 router.use("/api/events/:eventId/survey", eventSurveyRoutes);
 router.use("/api/events/:eventId/forms", smartFormsRoutes);
@@ -662,6 +674,10 @@ router.get(
   '/api/admin/audit-logs/stats',
   adminAuthMiddleware.requireAdmin,
   auditLogController.getStats
+  "/recommendations",
+  recommendationEngine
+);
+router.use(
   "/recommendations",
   recommendationEngine
 );
@@ -720,6 +736,8 @@ router.get(
 );
 
 // Platform Analytics APIs
+router.use("/api/analytics", platformAnalyticsRoutes);
+router.use("/digital-assets", digitalAssetRoutes);
 router.use('/api/analytics', platformAnalyticsRoutes);
 
 router.use('/api-analytics', apiAnalyticsRoutes);

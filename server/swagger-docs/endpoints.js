@@ -478,6 +478,37 @@
  * tags:
  *   name: Resource Discovery
  *   description: APIs for the Intelligent Campus Resource Discovery Platform
+ *   - name: Reporting Center
+ *     description: Platform-Wide Data Export & Reporting Center
+ */
+/**
+ * @swagger
+ * /api/reporting-center/reports:
+ *   get:
+ *     summary: Get all reports
+ *     tags: [Reporting Center]
+ *     responses:
+ *       200:
+ *         description: Reports retrieved successfully
+ * /api/reporting-center/export:
+ *   post:
+ *     summary: Export data (CSV, Excel, PDF)
+ *     requestBody:
+ *       required: true
+ *         description: Data exported successfully
+ * /api/reporting-center/schedule:
+ *     summary: Schedule report generation
+ *       201:
+ *         description: Report scheduled successfully
+ * /api/reporting-center/custom:
+ *     summary: Generate custom report
+ *         description: Custom report generated successfully
+ * /api/reporting-center/templates:
+ *     summary: Get saved report templates
+ *         description: Templates retrieved successfully
+ *
+ *     summary: Save report template
+ *         description: Template saved successfully
  * /api/notification-preferences/{userId}:
  *   get:
  *     summary: Get notification preferences
@@ -659,6 +690,15 @@
  *   get:
  *     summary: Get resource by ID
  *     tags: [Resource Discovery]
+ * /api/reporting-center/email:
+ *   post:
+ *     summary: Email report
+ *     tags: [Reporting Center]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Report emailed successfully
  * /api/announcements/{id}/priority:
  *   patch:
  *     summary: Update announcement priority
@@ -729,6 +769,21 @@
  *     responses:
  *       200:
  *         description: Search results returned successfully
+ * /api/reporting-center/dashboard:
+ *     summary: Get dashboard summary
+ *     tags: [Reporting Center]
+ *         description: Dashboard summary retrieved successfully
+ */
+/**
+ * @swagger
+ * /api/reporting-center/history:
+ *     summary: Get report history
+ *         description: Report history retrieved successfully
+ * /api/reporting-center/audit:
+ *     summary: Get export audit logs
+ *         description: Audit logs retrieved successfully
+ * /api/reporting-center/filter:
+ *     summary: Filter reports
  * /api/announcements/{id}/pin:
  *   patch:
  *     summary: Pin or unpin an announcement
@@ -1061,6 +1116,13 @@
  *         name: type
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Filtered reports returned successfully
  *           enum:
  *             - all
  *             - events
@@ -1093,9 +1155,12 @@
  *     description: Returns the most popular search queries.
  *     tags:
  *       - Global Search
+ * /api/reporting-center/permissions:
+ *     summary: Get export permissions
+ *     tags: [Reporting Center]
  *     responses:
  *       200:
- *         description: Trending searches retrieved successfully.
+ *         description: Export permissions retrieved successfully
  */
 /**
  * @swagger
@@ -1370,6 +1435,9 @@
  *         schema:
  *           type: integer
  *         description: Campaign resumed successfully
+ * tags:
+ *   - name: Digital Assets
+ *     description: Organization-Wide Digital Asset Management System
  */
 
 /**
@@ -1439,6 +1507,12 @@
  *       required: true
  *       201:
  *         description: Template created successfully
+ * /api/digital-assets:
+ *     summary: Get all digital assets
+ *     tags: [Digital Assets]
+ *         description: Assets retrieved successfully
+ *     summary: Upload a new digital asset
+ *         description: Asset uploaded successfully
  */
 
 /**
@@ -1459,6 +1533,19 @@
  * @swagger
  * /api/notification-campaigns/analytics/{id}:
  *     summary: Get campaign analytics
+ * /api/digital-assets/{id}:
+ *     summary: Get asset by ID
+ *     tags: [Digital Assets]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Asset retrieved successfully
+ *
+ *   put:
+ *     summary: Update asset
  *     parameters:
  *       - in: path
  *         name: id
@@ -1472,4 +1559,64 @@
  *     requestBody:
  *       201:
  *         description: A/B test created successfully
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Asset updated successfully
+ *
+ *   delete:
+ *     summary: Delete asset
+ *     tags: [Digital Assets]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         description: Asset deleted successfully
+ */
+/**
+ * @swagger
+ * /api/digital-assets/search:
+ *   get:
+ *     summary: Search assets
+ *       - in: query
+ *         name: q
+ *           type: string
+ *         description: Search results returned successfully
+ * /api/digital-assets/category/{category}:
+ *     summary: Filter assets by category
+ *         name: category
+ *         description: Category assets retrieved successfully
+ * /api/digital-assets/folders:
+ *     summary: Get folders
+ *         description: Folder list retrieved
+ *     summary: Create folder
+ *         description: Folder created successfully
+ * /api/digital-assets/duplicates:
+ *     summary: Detect duplicate assets
+ *         description: Duplicate assets retrieved
+ * /api/digital-assets/tags/{id}:
+ *     summary: Generate AI tags
+ *         description: AI tags generated successfully
+ * /api/digital-assets/history/{id}:
+ *     summary: Get asset version history
+ *         description: Version history retrieved
+ * /api/digital-assets/preview/{id}:
+ *     summary: Preview asset
+ *         description: Asset preview generated
+ * /api/digital-assets/bulk-upload:
+ *     summary: Bulk upload assets
+ *         description: Assets uploaded successfully
+ * /api/digital-assets/bulk-download:
+ *     summary: Bulk download assets
+ *         description: Assets downloaded successfully
+ * /api/digital-assets/share:
+ *     summary: Share asset
+ *         description: Asset shared successfully
+ * /api/digital-assets/storage:
+ *     summary: Storage usage analytics
+ *         description: Storage analytics retrieved
+ * /api/digital-assets/expiring:
+ *     summary: Get expiring assets
+ *         description: Expiring assets retrieved
 export default {};
