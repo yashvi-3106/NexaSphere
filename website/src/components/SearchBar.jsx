@@ -13,7 +13,7 @@ import {
   Folder,
   MessageSquare,
 } from 'lucide-react';
-import { useEventSearch as useSearch } from '../hooks/useEventSearch';
+import { useEventSearch } from '../hooks/useEventSearch';
 
 function Highlight({ text, query }) {
   if (!text) return null;
@@ -141,7 +141,7 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
     recentSearches,
     addRecentSearch,
     removeRecentSearch,
-  } = useSearch(activities, events);
+  } = useEventSearch(activities, events);
 
   const [localQuery, setLocalQuery] = useState('');
   const timeoutRef = useRef(null);
