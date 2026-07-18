@@ -1,30 +1,46 @@
-# TODO - Implement #1806 Cross-Platform Mobile App (React Native - Expo)
+# TODO - Advanced User Profile (Skills Graph + Contributions + Endorsements)
 
-## Phase 1: Repo/Scaffolding
+## Phase 1 — Thin vertical slice: `GET /api/auth/profile/advanced`
 
-- [ ] Create plan + confirm approach (Expo) (approved)
-- [ ] Add `mobile/` Expo workspace (TypeScript, React Native 0.72+)
-- [ ] Wire `mobile` into root `package.json` workspaces + scripts
-- [ ] Add `mobile` README with run/test instructions
+- [x] Inspect existing profile routes and DB access patterns
+- [x] Add DB tables for advanced profile (skills, contributions, endorsements, privacy prefs, summary) via server migrations
+- [ ] Implement repository layer to read advanced profile aggregates
+- [x] Implement controller endpoint `GET /api/auth/profile/advanced`
+- [x] Add frontend page/section to consume endpoint (placeholder UI accepted for slice)
+- [x] Add Playwright/e2e test for endpoint shape + privacy redaction (auth-specific)
 
-## Phase 2: Required Feature Stack
+## Phase 2 — Skills graph rendering
 
-- [ ] Add Redux Toolkit store + slices (basic app state)
-- [ ] Add React Navigation (stack) with example screens
-- [ ] Add offline persistence using `@react-native-async-storage/async-storage`
-- [ ] Add offline queue/outbox-lite for delayed requests
-- [ ] Create API client (fetch) hitting existing server endpoints
+- [ ] Implement radar/spider chart grouped by category
+- [ ] Implement growth over time line chart
+- [ ] Implement peer anonymized comparison
+- [ ] Wire skill level scoring inputs (self-assessment, endorsements, event attendance, quiz scores)
 
-## Phase 3: Maintainer Quality Requirements
+## Phase 3 — Contribution heatmap + timeline
 
-- [ ] Unit tests setup (Jest + React Native Testing Library)
-- [ ] Add tests and ensure coverage >= 70%
-- [ ] Add performance guard patterns (FlatList memoization, avoid re-renders)
-- [ ] Add accessibility labels/roles for key UI
-- [ ] Add platform-specific UI tweaks (Platform.select)
+- [ ] Implement contribution heatmap with streak + YoY comparison
+- [ ] Implement activity timeline filters + milestone highlighting
 
-## Phase 4: CI/Test
+## Phase 4 — Endorsements + notifications
 
-- [ ] Ensure root `npm test` / lint / typecheck not broken
-- [ ] Add `npm run test:mobile` and `npm run lint:mobile` scripts
-- [ ] Run tests locally and fix failures
+- [ ] Implement endorse/request flow
+- [ ] Mentor weight handling
+- [ ] Notification UI + backend feed
+
+## Phase 5 — Professional summary + PDF export
+
+- [ ] Auto-generated summary + editable field
+- [ ] PDF export endpoint + frontend export trigger
+- [ ] LinkedIn integration stub/sync
+
+## Phase 6 — Privacy enforcement + GDPR export
+
+- [ ] Backend privacy enforcement rules
+- [ ] Anonymous mode behavior
+- [ ] Personal data export (GDPR)
+
+## Phase 7 — QA & performance
+
+- [ ] Mobile responsive verification
+- [ ] Large dataset performance optimization
+- [ ] QA tests with multiple datasets
