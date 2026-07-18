@@ -32,11 +32,9 @@ import * as portfolioAnalyticsController from '../controllers/portfolioAnalytics
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import * as analyticsController from '../controllers/analyticsController.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
-import announcementPriorityRouter from './announcementPriority.js';
-import eventConflictRouter from './eventConflict.js';
-import waitlistRoutes from './waitlist.js';
-import recommendationEngine from './recommendationEngine.js';
-import platformAnalyticsRoutes from './platformAnalytics.js';
+import announcementPriorityRouter from "./announcementPriority.js";
+import eventConflictRouter from "./eventConflict.js";
+import waitlistRoutes from "./waitlist.js";
 import * as localAuthController from '../controllers/localAuthController.js';
 import * as whiteboardController from '../controllers/whiteboardController.js';
 import bookmarkRoutes from './bookmark.js';
@@ -69,6 +67,8 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
 const budgetRoutes = require('./budget');
+const resourceDiscoveryRoutes = require("./resourceDiscovery");
+const router = Router();
 
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
@@ -449,6 +449,10 @@ router.get(
   portfolioAnalyticsController.getPortfolioAnalytics
 );
 
+router.post(
+  '/api/portfolio/:username/visit',
+  portfolioAnalyticsController.recordPortfolioVisit
+);
 router.post('/api/portfolio/:username/visit', portfolioAnalyticsController.recordPortfolioVisit);
 router.post(
   '/api/portfolio/:username/visit',
@@ -547,6 +551,11 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   const active = impersonationService.getActive(req.adminSession.token);
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
+router.use(
+
+  "/resource-discovery",
+  resourceDiscoveryRoutes
+);
 
 router.use(
   "/api/announcements",
@@ -566,12 +575,17 @@ router.use(
 );
 router.use("/api/events/:event_id/collaborators", eventCollaboratorRoutes);
 // Audit Log Viewer APIs
+); // Audit Log Viewer APIs
 router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
 
 router.get(
   '/api/admin/audit-logs/stats',
   adminAuthMiddleware.requireAdmin,
   auditLogController.getStats
+  "/recommendations",
+  recommendationEngine
+);
+router.use(
   "/recommendations",
   recommendationEngine
 );

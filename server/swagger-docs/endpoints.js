@@ -476,49 +476,8 @@
 /**
  * @swagger
  * tags:
- *   - name: Budget Management
- *     description: Intelligent Event Budget Planning & Expense Management APIs
- */
-
-/**
- * @swagger
- * /api/budgets:
- *   get:
- *     summary: Get all budgets
- *     tags: [Budget Management]
- *     responses:
- *       200:
- *         description: Budgets retrieved successfully
- *
- *   post:
- *     summary: Create budget
- *     tags: [Budget Management]
- *     requestBody:
- *       required: true
- *     responses:
- *       201:
- *         description: Budget created successfully
- */
-
-/**
- * @swagger
- * /api/budgets/{id}:
- *   get:
- *     summary: Get budget by ID
- *     tags: [Budget Management]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Budget retrieved successfully
- *
- *   put:
- *     summary: Update budget
- *     tags: [Budget Management]
+ *   name: Resource Discovery
+ *   description: APIs for the Intelligent Campus Resource Discovery Platform
  * /api/notification-preferences/{userId}:
  *   get:
  *     summary: Get notification preferences
@@ -597,6 +556,20 @@
 
 /**
  * @swagger
+ * /api/resource-discovery:
+ *   get:
+ *     summary: Get all campus resources
+ *     tags: [Resource Discovery]
+ *     responses:
+ *       200:
+ *         description: List of resources retrieved successfully
+ *
+ *   post:
+ *     summary: Create a new resource
+ *     tags: [Resource Discovery]
+ *     responses:
+ *       201:
+ *         description: Resource created successfully
  * /api/notification-preferences/{userId}:
  *   put:
  *     summary: Update notification preferences
@@ -682,6 +655,10 @@
 
 /**
  * @swagger
+ * /api/resource-discovery/{id}:
+ *   get:
+ *     summary: Get resource by ID
+ *     tags: [Resource Discovery]
  * /api/announcements/{id}/priority:
  *   patch:
  *     summary: Update announcement priority
@@ -693,15 +670,35 @@
  *         required: true
  *         schema:
  *           type: integer
- *     requestBody:
- *       required: true
  *     responses:
  *       200:
- *         description: Budget updated successfully
+ *         description: Resource retrieved successfully
+ *
+ *   put:
+ *     summary: Update a resource
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Resource updated successfully
  *
  *   delete:
- *     summary: Delete budget
- *     tags: [Budget Management]
+ *     summary: Delete a resource
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Resource deleted successfully
  *           type: string
  *     requestBody:
  *       required: true
@@ -720,6 +717,18 @@
 
 /**
  * @swagger
+ * /api/resource-discovery/search:
+ *   get:
+ *     summary: Search campus resources
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Search results returned successfully
  * /api/announcements/{id}/pin:
  *   patch:
  *     summary: Pin or unpin an announcement
@@ -1072,6 +1081,102 @@
 
 /**
  * @swagger
+ * /api/resource-discovery/category/{category}:
+ *   get:
+ *     summary: Get resources by category
+ *     tags: [Resource Discovery]
+ *     parameters:
+ *       - in: path
+ *         name: category
+ * /api/search/trending:
+ *     summary: Trending Searches
+ *     description: Returns the most popular search queries.
+ *     tags:
+ *       - Global Search
+ *     responses:
+ *       200:
+ *         description: Trending searches retrieved successfully.
+ */
+/**
+ * @swagger
+ * /api/search/recent:
+ *     summary: Recent Searches
+ *     description: Returns the user's recent search history.
+ *     security:
+ *       - bearerAuth: []
+ *         description: Recent searches returned successfully.
+ * /api/search/suggestions:
+ *     summary: Instant Search Suggestions
+ *     description: Returns autocomplete suggestions while typing.
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Resources filtered by category
+ *         description: Suggestions returned successfully.
+ * /api/resource-discovery/popular:
+ *     summary: Get popular resources
+ *         description: Popular resources retrieved
+ * /api/admin/search/analytics:
+ *     summary: Search Analytics Dashboard
+ *     description: Returns analytics about search usage, popular keywords and categories.
+ *         description: Analytics retrieved successfully.
+ * /api/resource-discovery/recent:
+ *     summary: Get recently added resources
+ *         description: Recent resources retrieved
+ * /api/resource-discovery/recommended/{userId}:
+ *     summary: Get recommended resources
+ * /api/activity-timeline/{userId}:
+ *     summary: Get user activity timeline
+ *       - Activity Timeline
+ *         name: userId
+ *           type: integer
+ *         description: Personalized recommendations retrieved
+ *         description: User activity timeline
+ * /api/resource-discovery/bookmarks/{userId}:
+ *     summary: Get bookmarked resources
+ *         description: User bookmarks retrieved
+ * /api/resource-discovery/{id}/bookmark/{userId}:
+ *   post:
+ *     summary: Bookmark a resource
+ *         name: id
+ *         description: Resource bookmarked successfully
+ *
+ *   delete:
+ *     summary: Remove bookmarked resource
+ *         description: Bookmark removed successfully
+ *     summary: Add activity to timeline
+ *     requestBody:
+ *         description: Activity added successfully
+ * /api/resource-discovery/analytics:
+ *     summary: Get resource analytics
+ *         description: Resource analytics retrieved successfully
+ * /api/activity-timeline/{userId}/summary:
+ *     summary: Monthly activity summary
+ *         description: Monthly summary
+ * /api/budgets/{id}/categories:
+ *     summary: Category-wise spending
+ *     tags: [Budget Management]
+ *         description: Category-wise spending retrieved
+ * /api/budgets/vendors:
+ *     summary: Get vendors
+ *         description: Vendors retrieved successfully
+ *     summary: Add vendor
+ *       201:
+ *         description: Vendor added successfully
+ * /api/budgets/reports:
+ *     summary: Financial reports
+ *         description: Financial reports retrieved
+ * /api/budgets/alerts:
+ *     summary: Budget alerts
+ *         description: Budget alerts retrieved
+ * /api/budgets/export:
+ *     summary: Export expense statements
+ *         description: Expense statements exported
+ * /api/budgets/history:
+ *     summary: Historical budget comparison
+ *         description: Historical comparison retrieved
  * tags:
  *   name: Workflow Automation
  *   description: APIs for managing approval workflows, requests, analytics, and audit logs.
