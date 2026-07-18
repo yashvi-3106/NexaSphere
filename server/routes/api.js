@@ -15,6 +15,7 @@ import * as eventAnalyticsController from '../controllers/eventAnalyticsControll
 import * as bannersController from '../controllers/bannersController.js';
 import { adminAuditMiddleware, attachOldState } from '../middleware/adminAuditMiddleware.js';
 import { healthRepository } from '../repositories/healthRepository.js';
+import eventCollaboratorRoutes from './eventCollaboratorRoutes.js';
 import { eventsRepository } from '../repositories/eventsRepository.js';
 import { authRateLimiter, protectedActionRateLimiter } from '../middleware/authRateLimiter.js';
 import { eventRegistrationLimiter } from '../middleware/rateLimiter.js';
@@ -487,6 +488,7 @@ router.use(
   adminAuthMiddleware.requireAdmin,
   waitlistRoutes
 );
+router.use("/api/events/:event_id/collaborators", eventCollaboratorRoutes);
 // Audit Log Viewer APIs
 router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
 
