@@ -419,11 +419,11 @@ export default function HeroSection({ onTabChange, onApply, onJoin, theme = 'dar
       <Atmosphere isLight={isLight} />
 
       <div className="hero-content" style={{ position: 'relative', zIndex: 2, paddingBottom: '80px' }}>
-            {activeBanner ? (
-              <div className="mb-8 w-full max-w-4xl mx-auto cursor-pointer" onClick={() => activeBanner.linkUrl ? window.open(activeBanner.linkUrl, '_blank') : null}>
-                <Image src={activeBanner.imageUrl} alt={activeBanner.title} priority={true} style={{ width: '100%', borderRadius: '16px', boxShadow: '0 12px 32px rgba(0,0,0,0.4)', objectFit: 'cover', maxHeight: '400px' }} />
-              </div>
-            ) : (
+          {activeBanner ? (
+            <div className="mb-8 w-full max-w-4xl mx-auto cursor-pointer" onClick={() => activeBanner.linkUrl ? window.open(activeBanner.linkUrl, '_blank', 'noopener,noreferrer') : null}>
+              <img src={activeBanner.imageUrl} alt={activeBanner.title} style={{ width: '100%', borderRadius: '16px', boxShadow: '0 12px 32px rgba(0,0,0,0.4)', objectFit: 'cover', maxHeight: '400px' }} />
+            </div>
+          ) : (
             <Logo3D ready={ready} isLight={isLight} />
           )}
 
