@@ -188,6 +188,8 @@ import circuitBreakerRouter from './routes/circuitBreaker.js';
 import { validate } from './middleware/validate.js';
 import * as indexSchemas from './validators/routes/indexSchemas.js';
 import { sendSuccess, sendError, sendNoContent } from './utils/responseHelper.js';
+import apiKeysRouter from './routes/apiKeys.js';
+import { apiKeysRepository } from './repositories/apiKeysRepository.js';
 
 validateLimiters();
 
@@ -624,6 +626,9 @@ app.delete(
   adminAuth,
   backupController.deleteBackup
 );
+
+// API Key Management
+app.use(apiKeysRouter);
 
 const defaultContent = {
   events: [
@@ -2046,7 +2051,11 @@ let server;
 if (process.env.NODE_ENV !== 'test') {
   if (!process.env.VERCEL) {
     const boot = HAS_SUPABASE
-      ? Promise.all([studentUsersRepository.ensureSchema(), slackRepository.ensureSchema()])
+      ? Promise.all([
+          studentUsersRepository.ensureSchema(),
+          slackRepository.ensureSchema(),
+          apiKeysRepository.ensureSchema(),
+        ])
       : ensureContentFile();
     boot.then(async () => {
       loadPersistedPushSubscriptions();
