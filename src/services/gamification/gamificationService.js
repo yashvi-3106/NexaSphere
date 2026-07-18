@@ -158,7 +158,11 @@ class GamificationService {
   loadUserData() {
     const stored = localStorage.getItem('gamification_user_data');
     if (stored) {
-      return JSON.parse(stored);
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        // Fall through to defaults if corrupted
+      }
     }
     return {
       userId: null,
