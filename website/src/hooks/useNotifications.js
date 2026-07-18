@@ -194,7 +194,7 @@ export function useNotifications() {
               });
               localStorage.setItem(key, JSON.stringify(arr));
             } catch (e) {
-              console.error('[useNotifications] Failed to queue digest:', e);
+              setNotifications((prev) => [note, ...prev]);
             }
             return;
           }
