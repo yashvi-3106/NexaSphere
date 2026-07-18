@@ -32,6 +32,7 @@ import { achievementSchema } from '../validators/portfolioSchemas.js';
 import * as analyticsController from '../controllers/analyticsController.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import announcementPriorityRouter from "./announcementPriority.js";
+import eventPricingRoutes from "./eventPricingRoutes.js";
 import eventConflictRouter from "./eventConflict.js";
 import waitlistRoutes from "./waitlist.js";
 import * as localAuthController from '../controllers/localAuthController.js';
@@ -641,6 +642,7 @@ router.use('/api/announcements', announcementPriorityRouter);
 router.use('/api/events', eventConflictRouter);
 router.use('/api/admin/waitlist', waitlistRoutes);
 router.use("/api/events/recurring", eventRecurringRoutes);
+router.use("/api/events/:eventId/pricing", eventPricingRoutes);
 router.use(
   "/api/admin/waitlist",
   adminAuthMiddleware.requireAdmin,
