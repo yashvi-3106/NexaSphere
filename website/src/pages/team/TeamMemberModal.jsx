@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 // ── Copy Popup ──
 function CopyPopup({ value, onClose }) {
@@ -93,17 +94,14 @@ function ModalContent({ member, onClose }) {
   const [activePopup, setActivePopup] = useState(null);
   const [imgError, setImgError] = useState(false);
 
+  const modalRef = useFocusTrap(true, onClose);
+
   useEffect(() => {
-    const handler = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handler);
     document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener('keydown', handler);
       document.body.style.overflow = '';
     };
-  }, [onClose]);
+  }, []);
 
   const hasSocial = member.linkedin || member.whatsapp || member.instagram || member.email;
   const whatsappValue = getWhatsappDisplay(member.whatsapp);
@@ -115,7 +113,13 @@ function ModalContent({ member, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="modal-box">
+      <div
+        className="modal-box"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={member.name}
+      >
         {/* Close */}
         <button className="modal-close" onClick={onClose} aria-label="Close">
           ✕
