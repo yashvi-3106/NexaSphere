@@ -1,4 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
+
+// Validates a date value before formatting — avoids rendering literal
+// "Invalid Date" text when the API returns a null or malformed timestamp.
+function formatRevDate(value) {
+  if (!value) return 'Unknown';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'Unknown';
+  return d.toLocaleDateString();
+}
 import { buildUrl } from '../../utils/runtimeConfig';
 
 const pageStyle = {
@@ -807,7 +816,7 @@ export default function EventBudgetPage() {
                     <td style={tdStyle}>{revenue.source}</td>
                     <td style={tdStyle}>{revenue.description || '-'}</td>
                     <td style={tdStyle}>{formatCurrency(revenue.amount)}</td>
-                    <td style={tdStyle}>{new Date(revenue.receivedAt).toLocaleDateString()}</td>
+                    <td style={tdStyle}>{formatRevDate(revenue.receivedAt)}</td>
                     <td style={tdStyle}>
                       <button
                         style={{ ...buttonStyle('danger'), padding: '6px 12px', fontSize: '12px' }}
