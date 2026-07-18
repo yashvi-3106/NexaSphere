@@ -2,12 +2,25 @@ import { useState, useCallback } from 'react';
 import { useEventListener } from '../hooks/useEventListener';
 import { EVENTS } from '../services/eventEmitter';
 
+const MAX_TOASTS = 3;
+
+function createToastId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export function Toast() {
   const [toasts, setToasts] = useState([]);
 
   const handleNotify = useCallback(({ type, message }) => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, type, message }]);
+    const id = createToastId();
+    setToasts((prev) => {
+      const next = [...prev, { id, type, message }];
+      return next.length > MAX_TOASTS ? next.slice(next.length - MAX_TOASTS) : next;
+    });
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
   }, []);
 
