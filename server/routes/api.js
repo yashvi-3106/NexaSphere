@@ -104,6 +104,7 @@ const upload = multer({
 const budgetRoutes = require('./budget');
 const resourceDiscoveryRoutes = require("./resourceDiscovery");
 const notificationCampaignRoutes = require("./notificationCampaign");
+const maintenanceRoutes = require("./maintenance");
 const router = Router();
 
 // Public
@@ -649,6 +650,7 @@ router.use(
   announcementPriorityRouter
 );
 router.use('/budgets', budgetRoutes);
+router.use("/maintenance", maintenanceRoutes);
 router.use('/api/announcements', announcementPriorityRouter);
 router.use(
   "/api/admin/waitlist",

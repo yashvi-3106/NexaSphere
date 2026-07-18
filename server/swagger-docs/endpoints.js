@@ -480,6 +480,8 @@
  *   description: APIs for the Intelligent Campus Resource Discovery Platform
  *   - name: Reporting Center
  *     description: Platform-Wide Data Export & Reporting Center
+ *   - name: Maintenance
+ *     description: Platform-Wide Scheduled Maintenance Management
  */
 /**
  * @swagger
@@ -493,6 +495,12 @@
  * /api/reporting-center/export:
  *   post:
  *     summary: Export data (CSV, Excel, PDF)
+ * /api/maintenance:
+ *     summary: Get all maintenance schedules
+ *     tags: [Maintenance]
+ *         description: Maintenance schedules retrieved successfully
+ *
+ *     summary: Create maintenance schedule
  *     requestBody:
  *       required: true
  *         description: Data exported successfully
@@ -509,6 +517,25 @@
  *
  *     summary: Save report template
  *         description: Template saved successfully
+ *         description: Maintenance created successfully
+ */
+/**
+ * @swagger
+ * /api/maintenance/{id}:
+ *   get:
+ *     summary: Get maintenance by ID
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Maintenance retrieved successfully
+ *   put:
+ *     summary: Update maintenance
  * /api/notification-preferences/{userId}:
  *   get:
  *     summary: Get notification preferences
@@ -616,6 +643,67 @@
  *       required: true
  *     responses:
  *       200:
+ *         description: Maintenance updated successfully
+ *
+ *   delete:
+ *     summary: Delete maintenance
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Maintenance deleted successfully
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/{id}/start:
+ *   post:
+ *     summary: Start maintenance
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Maintenance started successfully
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/{id}/complete:
+ *   post:
+ *     summary: Complete maintenance
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Maintenance completed successfully
+ */
+
+/**
+ * @swagger
+ * /api/maintenance/emergency:
+ *   post:
+ *     summary: Activate emergency maintenance
+ *     tags: [Maintenance]
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       201:
+ *         description: Emergency maintenance activated
  *         description: Preferences updated successfully
  */
 
@@ -699,6 +787,18 @@
  *     responses:
  *       200:
  *         description: Report emailed successfully
+ * /api/maintenance/public:
+ *     summary: Get public maintenance status
+ *     tags: [Maintenance]
+ *         description: Public maintenance status retrieved
+ */
+/**
+ * @swagger
+ * /api/maintenance/history:
+ *     summary: Get maintenance history
+ *         description: Maintenance history retrieved
+ * /api/maintenance/countdown/{id}:
+ *     summary: Get maintenance countdown
  * /api/announcements/{id}/priority:
  *   patch:
  *     summary: Update announcement priority
@@ -739,6 +839,7 @@
  *     responses:
  *       200:
  *         description: Resource deleted successfully
+ *         description: Countdown retrieved successfully
  *           type: string
  *     requestBody:
  *       required: true
@@ -784,6 +885,10 @@
  *         description: Audit logs retrieved successfully
  * /api/reporting-center/filter:
  *     summary: Filter reports
+ * /api/maintenance/notify:
+ *   post:
+ *     summary: Send maintenance notifications
+ *     tags: [Maintenance]
  * /api/announcements/{id}/pin:
  *   patch:
  *     summary: Pin or unpin an announcement
@@ -1213,6 +1318,10 @@
  *         description: Bookmark removed successfully
  *     summary: Add activity to timeline
  *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Notifications sent successfully
  *         description: Activity added successfully
  */
 /**
@@ -1220,6 +1329,19 @@
  * /api/resource-discovery/analytics:
  *     summary: Get resource analytics
  *         description: Resource analytics retrieved successfully
+ * /api/maintenance/approve/{id}:
+ *   post:
+ *     summary: Approve maintenance schedule
+ *     tags: [Maintenance]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Maintenance approved successfully
  * /api/activity-timeline/{userId}/summary:
  *     summary: Monthly activity summary
  *         description: Monthly summary
@@ -1292,6 +1414,10 @@
  *     requestBody:
  *       required: true
  *         description: Campaign created successfully
+ * /api/maintenance/banner:
+ *     summary: Get maintenance status banner
+ *     tags: [Maintenance]
+ *         description: Status banner retrieved successfully
  */
 
 /**
@@ -1414,6 +1540,10 @@
  *       200:
  *         description: Request rejected successfully
  *         description: Campaign paused successfully
+ * /api/maintenance/services:
+ *     summary: Get affected services
+ *     tags: [Maintenance]
+ *         description: Service impact information retrieved successfully
  */
 
 /**
