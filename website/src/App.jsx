@@ -11,6 +11,7 @@ import './styles/portfolio.css';
 import './styles/pwa.css';
 import './styles/aurora.css';
 import './styles/motion.css';
+import './styles/accessibility.css';
 import './i18n';
 
 // Core structural elements
@@ -51,11 +52,8 @@ const isPlaywright =
 
 import { BookmarkProvider } from './context/BookmarkContext';
 import { StudentAuthProvider, useStudentAuth } from './context/StudentAuthContext';
-import ErrorBoundary from './components/common/ErrorBoundary';
-import { WalkthroughOverlay } from './components/walkthrough/WalkthroughOverlay';
-import { useWalkthroughStore } from './store/useWalkthroughStore';
-import { useAnalytics } from './hooks/useAnalytics';
-import { SessionRecordingProvider } from './context/SessionRecordingProvider';
+import ErrorBoundary from './components/ErrorBoundary';
+import SkipLink from './components/common/SkipLink';
 
 const MNH = 88;
 const DNH = 64;
@@ -116,6 +114,9 @@ function AppShell() {
 
   return (
     <>
+      {/* Skip-to-content link: visible only on first Tab press */}
+      <SkipLink targetId="main-content" />
+
       <OfflineBanner />
       <InstallPrompt />
       {swUpdateFn && <UpdatePrompt updateSW={swUpdateFn} />}
@@ -344,19 +345,441 @@ function MainRouter({
 
       <Wipe on={wipeOn} ph={wipePh} />
 
-      <main style={{ paddingTop: nh, position: 'relative', zIndex: 1 }}>
-        <AppRoutes
-          cinDone={cinDone}
-          theme={theme}
-          eventsData={eventsData}
-          nav={nav}
-          onTab={onTab}
-          onNavigate={onNavigate}
-          onKSSClick={onKSSClick}
-          openApply={openApply}
-          openJoin={openJoin}
-          onBackHome={onBackHome}
-        />
+      <main
+        id="main-content"
+        tabIndex={-1}
+        style={{ paddingTop: nh, position: 'relative', zIndex: 1 }}
+        aria-label="Main content"
+      >
+        <Suspense fallback={<PageLoadingSpinner />}>
+          <Routes>
+            {/* â”€â”€ Home (scrollable sections) â”€â”€ */}
+            <Route
+              path="/"
+              element={
+                cinDone ? (
+                  <PageIn k="home">
+                    <HeroSection
+                      onTabChange={onTab}
+                      onApply={openApply}
+                      onJoin={openJoin}
+                      theme={theme}
+                    />
+                    <SectionDivider />
+                    <ActivitiesSection onNavigate={onNavigate} />
+                    <SectionDivider />
+                    <EventsSection onEventClick={onKSSClick} events={eventsData} />
+                    <SectionDivider />
+                    <AboutSection />
+                    <SectionDivider />
+                    <TeamSection onApply={openApply} />
+                    <div id="section-contact">
+                      <Footer
+                        onAdmin={() => nav('/admin')}
+                        onProjects={() => onTab('Projects')}
+                        onRoadmaps={() => onTab('Roadmaps')}
+                      />
+                    </div>
+                  </PageIn>
+                ) : null
+              }
+            />
+
+            {/* â”€â”€ Activities â”€â”€ */}
+            <Route
+              path="/activities"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="activities">
+                    <ActivitiesPage onNavigate={onNavigate} onBack={onBackHome} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/activities/:activityKey"
+              element={
+                <ErrorBoundary>
+                  <ActivityDetailWrapper
+                    onBack={() => nav('/activities')}
+                    onSelectEvent={onKSSClick}
+                  />
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Events â”€â”€ */}
+            <Route
+              path="/events"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="events">
+                    <EventsPage onBack={onBackHome} onEventClick={onKSSClick} events={eventsData} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/events/:eventId"
+              element={
+                <ErrorBoundary>
+                  <EventDetailWrapper onBack={() => nav('/events')} events={eventsData} />
+                </ErrorBoundary>
+              }
+            />
+
+            {/* ── Event Planning (collaborative) ── */}
+            <Route
+              path="/events/:eventId/planning"
+              element={<EventPlanningWrapper onBack={() => nav('/events')} />}
+            />
+
+            {/* ── Live Streaming ── */}
+            <Route
+              path="/stream/:eventId"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="stream">
+                    <LiveStreamPage />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/stream/:eventId/:streamId"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="stream-id">
+                    <LiveStreamPage />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Dashboard (requires auth) â”€â”€ */}
+            <Route
+              path="/dashboard"
+              element={
+                <ErrorBoundary>
+                  <RequireAuth>
+                    <PageIn k="dashboard">
+                      <DashboardPage onBack={onBackHome} />
+                    </PageIn>
+                  </RequireAuth>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Gamification â”€â”€ */}
+            <Route
+              path="/gamification"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="gamification">
+                    <GamificationDashboard />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Analytics â”€â”€ */}
+            <Route
+              path="/analytics"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="analytics">
+                    <AnalyticsPage onBack={onBackHome} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Projects â”€â”€ */}
+            <Route
+              path="/projects"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="projects">
+                    <ProjectsPage onBack={onBackHome} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Roadmaps â”€â”€ */}
+            <Route
+              path="/roadmaps"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="roadmaps">
+                    <RoadmapsPage onBack={onBackHome} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Portfolio Builder â”€â”€ */}
+            <Route
+              path="/portfolio"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="portfolio">
+                    <PortfolioBuilder />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+            {/* â”€â”€ Public Portfolio â”€â”€ */}
+            <Route
+              path="/p/:username"
+              element={
+                <ErrorBoundary>
+                  <PublicPortfolioWrapper onBack={onBackHome} />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/profile/:username"
+              element={
+                <ErrorBoundary>
+                  <PublicPortfolioWrapper onBack={onBackHome} />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/p/:username/analytics"
+              element={
+                <ErrorBoundary>
+                  <PortfolioAnalyticsWrapper />
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ About â”€â”€ */}
+            <Route
+              path="/about"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="about">
+                    <AboutPage onBack={onBackHome} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Team â”€â”€ */}
+            <Route
+              path="/team"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="team">
+                    <TeamPage onBack={onBackHome} onApply={openApply} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Contact â”€â”€ */}
+            <Route
+              path="/contact"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="contact">
+                    <ContactPage onBack={onBackHome} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Recruitment / Apply â”€â”€ */}
+            <Route
+              path="/apply"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="apply">
+                    <RecruitmentPage onBack={onBackHome} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Membership / Join â”€â”€ */}
+            <Route
+              path="/join"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="join">
+                    <MembershipPage onBack={onBackHome} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Certificate Verify â”€â”€ */}
+            <Route
+              path="/verify/:certId"
+              element={
+                <ErrorBoundary>
+                  <CertVerifyWrapper onGoHome={onBackHome} />
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Workspace (collaborative room) â”€â”€ */}
+            <Route
+              path="/workspace/:roomId"
+              element={
+                <ErrorBoundary>
+                  <WorkspaceWrapper onBack={onBackHome} />
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Forum â”€â”€ */}
+            <Route
+              path="/forum"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="forum">
+                    <ForumPage onBack={onBackHome} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/forum/:id"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="forum-thread">
+                    <ForumThreadPage onBack={() => nav('/forum')} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Sponsors â”€â”€ */}
+            <Route
+              path="/sponsors"
+              element={
+                <PageIn k="sponsors">
+                  <SponsorsPage />
+                </PageIn>
+              }
+            />
+
+            {/* â”€â”€ Mentorship â”€â”€ */}
+            <Route
+              path="/mentorship"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="mentorship">
+                    <MentorsPage />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/mentorship/mentors"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="mentorship-mentors">
+                    <MentorsPage />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/mentorship/dashboard"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="mentorship-dashboard">
+                    <MentorshipDashboard />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* â”€â”€ Resources / Library â”€â”€ */}
+            <Route
+              path="/resources"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="resources">
+                    <ResourcesPage onBack={onBackHome} />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* ── Recommendations ── */}
+            <Route
+              path="/recommendations"
+              element={
+                <PageIn k="recommendations">
+                  <RecommendationsPage onBack={onBackHome} />
+                </PageIn>
+              }
+            />
+            {/* ── Notification History ── */}
+            <Route
+              path="/notifications"
+              element={
+                <PageIn k="notifications">
+                  <NotificationHistoryPage />
+                </PageIn>
+              }
+            />
+
+            {/* ── Login / SSO ── */}
+            <Route
+              path="/login"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="login">
+                    <LoginPage />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* ── Search Page ── */}
+            <Route
+              path="/search"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="search">
+                    <SearchPage />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* ── Status Page ── */}
+            <Route
+              path="/status"
+              element={
+                <ErrorBoundary>
+                  <PageIn k="status">
+                    <StatusPage />
+                  </PageIn>
+                </ErrorBoundary>
+              }
+            />
+
+            {/* ── Skill Exchange ── */}
+            <Route
+              path="/skill-exchange"
+              element={
+                <PageIn k="skill-exchange">
+                  <SkillExchangePage />
+                </PageIn>
+              }
+            />
+
+            {/* ── 404 ── */}
+            <Route path="*" element={<NotFoundPage onGoHome={onBackHome} />} />
+          </Routes>
+        </Suspense>
       </main>
 
       {cinDone && <MoveToTop />}

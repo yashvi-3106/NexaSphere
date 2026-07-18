@@ -116,10 +116,10 @@ export default function Navbar({
   if (compact)
     return (
       <nav className="ns-navbar-mobile">
-        <div
+        <button
           className="ns-mobile-top"
           onClick={goHome}
-          style={{ cursor: 'pointer' }}
+          style={{ cursor: 'pointer', background: 'none', border: 'none', display: 'flex', alignItems: 'center', width: '100%', padding: 0 }}
           aria-label="Go to homepage"
         >
           <img
@@ -188,17 +188,29 @@ export default function Navbar({
             <ThemeToggle />
             <LanguageSelector />
             {isAuthenticated && (
-              <span
-                className="ns-nav-user-badge"
-                onClick={() => navigate('/dashboard')}
-                style={{ cursor: 'pointer', fontSize: '0.8rem', color: 'var(--t1)' }}
-                title={user?.name || user?.email}
-              >
-                👤
-              </span>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  className="ns-nav-user-badge"
+                  onClick={() => navigate('/settings/account')}
+                  style={{ cursor: 'pointer', fontSize: '1rem', color: 'var(--t1)', background: 'none', border: 'none', padding: '4px', borderRadius: '4px' }}
+                  title="Settings & Privacy"
+                  aria-label="Account settings"
+                >
+                  ⚙️
+                </button>
+                <button
+                  className="ns-nav-user-badge"
+                  onClick={() => navigate('/dashboard')}
+                  style={{ cursor: 'pointer', fontSize: '0.8rem', color: 'var(--t1)', background: 'none', border: 'none', padding: '4px', borderRadius: '4px' }}
+                  title={user?.name || user?.email}
+                  aria-label={`View dashboard for ${user?.name || 'user'}`}
+                >
+                  👤
+                </button>
+              </div>
             )}
           </div>
-        </div>
+        </button>
 
         <div className="ns-mobile-tabs">
           {TABS.map((t) => (
@@ -276,6 +288,7 @@ export default function Navbar({
             </button>
             <button
               onClick={onSearchToggle}
+              aria-label="Open search (Ctrl+K)"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -350,24 +363,24 @@ export default function Navbar({
 
             {isAuthenticated && (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span
+                <button
                   className="ns-nav-user-badge"
                   onClick={() => navigate('/settings/account')}
-                  style={{ cursor: 'pointer', fontSize: '1rem', color: 'var(--t1)' }}
+                  style={{ cursor: 'pointer', fontSize: '1rem', color: 'var(--t1)', background: 'none', border: 'none', padding: '4px', borderRadius: '4px' }}
                   title="Settings & Privacy"
+                  aria-label="Account settings"
                 >
                   ⚙️
-                </span>
-                <WalkthroughWrapper
-                  stepId="profile"
-                  as="span"
+                </button>
+                <button
                   className="ns-nav-user-badge"
                   onClick={() => navigate('/dashboard')}
-                  style={{ cursor: 'pointer', fontSize: '0.9rem', color: 'var(--t1)' }}
+                  style={{ cursor: 'pointer', fontSize: '0.9rem', color: 'var(--t1)', background: 'none', border: 'none', padding: '4px', borderRadius: '4px' }}
                   title={user?.name || user?.email}
+                  aria-label={`View dashboard for ${user?.name || 'user'}`}
                 >
                   👤
-                </WalkthroughWrapper>
+                </button>
               </div>
             )}
 
