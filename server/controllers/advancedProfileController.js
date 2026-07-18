@@ -1,4 +1,5 @@
-import { withDb } from '../repositories/db.js';
+﻿import { withDb } from '../repositories/db.js';
+import { sendError } from '../utils/responseHelper.js';
 
 function computePrivacyView({ prefs, requester }) {
   // requester: { isSelf: boolean, isPublicRequest: boolean, isClubMember: boolean }
@@ -20,7 +21,7 @@ function computePrivacyView({ prefs, requester }) {
 
 export async function getAdvancedProfile(req, res) {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return sendError(req, res, 'Not authenticated', 401, 'UNAUTHORIZED');
   }
 
   const userId = req.studentUser.sub || req.studentUser.id;
@@ -150,10 +151,10 @@ export async function getAdvancedProfile(req, res) {
       };
     });
 
-    if (payload.error) return res.status(404).json({ error: payload.error });
+    if (payload.error) return sendError(req, res, payload.error, 404, 'NOT_FOUND');
     return res.json(payload);
   } catch (err) {
     console.error('getAdvancedProfile error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
+    return sendError(req, res, 'Server error', 500, 'INTERNAL_ERROR', { detail: err.message });
   }
 }

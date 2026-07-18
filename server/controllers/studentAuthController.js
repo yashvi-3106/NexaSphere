@@ -1,4 +1,4 @@
-import passport from 'passport';
+﻿import passport from 'passport';
 import { studentUsersRepository } from '../repositories/studentUsersRepository.js';
 import { studentAuthService } from '../services/studentAuthService.js';
 import { withDb } from '../repositories/db.js';
@@ -18,7 +18,9 @@ export const googleCallback = (req, res, next) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5175';
     if (err) return next(err);
     if (!data) {
-      intrusionDetectionService.reportEvent(EVENT_TYPES.AUTH_FAILURE, req.ip, null).catch(console.error);
+      intrusionDetectionService
+        .reportEvent(EVENT_TYPES.AUTH_FAILURE, req.ip, null)
+        .catch(console.error);
       return res.redirect(
         `${frontendUrl}/login?error=${encodeURIComponent(info?.message || 'Authentication failed')}`
       );
@@ -47,7 +49,9 @@ export const githubCallback = (req, res, next) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5175';
     if (err) return next(err);
     if (!data) {
-      intrusionDetectionService.reportEvent(EVENT_TYPES.AUTH_FAILURE, req.ip, null).catch(console.error);
+      intrusionDetectionService
+        .reportEvent(EVENT_TYPES.AUTH_FAILURE, req.ip, null)
+        .catch(console.error);
       return res.redirect(
         `${frontendUrl}/login?error=${encodeURIComponent(info?.message || 'Authentication failed')}`
       );
@@ -139,7 +143,13 @@ export const updateSlackSettings = async (req, res) => {
     });
     return sendSuccess(res, { success: true, user: { ...req.studentUser, ...updatedUser } });
   } catch (err) {
-    return sendError(req, res, 'Failed to update Slack settings: ' + err.message, 500, 'INTERNAL_ERROR');
+    return sendError(
+      req,
+      res,
+      'Failed to update Slack settings: ' + err.message,
+      500,
+      'INTERNAL_ERROR'
+    );
   }
 };
 
@@ -157,7 +167,7 @@ export const logout = async (req, res) => {
   }
 };
 
-// ── NEW: Student Profile endpoints ──────────────────────────────────────────
+// â”€â”€ NEW: Student Profile endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const getProfile = async (req, res) => {
   if (!req.studentUser) {
@@ -172,7 +182,7 @@ export const getProfile = async (req, res) => {
 
     if (!user) return sendError(req, res, 'User not found', 404, 'NOT_FOUND');
 
-    // Safely count related data — tables may not exist yet in all envs
+    // Safely count related data â€” tables may not exist yet in all envs
     let registrations = [];
     let forumPosts = 0;
     let mentorSessions = 0;
@@ -309,7 +319,7 @@ export const getRegistrations = async (req, res) => {
 
 export const deleteAccount = async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return sendError(req, res, 'Not authenticated', 401, 'UNAUTHORIZED');
   }
   try {
     const email = req.studentUser.email;
@@ -320,26 +330,26 @@ export const deleteAccount = async (req, res) => {
       });
     }
     res.clearCookie('ns_student_token');
-    return res.json({ success: true, message: 'Account deleted' });
+    return sendSuccess(res, { success: true, message: 'Account deleted' });
   } catch (err) {
     console.error('deleteAccount error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
+    return sendError(req, res, 'Server error', 500, 'INTERNAL_ERROR', { detail: err.message });
   }
 };
 
 export const exportData = async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return sendError(req, res, 'Not authenticated', 401, 'UNAUTHORIZED');
   }
   try {
     const email = req.studentUser.email;
     const user = await studentUsersRepository.findByEmail(email);
-    return res.json({
+    return sendSuccess(res, {
       profile: user,
       exportedAt: new Date().toISOString(),
     });
   } catch (err) {
     console.error('exportData error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
+    return sendError(req, res, 'Server error', 500, 'INTERNAL_ERROR', { detail: err.message });
   }
 };
