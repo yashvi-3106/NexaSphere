@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 // ── Copy Popup ──
 function CopyPopup({ value, onClose }) {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
   const timeoutRef = useRef(null);
   const copiedTimeoutRef = useRef(null);
 
@@ -14,13 +15,24 @@ function CopyPopup({ value, onClose }) {
       .writeText(sanitized)
       .then(() => {
         setCopied(true);
+        setCopyError(false);
         if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
         copiedTimeoutRef.current = setTimeout(() => {
           setCopied(false);
+          setCopyError(false);
           copiedTimeoutRef.current = null;
         }, 2000);
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('Failed to copy to clipboard', err);
+        setCopyError(true);
+        setCopied(false);
+        if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+        copiedTimeoutRef.current = setTimeout(() => {
+          setCopyError(false);
+          copiedTimeoutRef.current = null;
+        }, 2000);
+      });
   };
 
   useEffect(() => {
@@ -46,7 +58,7 @@ function CopyPopup({ value, onClose }) {
     <div className="copy-popup">
       <span className="copy-popup-value">{value}</span>
       <button className="copy-popup-btn" onClick={handleCopy}>
-        {copied ? '✅ Copied!' : '📋 Copy'}
+        {copyError ? '❌ Copy failed' : copied ? '✅ Copied!' : '📋 Copy'}
       </button>
     </div>
   );
