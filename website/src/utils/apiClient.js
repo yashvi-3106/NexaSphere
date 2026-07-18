@@ -3,9 +3,23 @@ import { cacheGet, cacheSet, CACHE_KEYS, TTL } from './indexedDB.js';
 import { enqueueRequest } from './offlineQueue.js';
 
 /**
- * Standardized API Error class
+ * Standardized API Error class for handling API request failures.
+ *
+ * Extends the native Error class to include HTTP status, error codes,
+ * and the original error for debugging purposes.
+ *
+ * @example
+ * throw new ApiError('User not found', 404, 'USER_NOT_FOUND');
  */
 export class ApiError extends Error {
+  /**
+   * Creates an instance of ApiError.
+   *
+   * @param {string} message - Human-readable error message.
+   * @param {number} status - HTTP status code (0 for network/offline errors).
+   * @param {string} code - Machine-readable error code for programmatic handling.
+   * @param {Error|null} originalError - The original error that caused this API error (if any).
+   */
   constructor(message, status, code, originalError = null) {
     super(message);
     this.name = 'ApiError';
@@ -40,12 +54,39 @@ function getIDBCacheKey(url) {
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
- * Centralized async API wrapper for fetch
- * =========================================
- * - Standardizes errors and timeouts
- * - When OFFLINE + GET: attempts IndexedDB hydration
- * - When OFFLINE + mutation: routes to offline sync queue
- * - Reports errors to Sentry
+ * Centralized async API wrapper for fetch requests.
+ *
+ * Provides standardized error handling, timeout management, offline support,
+ * and automatic caching for GET requests. Handles both online and offline scenarios:
+ * - Online: Makes HTTP requests with timeout and abort signal support
+ * - Offline + GET: Attempts to serve from IndexedDB cache
+ * - Offline + mutation: Queues requests for later sync (except auth requests)
+ * - Reports errors to Sentry for debugging
+ *
+ * @param {string} url - The API endpoint URL.
+ * @param {object} [options={}] - Fetch options.
+ * @param {number} [options.timeout=10000] - Request timeout in milliseconds.
+ * @param {string} [options.method='GET'] - HTTP method (GET, POST, PUT, PATCH, DELETE).
+ * @param {object} [options.headers] - Request headers.
+ * @param {object|string} [options.body] - Request body for mutations.
+ * @param {AbortSignal} [options.signal] - Abort signal for request cancellation.
+ *
+ * @returns {Promise<any>} The response data (JSON or text), or a queued response object for offline mutations.
+ *
+ * @throws {ApiError} When the request fails, times out, or cannot be served from cache.
+ *
+ * @example
+ * // Basic GET request
+ * const data = await apiClient('/api/events');
+ *
+ * @example
+ * // POST request with timeout
+ * const result = await apiClient('/api/events', {
+ *   method: 'POST',
+ *   body: JSON.stringify({ title: 'New Event' }),
+ *   headers: { 'Content-Type': 'application/json' },
+ *   timeout: 15000
+ * });
  */
 export const apiClient = async (url, options = {}) => {
   const { timeout = 10000, ...fetchOptions } = options;
