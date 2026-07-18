@@ -1,4 +1,5 @@
 import { withDb } from './db.js';
+import logger from '../utils/logger.js';
 
 function parsePostgresArray(val) {
   if (Array.isArray(val)) return val;
@@ -86,7 +87,7 @@ export const eventsRepository = {
       const mapped = mapRow(rows[0]);
       import('../services/searchIndexer.js')
         .then(({ searchIndexer }) => searchIndexer.indexEvent(mapped))
-        .catch(() => {});
+        .catch((err) => logger.error('Failed to index event in search', { err, eventId: mapped?.id }));
       return mapped;
     });
   },
@@ -145,8 +146,11 @@ export const eventsRepository = {
 
       const { rows } = await client.query(queryText, values);
       if (!rows.length) return null;
-      
-      return mapRow(rows[0]);
+      const mapped = mapRow(rows[0]);
+      import('../services/searchIndexer.js')
+        .then(({ searchIndexer }) => searchIndexer.indexEvent(mapped))
+        .catch((err) => logger.error('Failed to index event in search', { err, eventId: mapped?.id }));
+      return mapped;
     });
   },
 
@@ -156,7 +160,7 @@ export const eventsRepository = {
       if (rowCount > 0) {
         import('../services/searchIndexer.js')
           .then(({ searchIndexer }) => searchIndexer.deleteDocument('events', id))
-          .catch(() => {});
+          .catch((err) => logger.error('Failed to remove event from search index', { err, eventId: id }));
       }
       return rowCount > 0;
     });

@@ -27,7 +27,7 @@ import { getRedisClient } from '../utils/redis.js';
 import crypto from 'crypto';
 import QRCode from 'qrcode';
 import { getScopesForRole } from '../config/rbac.js';
-import { intrusionDetectionService, EVENT_TYPES } from '../services/intrusionDetectionService.js';
+import logger from '../utils/logger.js';
 
 // lgtm[js/weak-cryptographic-algorithm]
 function safeEqual(a, b) {
@@ -523,7 +523,7 @@ async function completeAdminLogin({ req, res, username, role, scopes, ip, userAg
     success: true,
     suspicious: !!suspicious?.suspicious,
     reason: suspicious?.reason,
-  }).catch(() => {});
+  }).catch((err) => logger.error('Failed to record admin login attempt', { err, username }));
 
   return res.json({
     username,

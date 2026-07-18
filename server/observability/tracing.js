@@ -8,6 +8,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { trace, context, propagation } from '@opentelemetry/api';
+import logger from '../utils/logger.js';
 
 const SERVICE_NAME = process.env.OTEL_SERVICE_NAME || 'nexasphere-api';
 const OTLP_ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318/v1/traces';
@@ -36,7 +37,7 @@ export function initTracing() {
   sdk.start();
 
   process.on('SIGTERM', () => {
-    sdk?.shutdown().catch(() => {});
+    sdk?.shutdown().catch((err) => logger.error('OpenTelemetry SDK shutdown failed', { err }));
   });
 
   return sdk;

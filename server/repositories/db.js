@@ -1,4 +1,5 @@
 import pg from 'pg';
+import logger from '../utils/logger.js';
 
 // ---------------------------------------------------------------------------
 // Pool configuration
@@ -124,6 +125,16 @@ export async function withDb(fn) {
       const duration = Date.now() - start;
       const sqlText = typeof config === 'string' ? config : config?.text || 'unknown';
 
+      // Slow query profiling (>= 100ms)
+      if (duration >= 100) {
+        import('../utils/queryLogger.js')
+          .then(({ recordSlowQuery }) =>
+            recordSlowQuery(sqlText, duration, { error: err?.message })
+          )
+          .catch((importErr) => logger.error('Failed to record slow query', { importErr }));
+      }
+
+      // Request trace collection (existing behavior)
       import('../config/appContext.js')
         .then(({ appContext }) => {
           const store = appContext.getStore();
@@ -135,7 +146,7 @@ export async function withDb(fn) {
             });
           }
         })
-        .catch(() => {});
+        .catch((importErr) => logger.error('Failed to record query trace', { importErr }));
     };
 
     if (typeof cb === 'function') {

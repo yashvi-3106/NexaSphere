@@ -72,7 +72,11 @@ describe('API Request Tracing and Distributed Correlation IDs', () => {
 
     capturedPgArgs = null;
     appContext.run({ reqId: testId }, () => {
-      client.query(config).catch(() => {}); // Catch any errors, we don't need it to succeed
+      client.query(config).catch(() => {
+        // Intentionally suppressed: we're testing query capture, not query success.
+        // The query may fail due to missing DB in test env, but we only care that
+        // the pg query wrapper fires the capture callback.
+      });
     });
 
     // Close the client so the event loop doesn't hang
