@@ -1,55 +1,56 @@
-const duplicateService = require("../services/duplicateDetectionService");
+import { sendSuccess } from '../utils/responseHelper.js';
+import duplicateService from "../services/duplicateDetectionService.js";
 
-exports.getOverview = (req, res) => {
-  res.status(200).json(duplicateService.getOverview());
+export const getOverview = (req, res) => {
+  sendSuccess(res, duplicateService.getOverview());
 };
 
-exports.checkRecord = (req, res) => {
-  res.status(200).json(
+export const checkRecord = (req, res) => {
+  sendSuccess(res, 
     duplicateService.checkRecord(req.body)
   );
 };
 
-exports.getDuplicateEvents = (req, res) => {
-  res.status(200).json(
+export const getDuplicateEvents = (req, res) => {
+  sendSuccess(res, 
     duplicateService.detectDuplicateEvents()
   );
 };
 
-exports.getDuplicateMedia = (req, res) => {
-  res.status(200).json(
+export const getDuplicateMedia = (req, res) => {
+  sendSuccess(res, 
     duplicateService.detectDuplicateMedia()
   );
 };
 
-exports.getPortfolioDuplicates = (req, res) => {
-  res.status(200).json(
+export const getPortfolioDuplicates = (req, res) => {
+  sendSuccess(res, 
     duplicateService.detectPortfolioDuplicates()
   );
 };
 
-exports.getClubDuplicates = (req, res) => {
-  res.status(200).json(
+export const getClubDuplicates = (req, res) => {
+  sendSuccess(res, 
     duplicateService.detectClubDuplicates()
   );
 };
 
-exports.mergeDuplicates = (req, res) => {
+export const mergeDuplicates = (req, res) => {
   const { id1, id2 } = req.body;
 
-  res.status(200).json(
+  sendSuccess(res, 
     duplicateService.mergeDuplicates(id1, id2)
   );
 };
 
-exports.deleteDuplicate = (req, res) => {
-  res.status(200).json(
+export const deleteDuplicate = (req, res) => {
+  sendSuccess(res, 
     duplicateService.deleteDuplicate(req.params.id)
   );
 };
 
-exports.getStatistics = (req, res) => {
-  res.status(200).json(
+export const getStatistics = (req, res) => {
+  sendSuccess(res, 
     duplicateService.getStatistics()
   );
 };

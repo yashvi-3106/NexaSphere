@@ -1,5 +1,6 @@
 import { parseResumePDF } from '../utils/resumeParser.js';
 import { getRecommendationsFromGemini } from '../utils/geminiClient.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 // Fallback / mock projects if database is empty or not configured.
 // Keep these synchronized with website/src/data/projectsData.js
@@ -55,7 +56,7 @@ const FALLBACK_PROJECTS = [
 export async function getProjectRecommendations(req, res, next) {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'Please upload a PDF resume file.' });
+      return sendError(req, res, 'Please upload a PDF resume file.', 400, 'VALIDATION_ERROR');
     }
 
     // Extract text from the uploaded PDF resume
@@ -65,7 +66,7 @@ export async function getProjectRecommendations(req, res, next) {
     if (!process.env.GEMINI_API_KEY) {
       console.warn('GEMINI_API_KEY is not set. Returning mock recommendations.');
       // Return mock recommendations mapping to our project list
-      return res.json([
+      return sendSuccess(res, [
         {
           projectId: 'nexa-portal',
           matchChips: ['React', 'Node.js', 'Vite'],
@@ -89,11 +90,9 @@ export async function getProjectRecommendations(req, res, next) {
 
     // Call Gemini API with parsed resume text and projects list
     const recommendations = await getRecommendationsFromGemini(resumeText, FALLBACK_PROJECTS);
-    return res.json(recommendations);
+    return sendSuccess(res, recommendations);
   } catch (error) {
     console.error('Error in getProjectRecommendations controller:', error);
-    return res
-      .status(500)
-      .json({ error: error.message || 'An error occurred during resume analysis.' });
+    return sendError(req, res, error.message || 'An error occurred during resume analysis.', 500, 'INTERNAL_ERROR');
   }
 }

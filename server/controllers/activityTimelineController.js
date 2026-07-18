@@ -1,9 +1,10 @@
 import { activityTimelineService } from "../services/activityTimelineService.js";
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 export const getTimeline = (req, res) => {
   const userId = req.params.userId;
 
-  res.json({
+  sendSuccess(res, {
     timeline: activityTimelineService.getTimeline(userId)
   });
 };
@@ -13,20 +14,19 @@ export const addActivity = (req, res) => {
 
   activityTimelineService.addActivity(userId, req.body);
 
-  res.json({
-    success: true,
+  sendSuccess(res, {
     message: "Activity added."
   });
 };
 
 export const getSummary = (req, res) => {
-  res.json(
+  sendSuccess(res,
     activityTimelineService.getMonthlySummary(req.params.userId)
   );
 };
 
 export const getStats = (req, res) => {
-  res.json(
+  sendSuccess(res,
     activityTimelineService.getStats(req.params.userId)
   );
 };

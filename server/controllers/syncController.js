@@ -1,8 +1,9 @@
 import { withDb } from '../repositories/db.js';
 import logger from '../utils/logger.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 export const getDeploymentHealth = async (req, res) => {
-  res.json({
+  sendSuccess(res, {
     status: 'healthy',
     rollbackAvailable: true,
     trafficSwitchReady: true,
@@ -20,7 +21,7 @@ export const syncController = {
         );
         return pendingRes.rows[0].count;
       });
-      return res.json({
+      return sendSuccess(res, {
         status: 'ok',
         serverTime: new Date().toISOString(),
         databaseConnected: true,
@@ -29,11 +30,10 @@ export const syncController = {
         compressionSupported: true,
       });
     } catch (err) {
-      return res.status(500).json({
+      return sendError(req, res, err.message, 500, 'INTERNAL_ERROR', {
         status: 'error',
         serverTime: new Date().toISOString(),
         databaseConnected: false,
-        error: err.message,
       });
     }
   },
@@ -41,11 +41,11 @@ export const syncController = {
   async getUpdates(req, res) {
     const since = req.query.since;
     if (!since) {
-      return res.status(400).json({ error: 'Missing "since" query parameter' });
+      return sendError(req, res, 'Missing "since" query parameter', 400, 'VALIDATION_ERROR');
     }
     const sinceDate = new Date(since);
     if (isNaN(sinceDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid "since" date format' });
+      return sendError(req, res, 'Invalid "since" date format', 400, 'VALIDATION_ERROR');
     }
 
     try {
@@ -63,7 +63,7 @@ export const syncController = {
           [sinceDate]
         );
 
-        return res.json({
+        return sendSuccess(res, {
           serverTime: new Date().toISOString(),
           events: eventsRes.rows,
           portfolios: portfolioRes.rows,
@@ -71,43 +71,35 @@ export const syncController = {
       });
     } catch (err) {
       logger.error('Failed to retrieve sync updates', { error: err.message });
-      return res.status(500).json({ error: 'Sync retrieval failed' });
+      return sendError(req, res, 'Sync retrieval failed', 500, 'INTERNAL_ERROR');
     }
   },
 
   async syncBatch(req, res) {
     const { changes } = req.body;
     if (!Array.isArray(changes)) {
-      return res.status(400).json({ error: 'Expected "changes" array in request body' });
+      return sendError(req, res, 'Expected "changes" array in request body', 400, 'VALIDATION_ERROR');
     }
 
     for (let i = 0; i < changes.length; i++) {
       const change = changes[i];
       if (!change || typeof change !== 'object') {
-        return res.status(400).json({ error: `changes[${i}] must be an object` });
+        return sendError(req, res, `changes[${i}] must be an object`, 400, 'VALIDATION_ERROR');
       }
       if (!change.type || typeof change.type !== 'string') {
-        return res
-          .status(400)
-          .json({ error: `changes[${i}].type is required and must be a string` });
+        return sendError(req, res, `changes[${i}].type is required and must be a string`, 400, 'VALIDATION_ERROR');
       }
       if (!['event'].includes(change.type)) {
-        return res
-          .status(400)
-          .json({ error: `changes[${i}].type "event" is the only supported type` });
+        return sendError(req, res, `changes[${i}].type "event" is the only supported type`, 400, 'VALIDATION_ERROR');
       }
       if (!change.id || typeof change.id !== 'string') {
-        return res.status(400).json({ error: `changes[${i}].id is required and must be a string` });
+        return sendError(req, res, `changes[${i}].id is required and must be a string`, 400, 'VALIDATION_ERROR');
       }
       if (!change.data || typeof change.data !== 'object' || Array.isArray(change.data)) {
-        return res
-          .status(400)
-          .json({ error: `changes[${i}].data is required and must be an object` });
+        return sendError(req, res, `changes[${i}].data is required and must be an object`, 400, 'VALIDATION_ERROR');
       }
       if (!change.data.name || typeof change.data.name !== 'string') {
-        return res
-          .status(400)
-          .json({ error: `changes[${i}].data.name is required and must be a string` });
+        return sendError(req, res, `changes[${i}].data.name is required and must be a string`, 400, 'VALIDATION_ERROR');
       }
     }
 
@@ -175,23 +167,21 @@ export const syncController = {
       });
 
       const hasConflicts = results.some((r) => r.status === 'conflict');
-      return res.status(hasConflicts ? 409 : 200).json({
+      return sendSuccess(res, {
         serverTime: new Date().toISOString(),
         results,
-        retryAfterConflict: hasConflicts
-          ? 'Use POST /api/sync/resolve-conflicts to force update'
-          : undefined,
-      });
+        ...(hasConflicts ? { retryAfterConflict: 'Use POST /api/sync/resolve-conflicts to force update' } : {}),
+      }, hasConflicts ? 409 : 200);
     } catch (err) {
       logger.error('Sync batch execution failed', { error: err.message });
-      return res.status(500).json({ error: 'Sync batch failed' });
+      return sendError(req, res, 'Sync batch failed', 500, 'INTERNAL_ERROR');
     }
   },
 
   async resolveConflicts(req, res) {
     const { changes } = req.body;
     if (!Array.isArray(changes)) {
-      return res.status(400).json({ error: 'Expected "changes" array in request body' });
+      return sendError(req, res, 'Expected "changes" array in request body', 400, 'VALIDATION_ERROR');
     }
 
     const results = [];
@@ -220,13 +210,13 @@ export const syncController = {
         }
       });
 
-      return res.json({
+      return sendSuccess(res, {
         serverTime: new Date().toISOString(),
         results,
       });
     } catch (err) {
       logger.error('Conflict resolution failed', { error: err.message });
-      return res.status(500).json({ error: 'Conflict resolution failed' });
+      return sendError(req, res, 'Conflict resolution failed', 500, 'INTERNAL_ERROR');
     }
   },
 };

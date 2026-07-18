@@ -1,3 +1,4 @@
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 import { eventsService } from '../services/eventsService.js';
 import { paginationSchema } from '../validators/eventSchemas.js';
 import { emitToRole } from '../config/socket.js';
@@ -52,7 +53,9 @@ export const listEvents = wrapAsync(async (req, res) => {
     location,
     search,
   });
-  return res.json({ events: rows, pagination: buildPaginationMeta(page, limit, total) });
+
+  res.setHeader('X-Cache', hit ? 'HIT' : 'MISS');
+  return sendSuccess(res, data);
 });
 
 export const adminListEvents = wrapAsync(async (req, res) => {
@@ -69,7 +72,7 @@ export const adminListEvents = wrapAsync(async (req, res) => {
     location,
     search,
   });
-  return res.json({ events: rows, pagination: buildPaginationMeta(page, limit, total) });
+  return sendSuccess(res, { events: rows, pagination: buildPaginationMeta(page, limit, total) });
 });
 
 export const adminCreateEvent = wrapAsync(async (req, res) => {
@@ -83,27 +86,27 @@ export const adminCreateEvent = wrapAsync(async (req, res) => {
     // ignore
   }
 
-  return res.status(201).json({ ok: true, event: created });
+  return sendSuccess(res, { event: created }, 201);
 });
 
 export const adminUpdateEvent = wrapAsync(async (req, res) => {
   const id = String(req.params.id || '').trim();
   const updateSeries = req.query.updateSeries === 'true';
   const updated = await eventsService.updateEvent(id, req.body, updateSeries);
-  if (!updated) return res.status(404).json({ error: 'Event not found' });
+  if (!updated) return sendError(req, res, 'Event not found', 404, 'NOT_FOUND');
 
 
   // Broadcast real-time update to all calendar views
   emitToRole('user', 'calendar:event-updated', updated);
 
-  return res.json({ ok: true, event: updated });
+  return sendSuccess(res, { event: updated });
 });
 
 export const adminDeleteEvent = wrapAsync(async (req, res) => {
   const id = String(req.params.id || '').trim();
   const deleteSeries = req.query.deleteSeries === 'true';
   const deleted = await eventsService.deleteEvent(id, deleteSeries);
-  if (!deleted) return res.status(404).json({ error: 'Event not found' });
+  if (!deleted) return sendError(req, res, 'Event not found', 404, 'NOT_FOUND');
 
   // Invalidate event listing cache
   try {
@@ -113,5 +116,5 @@ export const adminDeleteEvent = wrapAsync(async (req, res) => {
     // ignore
   }
 
-  return res.json({ ok: true });
+  return sendSuccess(res, { ok: true });
 });

@@ -7,19 +7,20 @@ import {
   buddyPairSchema,
   mentorshipPaginationSchema,
 } from '../schemas/mentorshipSchema.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 function wrapAsync(fn) {
   return (req, res) =>
     Promise.resolve(fn(req, res)).catch((e) => {
       console.error('[mentorshipController]', e);
-      return res.status(500).json({ error: e.message || 'Internal server error' });
+      return sendError(req, res, e.message || 'Internal server error', 500, 'INTERNAL_ERROR');
     });
 }
 
 export const listMentors = wrapAsync(async (req, res) => {
   const { page, limit, domain, q } = mentorshipPaginationSchema.parse(req.query);
   const result = await mentorshipService.listMentors({ page, limit, domain, q });
-  return res.json({
+  return sendSuccess(res, {
     mentors: result.rows,
     pagination: {
       page,
@@ -32,15 +33,15 @@ export const listMentors = wrapAsync(async (req, res) => {
 
 export const getMentor = wrapAsync(async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) return res.status(400).json({ error: 'Invalid mentor ID' });
+  if (isNaN(id)) return sendError(req, res, 'Invalid mentor ID', 400, 'VALIDATION_ERROR');
   const mentor = await mentorshipService.getMentor(id);
-  if (!mentor) return res.status(404).json({ error: 'Mentor not found' });
-  return res.json({ mentor });
+  if (!mentor) return sendError(req, res, 'Mentor not found', 404, 'NOT_FOUND');
+  return sendSuccess(res, { mentor });
 });
 
 export const registerMentor = wrapAsync(async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
   const input = registerMentorSchema.parse({
     ...req.body,
@@ -48,33 +49,33 @@ export const registerMentor = wrapAsync(async (req, res) => {
     email: req.studentUser.email,
   });
   const mentor = await mentorshipService.registerMentor(input);
-  if (!mentor) return res.status(503).json({ error: 'Mentorship system is offline' });
-  return res.status(201).json({ mentor });
+  if (!mentor) return sendError(req, res, 'Mentorship system is offline', 503, 'DEPENDENCY_ERROR');
+  return sendSuccess(res, { mentor }, 201);
 });
 
 export const updateMentor = wrapAsync(async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) return res.status(400).json({ error: 'Invalid mentor ID' });
+  if (isNaN(id)) return sendError(req, res, 'Invalid mentor ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const mentor = await mentorshipService.getMentor(id);
-  if (!mentor) return res.status(404).json({ error: 'Mentor not found' });
+  if (!mentor) return sendError(req, res, 'Mentor not found', 404, 'NOT_FOUND');
 
   const isAdmin = req.studentUser.role === 'admin';
   if (mentor.email !== req.studentUser.email && !isAdmin) {
-    return res.status(403).json({ error: 'Forbidden: You do not own this mentor profile' });
+    return sendError(req, res, 'Forbidden: You do not own this mentor profile', 403, 'FORBIDDEN');
   }
 
   const input = updateMentorSchema.parse(req.body);
   const updated = await mentorshipService.updateMentor(id, input);
-  return res.json({ mentor: updated });
+  return sendSuccess(res, { mentor: updated });
 });
 
 export const requestMentorship = wrapAsync(async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
   const input = requestMentorshipSchema.parse({
     ...req.body,
@@ -82,13 +83,13 @@ export const requestMentorship = wrapAsync(async (req, res) => {
     mentee_email: req.studentUser.email,
   });
   const mentorship = await mentorshipService.requestMentorship(input);
-  if (!mentorship) return res.status(503).json({ error: 'Mentorship system is offline' });
-  return res.status(201).json({ mentorship });
+  if (!mentorship) return sendError(req, res, 'Mentorship system is offline', 503, 'DEPENDENCY_ERROR');
+  return sendSuccess(res, { mentorship }, 201);
 });
 
 export const listMentorships = wrapAsync(async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
   const { page, limit, status } = req.query;
   const isAdmin = req.studentUser.role === 'admin';
@@ -100,18 +101,18 @@ export const listMentorships = wrapAsync(async (req, res) => {
     status: status || undefined,
     email: isAdmin && !req.query.email ? undefined : email,
   });
-  return res.json({ mentorships: result.rows, total: result.total });
+  return sendSuccess(res, { mentorships: result.rows, total: result.total });
 });
 
 export const getMentorship = wrapAsync(async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) return res.status(400).json({ error: 'Invalid mentorship ID' });
+  if (isNaN(id)) return sendError(req, res, 'Invalid mentorship ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const mentorship = await mentorshipService.getMentorship(id);
-  if (!mentorship) return res.status(404).json({ error: 'Mentorship not found' });
+  if (!mentorship) return sendError(req, res, 'Mentorship not found', 404, 'NOT_FOUND');
 
   const mentor = await mentorshipService.getMentor(mentorship.mentorId);
   const mentorEmail = mentor ? mentor.email : null;
@@ -122,29 +123,25 @@ export const getMentorship = wrapAsync(async (req, res) => {
     mentorship.menteeEmail === req.studentUser.email ||
     mentorEmail === req.studentUser.email;
   if (!isAuthorized) {
-    return res
-      .status(403)
-      .json({ error: 'Forbidden: You are not authorized to view this mentorship' });
+    return sendError(req, res, 'Forbidden: You are not authorized to view this mentorship', 403, 'FORBIDDEN');
   }
 
-  return res.json({ mentorship });
+  return sendSuccess(res, { mentorship });
 });
 
 export const updateMentorshipStatus = wrapAsync(async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) return res.status(400).json({ error: 'Invalid mentorship ID' });
+  if (isNaN(id)) return sendError(req, res, 'Invalid mentorship ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser && !req.adminSession) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const mentorship = await mentorshipService.getMentorship(id);
-  if (!mentorship) return res.status(404).json({ error: 'Mentorship not found' });
+  if (!mentorship) return sendError(req, res, 'Mentorship not found', 404, 'NOT_FOUND');
 
   const { status } = req.body;
   if (!['active', 'rejected', 'completed'].includes(status)) {
-    return res
-      .status(400)
-      .json({ error: 'Invalid status. Must be active, rejected, or completed' });
+    return sendError(req, res, 'Invalid status. Must be active, rejected, or completed', 400, 'VALIDATION_ERROR');
   }
 
   const isAdmin = req.adminSession || req.studentUser?.role === 'admin';
@@ -155,30 +152,26 @@ export const updateMentorshipStatus = wrapAsync(async (req, res) => {
   const isMentee = req.studentUser && req.studentUser.email === mentorship.menteeEmail;
 
   if (!isAdmin && !isMentor && !isMentee) {
-    return res
-      .status(403)
-      .json({ error: 'Forbidden: You are not authorized to update this status' });
+    return sendError(req, res, 'Forbidden: You are not authorized to update this status', 403, 'FORBIDDEN');
   }
 
   if (isMentee && !isAdmin && status !== 'completed') {
-    return res
-      .status(403)
-      .json({ error: 'Forbidden: Mentees can only mark mentorship as completed' });
+    return sendError(req, res, 'Forbidden: Mentees can only mark mentorship as completed', 403, 'FORBIDDEN');
   }
 
   const updated = await mentorshipService.updateMentorshipStatus(id, status);
-  return res.json({ mentorship: updated });
+  return sendSuccess(res, { mentorship: updated });
 });
 
 export const logSession = wrapAsync(async (req, res) => {
   const mentorshipId = parseInt(req.params.id, 10);
-  if (isNaN(mentorshipId)) return res.status(400).json({ error: 'Invalid mentorship ID' });
+  if (isNaN(mentorshipId)) return sendError(req, res, 'Invalid mentorship ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const mentorship = await mentorshipService.getMentorship(mentorshipId);
-  if (!mentorship) return res.status(404).json({ error: 'Mentorship not found' });
+  if (!mentorship) return sendError(req, res, 'Mentorship not found', 404, 'NOT_FOUND');
 
   const mentor = await mentorshipService.getMentor(mentorship.mentorId);
   const mentorEmail = mentor ? mentor.email : null;
@@ -189,26 +182,24 @@ export const logSession = wrapAsync(async (req, res) => {
     mentorship.menteeEmail === req.studentUser.email ||
     mentorEmail === req.studentUser.email;
   if (!isAuthorized) {
-    return res
-      .status(403)
-      .json({ error: 'Forbidden: You are not authorized to log sessions for this mentorship' });
+    return sendError(req, res, 'Forbidden: You are not authorized to log sessions for this mentorship', 403, 'FORBIDDEN');
   }
 
   const input = logSessionSchema.parse(req.body);
   const session = await mentorshipService.logSession(mentorshipId, input);
-  if (!session) return res.status(404).json({ error: 'Failed to log session' });
-  return res.status(201).json({ session });
+  if (!session) return sendError(req, res, 'Failed to log session', 404, 'NOT_FOUND');
+  return sendSuccess(res, { session }, 201);
 });
 
 export const listSessions = wrapAsync(async (req, res) => {
   const mentorshipId = parseInt(req.params.id, 10);
-  if (isNaN(mentorshipId)) return res.status(400).json({ error: 'Invalid mentorship ID' });
+  if (isNaN(mentorshipId)) return sendError(req, res, 'Invalid mentorship ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const mentorship = await mentorshipService.getMentorship(mentorshipId);
-  if (!mentorship) return res.status(404).json({ error: 'Mentorship not found' });
+  if (!mentorship) return sendError(req, res, 'Mentorship not found', 404, 'NOT_FOUND');
 
   const mentor = await mentorshipService.getMentor(mentorship.mentorId);
   const mentorEmail = mentor ? mentor.email : null;
@@ -219,9 +210,7 @@ export const listSessions = wrapAsync(async (req, res) => {
     mentorship.menteeEmail === req.studentUser.email ||
     mentorEmail === req.studentUser.email;
   if (!isAuthorized) {
-    return res
-      .status(403)
-      .json({ error: 'Forbidden: You are not authorized to view sessions for this mentorship' });
+    return sendError(req, res, 'Forbidden: You are not authorized to view sessions for this mentorship', 403, 'FORBIDDEN');
   }
 
   const { page, limit } = req.query;
@@ -229,12 +218,12 @@ export const listSessions = wrapAsync(async (req, res) => {
     page: Math.max(1, parseInt(page, 10) || 1),
     limit: Math.min(100, Math.max(1, parseInt(limit, 10) || 50)),
   });
-  return res.json({ sessions: result.rows, total: result.total });
+  return sendSuccess(res, { sessions: result.rows, total: result.total });
 });
 
 export const createBuddyPair = wrapAsync(async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
   const input = buddyPairSchema.parse(req.body);
 
@@ -242,19 +231,17 @@ export const createBuddyPair = wrapAsync(async (req, res) => {
   const isSelf =
     input.buddy1_email === req.studentUser.email || input.buddy2_email === req.studentUser.email;
   if (!isSelf && !isAdmin) {
-    return res
-      .status(403)
-      .json({ error: 'Forbidden: You can only register buddy pairings for yourself' });
+    return sendError(req, res, 'Forbidden: You can only register buddy pairings for yourself', 403, 'FORBIDDEN');
   }
 
   const pair = await mentorshipService.createBuddyPair(input);
-  if (!pair) return res.status(503).json({ error: 'Mentorship system is offline' });
-  return res.status(201).json({ pair });
+  if (!pair) return sendError(req, res, 'Mentorship system is offline', 503, 'DEPENDENCY_ERROR');
+  return sendSuccess(res, { pair }, 201);
 });
 
 export const listBuddyPairs = wrapAsync(async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
   const { page, limit } = req.query;
   const isAdmin = req.studentUser.role === 'admin';
@@ -265,7 +252,7 @@ export const listBuddyPairs = wrapAsync(async (req, res) => {
     limit: Math.min(100, Math.max(1, parseInt(limit, 10) || 50)),
     email: isAdmin && !req.query.email ? undefined : email,
   });
-  return res.json({ pairs: result.rows, total: result.total });
+  return sendSuccess(res, { pairs: result.rows, total: result.total });
 });
 
 export const adminListAll = wrapAsync(async (req, res) => {
@@ -275,7 +262,7 @@ export const adminListAll = wrapAsync(async (req, res) => {
     limit: Math.min(100, Math.max(1, parseInt(limit, 10) || 50)),
     status,
   });
-  return res.json({ mentorships: result.rows, total: result.total });
+  return sendSuccess(res, { mentorships: result.rows, total: result.total });
 });
 
 export const adminListMentors = wrapAsync(async (req, res) => {
@@ -284,5 +271,5 @@ export const adminListMentors = wrapAsync(async (req, res) => {
     page: Math.max(1, parseInt(page, 10) || 1),
     limit: Math.min(100, Math.max(1, parseInt(limit, 10) || 50)),
   });
-  return res.json({ mentors: result.rows, total: result.total });
+  return sendSuccess(res, { mentors: result.rows, total: result.total });
 });

@@ -8,6 +8,12 @@
 
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
+import { validate } from '../middleware/validate.js';
+import {
+  updateSettingsSchema,
+  rollbackSettingSchema,
+  importSettingsSchema,
+} from '../validators/routes/settingsRoutesSchemas.js';
 import {
   getSettings,
   updateSettings,
@@ -30,10 +36,10 @@ const settingsLimiter = rateLimit({
 router.use(settingsLimiter);
 
 router.get('/', getSettings);
-router.put('/', updateSettings);
+router.put('/', validate(updateSettingsSchema), updateSettings);
 router.get('/history', getHistory);
-router.post('/rollback', rollbackSetting);
+router.post('/rollback', validate(rollbackSettingSchema), rollbackSetting);
 router.get('/export', exportSettings);
-router.post('/import', importSettings);
+router.post('/import', validate(importSettingsSchema), importSettings);
 
 export default router;

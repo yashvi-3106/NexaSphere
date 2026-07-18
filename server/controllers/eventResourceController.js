@@ -1,19 +1,13 @@
 const eventResourceService = require("../services/eventResourceService");
+const { sendSuccess, sendError, sendNoContent } = require('../utils/responseHelper.js');
 
 exports.createResource = (req, res) => {
   try {
     const resource = eventResourceService.createResource(req.body);
 
-    res.status(201).json({
-      success: true,
-      message: "Resource created successfully.",
-      data: resource,
-    });
+    return sendSuccess(res, { message: "Resource created successfully.", data: resource }, 201);
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -21,16 +15,9 @@ exports.getAllResources = (req, res) => {
   try {
     const resources = eventResourceService.getAllResources();
 
-    res.json({
-      success: true,
-      total: resources.length,
-      data: resources,
-    });
+    return sendSuccess(res, { total: resources.length, data: resources });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -39,21 +26,12 @@ exports.getResourceById = (req, res) => {
     const resource = eventResourceService.getResourceById(req.params.id);
 
     if (!resource) {
-      return res.status(404).json({
-        success: false,
-        message: "Resource not found",
-      });
+      return sendError(req, res, "Resource not found", 404, 'NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      data: resource,
-    });
+    return sendSuccess(res, { data: resource });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -65,22 +43,12 @@ exports.updateResource = (req, res) => {
     );
 
     if (!resource) {
-      return res.status(404).json({
-        success: false,
-        message: "Resource not found",
-      });
+      return sendError(req, res, "Resource not found", 404, 'NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      message: "Resource updated successfully.",
-      data: resource,
-    });
+    return sendSuccess(res, { message: "Resource updated successfully.", data: resource });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -89,21 +57,12 @@ exports.deleteResource = (req, res) => {
     const deleted = eventResourceService.deleteResource(req.params.id);
 
     if (!deleted) {
-      return res.status(404).json({
-        success: false,
-        message: "Resource not found",
-      });
+      return sendError(req, res, "Resource not found", 404, 'NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      message: "Resource deleted successfully.",
-    });
+    return sendSuccess(res, { message: "Resource deleted successfully." });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -116,18 +75,12 @@ exports.reserveResource = (req, res) => {
     );
 
     if (!result) {
-      return res.status(404).json({
-        success: false,
-        message: "Resource not found",
-      });
+      return sendError(req, res, "Resource not found", 404, 'NOT_FOUND');
     }
 
-    res.json(result);
+    return sendSuccess(res, result);
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -139,22 +92,12 @@ exports.returnResource = (req, res) => {
     );
 
     if (!resource) {
-      return res.status(404).json({
-        success: false,
-        message: "Resource not found",
-      });
+      return sendError(req, res, "Resource not found", 404, 'NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      message: "Resource returned successfully.",
-      data: resource,
-    });
+    return sendSuccess(res, { message: "Resource returned successfully.", data: resource });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -166,22 +109,12 @@ exports.assignResource = (req, res) => {
     );
 
     if (!resource) {
-      return res.status(404).json({
-        success: false,
-        message: "Resource not found",
-      });
+      return sendError(req, res, "Resource not found", 404, 'NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      message: "Resource assigned successfully.",
-      data: resource,
-    });
+    return sendSuccess(res, { message: "Resource assigned successfully.", data: resource });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -193,22 +126,12 @@ exports.reportDamage = (req, res) => {
     );
 
     if (!resource) {
-      return res.status(404).json({
-        success: false,
-        message: "Resource not found",
-      });
+      return sendError(req, res, "Resource not found", 404, 'NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      message: "Damage report submitted.",
-      data: resource,
-    });
+    return sendSuccess(res, { message: "Damage report submitted.", data: resource });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -220,22 +143,12 @@ exports.updateMaintenanceStatus = (req, res) => {
     );
 
     if (!resource) {
-      return res.status(404).json({
-        success: false,
-        message: "Resource not found",
-      });
+      return sendError(req, res, "Resource not found", 404, 'NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      message: "Maintenance status updated.",
-      data: resource,
-    });
+    return sendSuccess(res, { message: "Maintenance status updated.", data: resource });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -246,21 +159,12 @@ exports.checkAvailability = (req, res) => {
     );
 
     if (!availability) {
-      return res.status(404).json({
-        success: false,
-        message: "Resource not found",
-      });
+      return sendError(req, res, "Resource not found", 404, 'NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      data: availability,
-    });
+    return sendSuccess(res, { data: availability });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -268,16 +172,9 @@ exports.detectConflicts = (req, res) => {
   try {
     const conflicts = eventResourceService.detectConflicts();
 
-    res.json({
-      success: true,
-      total: conflicts.length,
-      data: conflicts,
-    });
+    return sendSuccess(res, { total: conflicts.length, data: conflicts });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -285,15 +182,9 @@ exports.getAvailabilityCalendar = (req, res) => {
   try {
     const calendar = eventResourceService.getAvailabilityCalendar();
 
-    res.json({
-      success: true,
-      data: calendar,
-    });
+    return sendSuccess(res, { data: calendar });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -302,21 +193,12 @@ exports.generateQRCode = (req, res) => {
     const qr = eventResourceService.generateQRCode(req.params.id);
 
     if (!qr) {
-      return res.status(404).json({
-        success: false,
-        message: "Resource not found",
-      });
+      return sendError(req, res, "Resource not found", 404, 'NOT_FOUND');
     }
 
-    res.json({
-      success: true,
-      data: qr,
-    });
+    return sendSuccess(res, { data: qr });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -324,15 +206,9 @@ exports.getBorrowHistory = (req, res) => {
   try {
     const history = eventResourceService.getBorrowHistory(req.params.id);
 
-    res.json({
-      success: true,
-      data: history,
-    });
+    return sendSuccess(res, { data: history });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -340,15 +216,9 @@ exports.getInventoryAnalytics = (req, res) => {
   try {
     const analytics = eventResourceService.getInventoryAnalytics();
 
-    res.json({
-      success: true,
-      data: analytics,
-    });
+    return sendSuccess(res, { data: analytics });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -356,14 +226,8 @@ exports.getUtilizationReport = (req, res) => {
   try {
     const report = eventResourceService.getUtilizationReport();
 
-    res.json({
-      success: true,
-      data: report,
-    });
+    return sendSuccess(res, { data: report });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };

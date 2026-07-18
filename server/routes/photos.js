@@ -10,6 +10,7 @@ const { authenticate } = require('../middleware/auth');
 const aiTaggingService = require('../services/aiTagging');
 const imageService = require('../services/imageProcessing');
 const db = require('../db');
+const { sendSuccess, sendError, sendNoContent } = require('../utils/responseHelper.js');
 
 // ── Multer config (memory storage → hand off to imageService) ─────────────────
 const upload = multer({
@@ -29,7 +30,7 @@ const upload = multer({
 router.post('/upload', authenticate, upload.single('photo'), async (req, res) => {
   try {
     const { eventId, albumId } = req.body;
-    if (!eventId) return res.status(400).json({ error: 'eventId is required' });
+    if (!eventId) return sendError(req, res, 'eventId is required', 400, 'VALIDATION_ERROR');
 
     // 1. Process image: compress, resize, convert to WebP, generate thumbnails
     const processed = await imageService.processUpload(req.file.buffer, req.file.originalname);
@@ -40,9 +41,7 @@ router.post('/upload', authenticate, upload.single('photo'), async (req, res) =>
     // 3. Content moderation — reject inappropriate images before storing
     const moderation = await aiTaggingService.moderateContent(processed.largeBuffer);
     if (moderation.rejected) {
-      return res
-        .status(422)
-        .json({ error: 'Image rejected by content moderation', reason: moderation.reason });
+      return sendError(req, res, 'Image rejected by content moderation', 422, 'VALIDATION_ERROR', moderation.reason);
     }
 
     // 4. AI tagging — run async; don't block response
@@ -70,10 +69,10 @@ router.post('/upload', authenticate, upload.single('photo'), async (req, res) =>
       .then((tags) => db.photos.update(photoRecord.id, { aiTags: tags }))
       .catch((err) => console.error('AI tagging failed for photo', photoRecord.id, err));
 
-    res.status(201).json(photoRecord);
+    sendSuccess(res, photoRecord, 201);
   } catch (err) {
     console.error('Upload error:', err);
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -81,7 +80,7 @@ router.post('/upload', authenticate, upload.single('photo'), async (req, res) =>
 router.get('/', authenticate, async (req, res) => {
   try {
     const { eventId, page = 1, limit = 30, sort = 'newest', album, date, photographer } = req.query;
-    if (!eventId) return res.status(400).json({ error: 'eventId is required' });
+    if (!eventId) return sendError(req, res, 'eventId is required', 400, 'VALIDATION_ERROR');
 
     const { photos, hasMore } = await db.photos.list({
       eventId,
@@ -92,9 +91,9 @@ router.get('/', authenticate, async (req, res) => {
       userId: req.user.id, // for likedByMe flag
     });
 
-    res.json({ photos, hasMore });
+    sendSuccess(res, { photos, hasMore });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -102,14 +101,14 @@ router.get('/', authenticate, async (req, res) => {
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const photo = await db.photos.findById(req.params.id, req.user.id);
-    if (!photo) return res.status(404).json({ error: 'Photo not found' });
+    if (!photo) return sendError(req, res, 'Photo not found', 404, 'NOT_FOUND');
 
     // Increment view count asynchronously
     db.photos.incrementViews(req.params.id).catch(console.error);
 
-    res.json(photo);
+    sendSuccess(res, photo);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -117,9 +116,9 @@ router.get('/:id', authenticate, async (req, res) => {
 router.post('/:id/like', authenticate, async (req, res) => {
   try {
     await db.photos.like(req.params.id, req.user.id);
-    res.status(204).end();
+    sendNoContent(res);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -127,9 +126,9 @@ router.post('/:id/like', authenticate, async (req, res) => {
 router.delete('/:id/like', authenticate, async (req, res) => {
   try {
     await db.photos.unlike(req.params.id, req.user.id);
-    res.status(204).end();
+    sendNoContent(res);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -137,9 +136,9 @@ router.delete('/:id/like', authenticate, async (req, res) => {
 router.get('/:id/comments', authenticate, async (req, res) => {
   try {
     const comments = await db.comments.forPhoto(req.params.id);
-    res.json({ comments });
+    sendSuccess(res, { comments });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -147,7 +146,7 @@ router.get('/:id/comments', authenticate, async (req, res) => {
 router.post('/:id/comments', authenticate, async (req, res) => {
   try {
     const { text } = req.body;
-    if (!text?.trim()) return res.status(400).json({ error: 'Comment text required' });
+    if (!text?.trim()) return sendError(req, res, 'Comment text required', 400, 'VALIDATION_ERROR');
 
     const comment = await db.comments.create({
       photoId: req.params.id,
@@ -156,9 +155,9 @@ router.post('/:id/comments', authenticate, async (req, res) => {
       text: text.trim(),
     });
 
-    res.status(201).json(comment);
+    sendSuccess(res, comment, 201);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -166,7 +165,7 @@ router.post('/:id/comments', authenticate, async (req, res) => {
 router.post('/:id/tags', authenticate, async (req, res) => {
   try {
     const { userId } = req.body;
-    if (!userId) return res.status(400).json({ error: 'userId required' });
+    if (!userId) return sendError(req, res, 'userId required', 400, 'VALIDATION_ERROR');
 
     await db.photos.tagUser(req.params.id, userId, req.user.id);
 
@@ -178,9 +177,9 @@ router.post('/:id/tags', authenticate, async (req, res) => {
       data: { photoId: req.params.id },
     });
 
-    res.status(204).end();
+    sendNoContent(res);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -192,23 +191,23 @@ router.delete('/:id/tags/:userId', authenticate, async (req, res) => {
     if (req.user.id !== userId) {
       const photo = await db.photos.findById(req.params.id);
       if (!photo || photo.uploaderId !== req.user.id) {
-        return res.status(403).json({ error: 'You can only remove your own tag' });
+        return sendError(req, res, 'You can only remove your own tag', 403, 'FORBIDDEN');
       }
     }
 
     await db.photos.untagUser(req.params.id, userId);
-    res.status(204).end();
+    sendNoContent(res);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
 // ── Error handler for multer ──────────────────────────────────────────────────
 router.use((err, _req, res, _next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(413).json({ error: 'File exceeds 10 MB limit' });
+    return sendError(_req, res, 'File exceeds 10 MB limit', 413, 'PAYLOAD_TOO_LARGE');
   }
-  res.status(400).json({ error: err.message });
+  sendError(_req, res, err.message, 400, 'VALIDATION_ERROR');
 });
 
 module.exports = router;

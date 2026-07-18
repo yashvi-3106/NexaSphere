@@ -1,3 +1,4 @@
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 import { registrationsRepository } from '../repositories/registrationsRepository.js';
 import { forumRepository } from '../repositories/forumRepository.js';
 import { mentorshipRepository } from '../repositories/mentorshipRepository.js';
@@ -15,7 +16,7 @@ export const dashboardController = {
 
       const mentorships = await mentorshipRepository.countMentorshipsByEmail(email);
 
-      return res.json({
+      return sendSuccess(res, {
         eventCount: registrations,
         registrationCount: registrations,
         forumPostCount: threads + replies,
@@ -23,9 +24,7 @@ export const dashboardController = {
       });
     } catch (err) {
       console.error(err);
-      return res.status(500).json({
-        error: 'Failed to load dashboard stats',
-      });
+      return sendError(req, res, 'Failed to load dashboard stats', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -66,13 +65,11 @@ export const dashboardController = {
         },
       ];
 
-      return res.json(quests);
+      return sendSuccess(res, quests);
     } catch (err) {
       console.error(err);
 
-      return res.status(500).json({
-        error: 'Failed to load quests',
-      });
+      return sendError(req, res, 'Failed to load quests', 500, 'INTERNAL_ERROR');
     }
   },
 
@@ -93,13 +90,11 @@ export const dashboardController = {
           ...user,
         }));
 
-      return res.json(leaderboard);
+      return sendSuccess(res, leaderboard);
     } catch (err) {
       console.error(err);
 
-      return res.status(500).json({
-        error: 'Failed to load leaderboard',
-      });
+      return sendError(req, res, 'Failed to load leaderboard', 500, 'INTERNAL_ERROR');
     }
   },
 };

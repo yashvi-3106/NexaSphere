@@ -1,4 +1,5 @@
 import prisma from '../config/db.js'; // Adjust path to your Prisma client
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 // 1. Fetch templates (supports search, system vs user filtering)
 export const getTemplates = async (req, res) => {
@@ -16,9 +17,9 @@ export const getTemplates = async (req, res) => {
     }
 
     const templates = await prisma.eventTemplate.findMany({ where });
-    res.json(templates);
+    sendSuccess(res, templates);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch templates' });
+    sendError(req, res, 'Failed to fetch templates', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -28,9 +29,9 @@ export const createTemplate = async (req, res) => {
     const template = await prisma.eventTemplate.create({
       data: { ...req.body, createdBy: req.user.id },
     });
-    res.status(201).json(template);
+    sendSuccess(res, template, 201);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to save template' });
+    sendError(req, res, 'Failed to save template', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -45,8 +46,8 @@ export const cloneTemplate = async (req, res) => {
 
     // Explicitly omit live operational data like dates/times for clean copying
     const { id: _, createdAt: __, updatedAt: ___, usageCount: ____, ...clonedData } = template;
-    res.json(clonedData);
+    sendSuccess(res, clonedData);
   } catch (error) {
-    res.status(500).json({ error: 'Cloning processing failure' });
+    sendError(req, res, 'Cloning processing failure', 500, 'INTERNAL_ERROR');
   }
 };

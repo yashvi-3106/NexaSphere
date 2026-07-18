@@ -1,8 +1,8 @@
 import mediaManagementService from "../services/mediaManagementService.js";
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 export const getFiles = (req, res) => {
-  res.json({
-    success: true,
+  sendSuccess(res, {
     data: mediaManagementService.getAllFiles(),
   });
 };
@@ -11,14 +11,10 @@ export const getFile = (req, res) => {
   const file = mediaManagementService.getFileById(req.params.id);
 
   if (!file) {
-    return res.status(404).json({
-      success: false,
-      message: "File not found",
-    });
+    return sendError(req, res, "File not found", 404, 'NOT_FOUND');
   }
 
-  res.json({
-    success: true,
+  sendSuccess(res, {
     data: file,
   });
 };
@@ -26,25 +22,20 @@ export const getFile = (req, res) => {
 export const uploadFile = (req, res) => {
   const file = mediaManagementService.uploadFile(req.body);
 
-  res.status(201).json({
-    success: true,
+  sendSuccess(res, {
     message: "File uploaded successfully",
     data: file,
-  });
+  }, 201);
 };
 
 export const deleteFile = (req, res) => {
   const deleted = mediaManagementService.deleteFile(req.params.id);
 
   if (!deleted) {
-    return res.status(404).json({
-      success: false,
-      message: "File not found",
-    });
+    return sendError(req, res, "File not found", 404, 'NOT_FOUND');
   }
 
-  res.json({
-    success: true,
+  sendSuccess(res, {
     message: "File deleted successfully",
     data: deleted,
   });
@@ -53,8 +44,7 @@ export const deleteFile = (req, res) => {
 export const searchFiles = (req, res) => {
   const files = mediaManagementService.searchFiles(req.query.q || "");
 
-  res.json({
-    success: true,
+  sendSuccess(res, {
     data: files,
   });
 };
@@ -66,14 +56,10 @@ export const updateTags = (req, res) => {
   );
 
   if (!file) {
-    return res.status(404).json({
-      success: false,
-      message: "File not found",
-    });
+    return sendError(req, res, "File not found", 404, 'NOT_FOUND');
   }
 
-  res.json({
-    success: true,
+  sendSuccess(res, {
     data: file,
   });
 };
@@ -85,14 +71,10 @@ export const moveFile = (req, res) => {
   );
 
   if (!file) {
-    return res.status(404).json({
-      success: false,
-      message: "File not found",
-    });
+    return sendError(req, res, "File not found", 404, 'NOT_FOUND');
   }
 
-  res.json({
-    success: true,
+  sendSuccess(res, {
     data: file,
   });
 };
@@ -101,29 +83,23 @@ export const optimizeImage = (req, res) => {
   const file = mediaManagementService.optimizeImage(req.params.id);
 
   if (!file) {
-    return res.status(404).json({
-      success: false,
-      message: "Image not found",
-    });
+    return sendError(req, res, "Image not found", 404, 'NOT_FOUND');
   }
 
-  res.json({
-    success: true,
+  sendSuccess(res, {
     message: "Image optimized",
     data: file,
   });
 };
 
 export const getStorageUsage = (req, res) => {
-  res.json({
-    success: true,
+  sendSuccess(res, {
     data: mediaManagementService.getStorageUsage(),
   });
 };
 
 export const getStatistics = (req, res) => {
-  res.json({
-    success: true,
+  sendSuccess(res, {
     data: mediaManagementService.getStatistics(),
   });
 };

@@ -1,53 +1,54 @@
 import bookmarkService from '../services/bookmarkService.js';
+import { sendSuccess } from '../utils/responseHelper.js';
 
 export const createBookmark = (req, res) => {
-  res.status(201).json(bookmarkService.createBookmark(req.body));
+  sendSuccess(res, bookmarkService.createBookmark(req.body), 201);
 };
 
 export const getBookmarks = (req, res) => {
-  res.json(bookmarkService.getBookmarks());
+  sendSuccess(res, bookmarkService.getBookmarks());
 };
 
 export const deleteBookmark = (req, res) => {
-  res.json(bookmarkService.deleteBookmark(req.params.id));
+  sendSuccess(res, bookmarkService.deleteBookmark(req.params.id));
 };
 
 export const searchBookmarks = (req, res) => {
-  res.json(bookmarkService.searchBookmarks(req.query.q || ''));
+  sendSuccess(res, bookmarkService.searchBookmarks(req.query.q || ''));
 };
 
 export const getRecentBookmarks = (req, res) => {
-  res.json(bookmarkService.getRecentBookmarks());
+  sendSuccess(res, bookmarkService.getRecentBookmarks());
 };
 
 export const createFolder = (req, res) => {
-  res.status(201).json(bookmarkService.createFolder(req.body.name));
+  sendSuccess(res, bookmarkService.createFolder(req.body.name), 201);
 };
 
 export const getFolders = (req, res) => {
-  res.json(bookmarkService.getFolders());
+  sendSuccess(res, bookmarkService.getFolders());
 };
 
 export const updateFolder = (req, res) => {
-  res.json(bookmarkService.updateFolder(req.params.id, req.body.name));
+  sendSuccess(res, bookmarkService.updateFolder(req.params.id, req.body.name));
 };
 
 export const deleteFolder = (req, res) => {
-  res.json(bookmarkService.deleteFolder(req.params.id));
+  sendSuccess(res, bookmarkService.deleteFolder(req.params.id));
 };
 
 export const shareCollection = (req, res) => {
-  res.json(bookmarkService.shareCollection(req.params.id));
+  sendSuccess(res, bookmarkService.shareCollection(req.params.id));
 };
 
 export const syncBookmarks = (req, res) => {
-  res.json(bookmarkService.syncBookmarks());
+  sendSuccess(res, bookmarkService.syncBookmarks());
 };
 
 export const exportBookmarks = (req, res) => {
-  res.json(bookmarkService.exportBookmarks());
+  sendSuccess(res, bookmarkService.exportBookmarks());
 };
 
 export const getBookmarkAnalytics = (req, res) => {
-  res.json(bookmarkService.getBookmarkAnalytics());
+  sendSuccess(res, bookmarkService.getBookmarkAnalytics());
 };

@@ -1,4 +1,5 @@
 import { emailCampaignService } from '../services/emailCampaignService.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 function wrapAsync(fn) {
   return (req, res) =>
@@ -16,7 +17,7 @@ function wrapAsync(fn) {
         status = 400;
       }
 
-      res.status(status).json({ error: msg || 'Internal server error' });
+      sendError(req, res, msg || 'Internal server error', status);
     });
 }
 
@@ -24,14 +25,14 @@ function wrapAsync(fn) {
 export const createCampaign = wrapAsync(async (req, res) => {
   const { name, subject, templateName, content, segmentCriteria, scheduledAt } = req.body;
   if (!name || !subject) {
-    return res.status(400).json({ error: 'Campaign name and subject are required' });
+    return sendError(req, res, 'Campaign name and subject are required', 400, 'VALIDATION_ERROR');
   }
 
   const campaign = await emailCampaignService.createCampaign(
     { name, subject, templateName, content, segmentCriteria, scheduledAt },
     req.studentUser
   );
-  return res.status(201).json(campaign);
+  return sendSuccess(res, campaign, 201);
 });
 
 export const getCampaigns = wrapAsync(async (req, res) => {
@@ -41,55 +42,55 @@ export const getCampaigns = wrapAsync(async (req, res) => {
   if (limit) filters.limit = parseInt(limit, 10);
 
   const campaigns = await emailCampaignService.getCampaigns(filters);
-  return res.status(200).json({ campaigns });
+  return sendSuccess(res, { campaigns });
 });
 
 export const getCampaignById = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const campaign = await emailCampaignService.getCampaignById(id);
-  return res.status(200).json(campaign);
+  return sendSuccess(res, campaign);
 });
 
 export const updateCampaign = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const updated = await emailCampaignService.updateCampaign(id, req.body);
-  return res.status(200).json(updated);
+  return sendSuccess(res, updated);
 });
 
 export const deleteCampaign = wrapAsync(async (req, res) => {
   const { id } = req.params;
   await emailCampaignService.deleteCampaign(id);
-  return res.status(200).json({ success: true });
+  return sendSuccess(res, { success: true });
 });
 
 export const sendCampaign = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const result = await emailCampaignService.sendCampaign(id, req.studentUser);
-  return res.status(200).json(result);
+  return sendSuccess(res, result);
 });
 
 export const resendBouncedEmails = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const result = await emailCampaignService.resendBouncedEmails(id);
-  return res.status(200).json(result);
+  return sendSuccess(res, result);
 });
 
 export const getCampaignStats = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const stats = await emailCampaignService.getCampaignStats(id);
-  return res.status(200).json(stats);
+  return sendSuccess(res, stats);
 });
 
 export const getCampaignAnalytics = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const analytics = await emailCampaignService.getCampaignAnalytics(id);
-  return res.status(200).json({ analytics });
+  return sendSuccess(res, { analytics });
 });
 
 export const trackOpen = wrapAsync(async (req, res) => {
   const { campaignId, email } = req.query;
   if (!campaignId || !email) {
-    return res.status(400).json({ error: 'campaignId and email are required' });
+    return sendError(req, res, 'campaignId and email are required', 400, 'VALIDATION_ERROR');
   }
   await emailCampaignService.trackOpen(campaignId, email);
   // Return a 1x1 transparent pixel
@@ -102,7 +103,7 @@ export const trackOpen = wrapAsync(async (req, res) => {
 export const trackClick = wrapAsync(async (req, res) => {
   const { campaignId, email, url } = req.query;
   if (!campaignId || !email) {
-    return res.status(400).json({ error: 'campaignId and email are required' });
+    return sendError(req, res, 'campaignId and email are required', 400, 'VALIDATION_ERROR');
   }
   await emailCampaignService.trackClick(campaignId, email);
   return res.redirect(url || '/');
@@ -112,95 +113,95 @@ export const trackClick = wrapAsync(async (req, res) => {
 export const createTemplate = wrapAsync(async (req, res) => {
   const { name, subject, htmlContent, category } = req.body;
   if (!name || !htmlContent) {
-    return res.status(400).json({ error: 'Template name and HTML content are required' });
+    return sendError(req, res, 'Template name and HTML content are required', 400, 'VALIDATION_ERROR');
   }
 
   const template = await emailCampaignService.createTemplate(
     { name, subject, htmlContent, category },
     req.studentUser
   );
-  return res.status(201).json(template);
+  return sendSuccess(res, template, 201);
 });
 
 export const getTemplates = wrapAsync(async (req, res) => {
   const { category } = req.query;
   const templates = await emailCampaignService.getTemplates(category || null);
-  return res.status(200).json({ templates });
+  return sendSuccess(res, { templates });
 });
 
 export const getTemplateById = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const template = await emailCampaignService.getTemplateById(id);
-  return res.status(200).json(template);
+  return sendSuccess(res, template);
 });
 
 export const updateTemplate = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const updated = await emailCampaignService.updateTemplate(id, req.body);
-  return res.status(200).json(updated);
+  return sendSuccess(res, updated);
 });
 
 export const deleteTemplate = wrapAsync(async (req, res) => {
   const { id } = req.params;
   await emailCampaignService.deleteTemplate(id);
-  return res.status(200).json({ success: true });
+  return sendSuccess(res, { success: true });
 });
 
 // --- Unsubscribe ---
 export const unsubscribe = wrapAsync(async (req, res) => {
   const { email, reason } = req.body;
   if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
+    return sendError(req, res, 'Email is required', 400, 'VALIDATION_ERROR');
   }
   await emailCampaignService.unsubscribe(email, reason);
-  return res.status(200).json({ success: true, message: 'You have been unsubscribed' });
+  return sendSuccess(res, { success: true, message: 'You have been unsubscribed' });
 });
 
 export const resubscribe = wrapAsync(async (req, res) => {
   const { email } = req.body;
   if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
+    return sendError(req, res, 'Email is required', 400, 'VALIDATION_ERROR');
   }
   await emailCampaignService.resubscribe(email);
-  return res.status(200).json({ success: true, message: 'You have been resubscribed' });
+  return sendSuccess(res, { success: true, message: 'You have been resubscribed' });
 });
 
 export const checkUnsubscribed = wrapAsync(async (req, res) => {
   const { email } = req.query;
   if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
+    return sendError(req, res, 'Email is required', 400, 'VALIDATION_ERROR');
   }
   const isUnsubscribed = await emailCampaignService.checkUnsubscribed(email);
-  return res.status(200).json({ isUnsubscribed });
+  return sendSuccess(res, { isUnsubscribed });
 });
 
 // --- Automation Triggers ---
 export const createTrigger = wrapAsync(async (req, res) => {
   const { name, triggerType, campaignId, conditions, isActive } = req.body;
   if (!name || !triggerType) {
-    return res.status(400).json({ error: 'Trigger name and type are required' });
+    return sendError(req, res, 'Trigger name and type are required', 400, 'VALIDATION_ERROR');
   }
 
   const trigger = await emailCampaignService.createTrigger(
     { name, triggerType, campaignId, conditions, isActive },
     req.studentUser
   );
-  return res.status(201).json(trigger);
+  return sendSuccess(res, trigger, 201);
 });
 
 export const getTriggers = wrapAsync(async (req, res) => {
   const triggers = await emailCampaignService.getTriggers();
-  return res.status(200).json({ triggers });
+  return sendSuccess(res, { triggers });
 });
 
 export const updateTrigger = wrapAsync(async (req, res) => {
   const { id } = req.params;
   const updated = await emailCampaignService.updateTrigger(id, req.body);
-  return res.status(200).json(updated);
+  return sendSuccess(res, updated);
 });
 
 export const deleteTrigger = wrapAsync(async (req, res) => {
   const { id } = req.params;
   await emailCampaignService.deleteTrigger(id);
-  return res.status(200).json({ success: true });
+  return sendSuccess(res, { success: true });
 });

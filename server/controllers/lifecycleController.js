@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 const prisma = new PrismaClient();
 
@@ -25,13 +26,13 @@ export const getUserLifecycle = async (req, res) => {
     });
 
     if (!lifecycle) {
-      return res.status(404).json({ success: false, message: 'User lifecycle not found' });
+      return sendError(req, res, 'User lifecycle not found', 404, 'NOT_FOUND');
     }
 
-    res.json({ success: true, lifecycle });
+    sendSuccess(res, { lifecycle });
   } catch (error) {
     console.error('Error fetching lifecycle:', error);
-    res.status(500).json({ success: false, error: 'Internal Server Error' });
+    sendError(req, res, 'Internal Server Error', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -43,7 +44,7 @@ export const updateEventAttended = async (req, res) => {
     });
 
     if (!lifecycle) {
-      return res.status(404).json({ success: false, message: 'User lifecycle not found' });
+      return sendError(req, res, 'User lifecycle not found', 404, 'NOT_FOUND');
     }
 
     const newEventsAttended = lifecycle.eventsAttended + 1;
@@ -60,10 +61,10 @@ export const updateEventAttended = async (req, res) => {
 
     // TODO: Trigger automated emails (e.g. Welcome email, recommend new events) based on newStage here.
 
-    res.json({ success: true, lifecycle: updated });
+    sendSuccess(res, { lifecycle: updated });
   } catch (error) {
     console.error('Error updating event attended:', error);
-    res.status(500).json({ success: false, error: 'Internal Server Error' });
+    sendError(req, res, 'Internal Server Error', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -79,9 +80,9 @@ export const getLifecycleAnalytics = async (req, res) => {
       return acc;
     }, {});
 
-    res.json({ success: true, stats: formattedStats });
+    sendSuccess(res, { stats: formattedStats });
   } catch (error) {
     console.error('Error fetching lifecycle analytics:', error);
-    res.status(500).json({ success: false, error: 'Internal Server Error' });
+    sendError(req, res, 'Internal Server Error', 500, 'INTERNAL_ERROR');
   }
 };

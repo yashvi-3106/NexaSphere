@@ -6,14 +6,19 @@ import {
   createActionItem,
   getActionItems,
 } from '../controllers/feedbackController.js';
+import { validate } from '../middleware/validate.js';
+import {
+  submitFeedbackSchema,
+  createActionItemSchema,
+} from '../validators/routes/feedbackRoutesSchemas.js';
 
 const router = express.Router();
 
-router.post('/', submitFeedback);
+router.post('/', validate(submitFeedbackSchema), submitFeedback);
 router.get('/analytics/:eventId', getFeedbackAnalytics);
 router.get('/:eventId', getFeedbacks);
 
-router.post('/actions', createActionItem);
+router.post('/actions', validate(createActionItemSchema), createActionItem);
 router.get('/actions/:eventId', getActionItems);
 
 export default router;

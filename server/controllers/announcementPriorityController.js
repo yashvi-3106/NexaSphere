@@ -1,20 +1,15 @@
-import { announcementPriorityService } from '../services/announcementPriorityService.js';
+import { announcementPriorityService } from "../services/announcementPriorityService.js";
+import { sendSuccess, sendError } from "../utils/responseHelper.js";
 
 export const getAnnouncements = async (req, res) => {
   try {
     const announcements = announcementPriorityService.getAnnouncements();
 
-    return res.json({
-      success: true,
-      announcements,
-    });
+    return sendSuccess(res, { announcements });
   } catch (error) {
     console.error(error);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch announcements',
-    });
+    return sendError(req, res, "Failed to fetch announcements", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -22,17 +17,11 @@ export const createAnnouncement = async (req, res) => {
   try {
     const announcement = announcementPriorityService.createAnnouncement(req.body);
 
-    return res.status(201).json({
-      success: true,
-      announcement,
-    });
+    return sendSuccess(res, { announcement }, 201);
   } catch (error) {
     console.error(error);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to create announcement',
-    });
+    return sendError(req, res, "Failed to create announcement", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -44,23 +33,14 @@ export const updatePriority = async (req, res) => {
     const announcement = announcementPriorityService.updatePriority(id, priority);
 
     if (!announcement) {
-      return res.status(404).json({
-        success: false,
-        message: 'Announcement not found',
-      });
+      return sendError(req, res, "Announcement not found", 404, 'NOT_FOUND');
     }
 
-    return res.json({
-      success: true,
-      announcement,
-    });
+    return sendSuccess(res, { announcement });
   } catch (error) {
     console.error(error);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to update priority',
-    });
+    return sendError(req, res, "Failed to update priority", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -72,23 +52,14 @@ export const pinAnnouncement = async (req, res) => {
     const announcement = announcementPriorityService.pinAnnouncement(id, pinned);
 
     if (!announcement) {
-      return res.status(404).json({
-        success: false,
-        message: 'Announcement not found',
-      });
+      return sendError(req, res, "Announcement not found", 404, 'NOT_FOUND');
     }
 
-    return res.json({
-      success: true,
-      announcement,
-    });
+    return sendSuccess(res, { announcement });
   } catch (error) {
     console.error(error);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to pin announcement',
-    });
+    return sendError(req, res, "Failed to pin announcement", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -100,23 +71,14 @@ export const markRead = async (req, res) => {
     const announcement = announcementPriorityService.markAnnouncementRead(id, userId);
 
     if (!announcement) {
-      return res.status(404).json({
-        success: false,
-        message: 'Announcement not found',
-      });
+      return sendError(req, res, "Announcement not found", 404, 'NOT_FOUND');
     }
 
-    return res.json({
-      success: true,
-      announcement,
-    });
+    return sendSuccess(res, { announcement });
   } catch (error) {
     console.error(error);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to mark announcement as read',
-    });
+    return sendError(req, res, "Failed to mark announcement as read", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -124,16 +86,10 @@ export const analytics = async (req, res) => {
   try {
     const data = announcementPriorityService.getAnalytics();
 
-    return res.json({
-      success: true,
-      analytics: data,
-    });
+    return sendSuccess(res, { analytics: data });
   } catch (error) {
     console.error(error);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch analytics',
-    });
+    return sendError(req, res, "Failed to fetch analytics", 500, 'INTERNAL_ERROR');
   }
 };

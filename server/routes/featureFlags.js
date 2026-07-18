@@ -3,6 +3,7 @@ import { featureFlagsService } from '../services/featureFlagsService.js';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import { apiRateLimiter } from '../middleware/rateLimiter.js';
 import logger from '../utils/logger.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 const router = Router();
 const adminAuth = [apiRateLimiter, adminAuthMiddleware.requireAdmin];
@@ -17,7 +18,7 @@ router.post('/api/feature-flags/evaluate', apiRateLimiter, async (req, res) => {
   try {
     const { flags, context } = req.body;
     if (!Array.isArray(flags)) {
-      return res.status(400).json({ error: 'flags must be an array of strings' });
+      return sendError(req, res, 'flags must be an array of strings', 400, 'VALIDATION_ERROR');
     }
 
     const results = {};
@@ -37,10 +38,10 @@ router.post('/api/feature-flags/evaluate', apiRateLimiter, async (req, res) => {
       }
     }
 
-    res.json(results);
+    sendSuccess(res, results);
   } catch (error) {
     logger.error('Error evaluating feature flags', { error: error.message });
-    res.status(500).json({ error: 'Failed to evaluate feature flags' });
+    sendError(req, res, 'Failed to evaluate feature flags', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -52,14 +53,14 @@ router.post('/api/feature-flags/ab-test/conversion', apiRateLimiter, async (req,
   try {
     const { flagKey, userId } = req.body;
     if (!flagKey || !userId) {
-      return res.status(400).json({ error: 'flagKey and userId are required' });
+      return sendError(req, res, 'flagKey and userId are required', 400, 'VALIDATION_ERROR');
     }
 
     const tracked = await featureFlagsService.trackABConversion(flagKey, userId);
-    res.json({ success: tracked });
+    sendSuccess(res, { success: tracked });
   } catch (error) {
     logger.error('Error tracking AB conversion', { error: error.message });
-    res.status(500).json({ error: 'Failed to track conversion' });
+    sendError(req, res, 'Failed to track conversion', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -72,10 +73,10 @@ router.post('/api/feature-flags/ab-test/conversion', apiRateLimiter, async (req,
 router.get('/api/admin/feature-flags', adminAuth, async (req, res) => {
   try {
     const flags = await featureFlagsService.getFlags();
-    res.json(flags);
+    sendSuccess(res, flags);
   } catch (error) {
     logger.error('Error fetching feature flags', { error: error.message });
-    res.status(500).json({ error: 'Failed to fetch feature flags' });
+    sendError(req, res, 'Failed to fetch feature flags', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -87,10 +88,10 @@ router.get('/api/admin/feature-flags/stale', adminAuth, async (req, res) => {
   try {
     const threshold = req.query.threshold ? parseInt(req.query.threshold) : 30;
     const stale = await featureFlagsService.checkStaleFlags(threshold);
-    res.json(stale);
+    sendSuccess(res, stale);
   } catch (error) {
     logger.error('Error checking stale flags', { error: error.message });
-    res.status(500).json({ error: 'Failed to fetch stale flags' });
+    sendError(req, res, 'Failed to fetch stale flags', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -102,12 +103,12 @@ router.get('/api/admin/feature-flags/:key', adminAuth, async (req, res) => {
   try {
     const flag = await featureFlagsService.getFlagByKey(req.params.key);
     if (!flag) {
-      return res.status(404).json({ error: 'Feature flag not found' });
+      return sendError(req, res, 'Feature flag not found', 404, 'NOT_FOUND');
     }
-    res.json(flag);
+    sendSuccess(res, flag);
   } catch (error) {
     logger.error('Error fetching feature flag', { error: error.message });
-    res.status(500).json({ error: 'Failed to fetch feature flag' });
+    sendError(req, res, 'Failed to fetch feature flag', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -119,20 +120,20 @@ router.post('/api/admin/feature-flags', adminAuth, async (req, res) => {
   try {
     const { key, name, type } = req.body;
     if (!key || !name || !type) {
-      return res.status(400).json({ error: 'key, name, and type are required' });
+      return sendError(req, res, 'key, name, and type are required', 400, 'VALIDATION_ERROR');
     }
 
     const existing = await featureFlagsService.getFlagByKey(key);
     if (existing) {
-      return res.status(409).json({ error: `Feature flag with key '${key}' already exists` });
+      return sendError(req, res, `Feature flag with key '${key}' already exists`, 409, 'CONFLICT');
     }
 
     const changedBy = req.adminUser?.username || 'admin';
     const flag = await featureFlagsService.createFlag(req.body, changedBy);
-    res.status(201).json(flag);
+    sendSuccess(res, flag, 201);
   } catch (error) {
     logger.error('Error creating feature flag', { error: error.message });
-    res.status(500).json({ error: 'Failed to create feature flag' });
+    sendError(req, res, 'Failed to create feature flag', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -145,15 +146,15 @@ router.put('/api/admin/feature-flags/:key', adminAuth, async (req, res) => {
     const key = req.params.key;
     const existing = await featureFlagsService.getFlagByKey(key);
     if (!existing) {
-      return res.status(404).json({ error: 'Feature flag not found' });
+      return sendError(req, res, 'Feature flag not found', 404, 'NOT_FOUND');
     }
 
     const changedBy = req.adminUser?.username || 'admin';
     const flag = await featureFlagsService.updateFlag(key, req.body, changedBy);
-    res.json(flag);
+    sendSuccess(res, flag);
   } catch (error) {
     logger.error('Error updating feature flag', { error: error.message });
-    res.status(500).json({ error: 'Failed to update feature flag' });
+    sendError(req, res, 'Failed to update feature flag', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -166,18 +167,18 @@ router.post('/api/admin/feature-flags/:key/toggle', adminAuth, async (req, res) 
     const key = req.params.key;
     const { is_active } = req.body;
     if (is_active === undefined) {
-      return res.status(400).json({ error: 'is_active is required' });
+      return sendError(req, res, 'is_active is required', 400, 'VALIDATION_ERROR');
     }
 
     const changedBy = req.adminUser?.username || 'admin';
     const flag = await featureFlagsService.toggleFlag(key, is_active, changedBy);
     if (!flag) {
-      return res.status(404).json({ error: 'Feature flag not found' });
+      return sendError(req, res, 'Feature flag not found', 404, 'NOT_FOUND');
     }
-    res.json(flag);
+    sendSuccess(res, flag);
   } catch (error) {
     logger.error('Error toggling feature flag', { error: error.message });
-    res.status(500).json({ error: 'Failed to toggle feature flag' });
+    sendError(req, res, 'Failed to toggle feature flag', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -191,12 +192,12 @@ router.delete('/api/admin/feature-flags/:key', adminAuth, async (req, res) => {
     const changedBy = req.adminUser?.username || 'admin';
     const success = await featureFlagsService.deleteFlag(key, changedBy);
     if (!success) {
-      return res.status(404).json({ error: 'Feature flag not found' });
+      return sendError(req, res, 'Feature flag not found', 404, 'NOT_FOUND');
     }
-    res.json({ success: true });
+    sendSuccess(res, { success: true });
   } catch (error) {
     logger.error('Error deleting feature flag', { error: error.message });
-    res.status(500).json({ error: 'Failed to delete feature flag' });
+    sendError(req, res, 'Failed to delete feature flag', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -207,10 +208,10 @@ router.delete('/api/admin/feature-flags/:key', adminAuth, async (req, res) => {
 router.get('/api/admin/feature-flags/:key/history', adminAuth, async (req, res) => {
   try {
     const history = await featureFlagsService.getFlagHistory(req.params.key);
-    res.json(history);
+    sendSuccess(res, history);
   } catch (error) {
     logger.error('Error fetching feature flag history', { error: error.message });
-    res.status(500).json({ error: 'Failed to fetch feature flag history' });
+    sendError(req, res, 'Failed to fetch feature flag history', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -221,10 +222,10 @@ router.get('/api/admin/feature-flags/:key/history', adminAuth, async (req, res) 
 router.get('/api/admin/feature-flags/:key/ab-test', adminAuth, async (req, res) => {
   try {
     const analytics = await featureFlagsService.getABTestAnalytics(req.params.key);
-    res.json(analytics);
+    sendSuccess(res, analytics);
   } catch (error) {
     logger.error('Error fetching AB test analytics', { error: error.message });
-    res.status(500).json({ error: 'Failed to fetch A/B test analytics' });
+    sendError(req, res, 'Failed to fetch A/B test analytics', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -235,10 +236,10 @@ router.get('/api/admin/feature-flags/:key/ab-test', adminAuth, async (req, res) 
 router.post('/api/admin/feature-flags/:key/ab-test/reset', adminAuth, async (req, res) => {
   try {
     await featureFlagsService.resetABTest(req.params.key);
-    res.json({ success: true });
+    sendSuccess(res, { success: true });
   } catch (error) {
     logger.error('Error resetting AB test metrics', { error: error.message });
-    res.status(500).json({ error: 'Failed to reset A/B test metrics' });
+    sendError(req, res, 'Failed to reset A/B test metrics', 500, 'INTERNAL_ERROR');
   }
 });
 

@@ -113,17 +113,31 @@ List all users. **Requires admin session.**
 
 ## Error Responses
 
-All errors return a JSON object with a `message` field:
+All errors return a standardized JSON envelope:
 
 ```json
-{ "message": "Unauthorized. Core team details or password did not match." }
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication required",
+    "traceId": "req-abc-123-def"
+  }
+}
 ```
 
-| HTTP Status | Meaning                         |
-| ----------- | ------------------------------- |
-| `400`       | Validation error (bad input)    |
-| `401`       | Authentication required         |
-| `403`       | Forbidden (insufficient access) |
-| `404`       | Resource not found              |
-| `429`       | Rate limit exceeded             |
-| `500`       | Internal server error           |
+| HTTP Status | Error Code            | Meaning                         |
+| ----------- | --------------------- | ------------------------------- |
+| `400`       | `VALIDATION_ERROR`    | Validation error (bad input)    |
+| `401`       | `UNAUTHORIZED`        | Authentication required         |
+| `403`       | `FORBIDDEN`           | Forbidden (insufficient access) |
+| `404`       | `NOT_FOUND`           | Resource not found              |
+| `409`       | `CONFLICT`            | Conflict (duplicate, stale)     |
+| `429`       | `RATE_LIMITED`        | Rate limit exceeded             |
+| `500`       | `INTERNAL_ERROR`      | Internal server error           |
+| `502`       | `DEPENDENCY_ERROR`    | External dependency failure     |
+
+Success responses return the data directly (no wrapper):
+
+```json
+{ "id": 1, "name": "Example" }
+```

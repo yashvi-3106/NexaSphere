@@ -1,10 +1,11 @@
 // Admin controllers for #1787
 
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
+
 export async function adminGetCertificateById(req, res) {
   const { id } = req.params;
-  return res.json({
+  return sendSuccess(res, {
     id,
-    ok: true,
     certificate: {
       id,
       verified: false,
@@ -16,11 +17,11 @@ export async function adminGetCertificateById(req, res) {
 export async function adminVerifyCertificate(req, res) {
   const { id } = req.params;
   // TODO: update DB verification status + audit log.
-  return res.json({ ok: true, id, verified: true });
+  return sendSuccess(res, { id, verified: true });
 }
 
 export async function adminRevokeCertificate(req, res) {
   const { id } = req.params;
   // TODO: update DB verification status + audit log.
-  return res.json({ ok: true, id, revoked: true });
+  return sendSuccess(res, { id, revoked: true });
 }

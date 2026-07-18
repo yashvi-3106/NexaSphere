@@ -1,11 +1,12 @@
 import { resourcesService } from '../services/resourcesService.js';
 import { paginationSchema, voteSchema } from '../schemas/resourceSchema.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 function wrapAsync(fn) {
   return (req, res) =>
     Promise.resolve(fn(req, res)).catch((e) => {
       console.error('[resourcesController]', e);
-      return res.status(500).json({ error: e.message || 'Internal server error' });
+      return sendError(req, res, e.message || 'Internal server error', 500, 'INTERNAL_ERROR');
     });
 }
 
@@ -19,7 +20,7 @@ export const listResources = wrapAsync(async (req, res) => {
     status,
     q,
   });
-  return res.json({
+  return sendSuccess(res, {
     resources: result.rows,
     pagination: {
       page,
@@ -33,9 +34,9 @@ export const listResources = wrapAsync(async (req, res) => {
 export const getResource = wrapAsync(async (req, res) => {
   const resource = await resourcesService.getResource(req.params.id);
   if (!resource) {
-    return res.status(404).json({ error: 'Resource not found' });
+    return sendError(req, res, 'Resource not found', 404, 'NOT_FOUND');
   }
-  return res.json(resource);
+  return sendSuccess(res, resource);
 });
 
 export const createResource = wrapAsync(async (req, res) => {
@@ -53,52 +54,52 @@ export const createResource = wrapAsync(async (req, res) => {
   };
 
   const created = await resourcesService.createResource(input);
-  return res.status(201).json(created);
+  return sendSuccess(res, created, 201);
 });
 
 export const updateResource = wrapAsync(async (req, res) => {
   const updated = await resourcesService.updateResource(req.params.id, req.body);
   if (!updated) {
-    return res.status(404).json({ error: 'Resource not found' });
+    return sendError(req, res, 'Resource not found', 404, 'NOT_FOUND');
   }
-  return res.json(updated);
+  return sendSuccess(res, updated);
 });
 
 export const deleteResource = wrapAsync(async (req, res) => {
   const deleted = await resourcesService.deleteResource(req.params.id);
   if (!deleted) {
-    return res.status(404).json({ error: 'Resource not found' });
+    return sendError(req, res, 'Resource not found', 404, 'NOT_FOUND');
   }
-  return res.json({ success: true });
+  return sendSuccess(res, { success: true });
 });
 
 export const voteResource = wrapAsync(async (req, res) => {
   const { voter_id } = voteSchema.parse(req.body);
   const result = await resourcesService.toggleVote(req.params.id, voter_id);
   if (!result) {
-    return res.status(404).json({ error: 'Resource not found' });
+    return sendError(req, res, 'Resource not found', 404, 'NOT_FOUND');
   }
-  return res.json(result);
+  return sendSuccess(res, result);
 });
 
 export const downloadResource = wrapAsync(async (req, res) => {
   const resource = await resourcesService.incrementDownloads(req.params.id);
   if (!resource) {
-    return res.status(404).json({ error: 'Resource not found' });
+    return sendError(req, res, 'Resource not found', 404, 'NOT_FOUND');
   }
-  return res.json({ download_url: resource.fileUrl });
+  return sendSuccess(res, { download_url: resource.fileUrl });
 });
 
 export const moderateResource = wrapAsync(async (req, res) => {
   const { status } = req.body;
   if (!['pending', 'approved', 'rejected'].includes(status)) {
-    return res.status(400).json({ error: 'Status must be pending, approved, or rejected' });
+    return sendError(req, res, 'Status must be pending, approved, or rejected', 400, 'VALIDATION_ERROR');
   }
   const updated = await resourcesService.moderateResource(req.params.id, status);
   if (!updated) {
-    return res.status(404).json({ error: 'Resource not found' });
+    return sendError(req, res, 'Resource not found', 404, 'NOT_FOUND');
   }
-  return res.json(updated);
+  return sendSuccess(res, updated);
 });
 
 function sanitizeFilename(name) {
@@ -107,7 +108,7 @@ function sanitizeFilename(name) {
 
 export const uploadFile = wrapAsync(async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
+    return sendError(req, res, 'No file uploaded', 400, 'VALIDATION_ERROR');
   }
 
   const fileUrl = `/uploads/${req.file.filename}`;
@@ -131,5 +132,5 @@ export const uploadFile = wrapAsync(async (req, res) => {
   };
 
   const created = await resourcesService.createResource(input);
-  return res.status(201).json(created);
+  return sendSuccess(res, created, 201);
 });

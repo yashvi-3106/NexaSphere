@@ -1,50 +1,30 @@
 import platformAnalyticsService from "../services/platformAnalyticsService.js";
+import { sendSuccess } from "../utils/responseHelper.js";
 
 export const getDashboardOverview = (req, res) => {
-  res.status(200).json({
-    success: true,
-    data: platformAnalyticsService.getDashboardOverview(),
-  });
+  sendSuccess(res, platformAnalyticsService.getDashboardOverview());
 };
 
 export const getUserAnalytics = (req, res) => {
-  res.status(200).json({
-    success: true,
-    data: platformAnalyticsService.getUserAnalytics(),
-  });
+  sendSuccess(res, platformAnalyticsService.getUserAnalytics());
 };
 
 export const getEventAnalytics = (req, res) => {
-  res.status(200).json({
-    success: true,
-    data: platformAnalyticsService.getEventAnalytics(),
-  });
+  sendSuccess(res, platformAnalyticsService.getEventAnalytics());
 };
 
 export const getClubAnalytics = (req, res) => {
-  res.status(200).json({
-    success: true,
-    data: platformAnalyticsService.getClubAnalytics(),
-  });
+  sendSuccess(res, platformAnalyticsService.getClubAnalytics());
 };
 
 export const getPortfolioAnalytics = (req, res) => {
-  res.status(200).json({
-    success: true,
-    data: platformAnalyticsService.getPortfolioAnalytics(),
-  });
+  sendSuccess(res, platformAnalyticsService.getPortfolioAnalytics());
 };
 
 export const getGrowthAnalytics = (req, res) => {
-  res.status(200).json({
-    success: true,
-    data: platformAnalyticsService.getGrowthAnalytics(),
-  });
+  sendSuccess(res, platformAnalyticsService.getGrowthAnalytics());
 };
 
 export const exportReport = (req, res) => {
-  res.status(200).json({
-    success: true,
-    data: platformAnalyticsService.exportReport(),
-  });
+  sendSuccess(res, platformAnalyticsService.exportReport());
 };

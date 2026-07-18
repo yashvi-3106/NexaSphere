@@ -1,3 +1,4 @@
+import { sendSuccess, sendCreated, sendNoContent, sendError } from '../utils/responseHelper.js';
 import { activityEventsService } from '../services/activityEventsService.js';
 import { wrapAsync } from '../middleware/asyncHandler.js';
 import { NotFoundError } from '../utils/errors.js';
@@ -19,13 +20,13 @@ export const listActivityEvents = wrapAsync(async (req, res) => {
     page,
     limit,
   });
-  return res.json({ events: rows, pagination: buildPaginationMeta(page, limit, total) });
+  return sendSuccess(res, { events: rows, pagination: buildPaginationMeta(page, limit, total) });
 });
 
 export const addActivityEvent = wrapAsync(async (req, res) => {
   const activityKey = String(req.params.activityKey || '').trim();
   const result = await activityEventsService.addActivityEvent(activityKey, req.body);
-  return res.status(201).json({ ok: true, event: result });
+  return sendCreated(res, { event: result });
 });
 
 export const deleteActivityEvent = wrapAsync(async (req, res) => {
@@ -33,5 +34,5 @@ export const deleteActivityEvent = wrapAsync(async (req, res) => {
   const eventId = String(req.params.eventId || '').trim();
   const deleted = await activityEventsService.deleteActivityEvent(activityKey, eventId, req.body);
   if (!deleted) throw new NotFoundError('Event not found in manual activity events.');
-  return res.json({ ok: true });
+  return sendSuccess(res, { ok: true });
 });

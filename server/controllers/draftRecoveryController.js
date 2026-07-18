@@ -1,4 +1,5 @@
 const draftService = require("../services/draftRecoveryService");
+const { sendSuccess, sendError } = require("../utils/responseHelper");
 
 exports.createDraft = (req, res) => {
   try {
@@ -12,16 +13,9 @@ exports.createDraft = (req, res) => {
       content
     );
 
-    res.status(201).json({
-      success: true,
-      message: "Draft created successfully",
-      draft,
-    });
+    sendSuccess(res, { message: "Draft created successfully", draft }, 201);
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -29,25 +23,16 @@ exports.getDraft = (req, res) => {
   const draft = draftService.getDraft(req.params.draftId);
 
   if (!draft) {
-    return res.status(404).json({
-      success: false,
-      message: "Draft not found",
-    });
+    return sendError(req, res, "Draft not found", 404, 'NOT_FOUND');
   }
 
-  res.json({
-    success: true,
-    draft,
-  });
+  sendSuccess(res, { draft });
 };
 
 exports.listDrafts = (req, res) => {
   const drafts = draftService.listDrafts(req.params.userId);
 
-  res.json({
-    success: true,
-    drafts,
-  });
+  sendSuccess(res, { drafts });
 };
 
 exports.updateDraft = (req, res) => {
@@ -57,53 +42,32 @@ exports.updateDraft = (req, res) => {
   );
 
   if (!draft) {
-    return res.status(404).json({
-      success: false,
-      message: "Draft not found",
-    });
+    return sendError(req, res, "Draft not found", 404, 'NOT_FOUND');
   }
 
-  res.json({
-    success: true,
-    message: "Draft auto-saved",
-    draft,
-  });
+  sendSuccess(res, { message: "Draft auto-saved", draft });
 };
 
 exports.deleteDraft = (req, res) => {
   const deleted = draftService.deleteDraft(req.params.draftId);
 
-  res.json({
-    success: deleted,
-  });
+  sendSuccess(res, { success: deleted });
 };
 
 exports.restoreDraft = (req, res) => {
   const version = draftService.restoreDraft(req.params.draftId);
 
-  res.json({
-    success: true,
-    version,
-  });
+  sendSuccess(res, { version });
 };
 
 exports.versionHistory = (req, res) => {
-  res.json({
-    success: true,
-    versions: draftService.versionHistory(req.params.draftId),
-  });
+  sendSuccess(res, { versions: draftService.versionHistory(req.params.draftId) });
 };
 
 exports.syncDraft = (req, res) => {
-  res.json({
-    success: true,
-    draft: draftService.syncDraft(req.params.draftId),
-  });
+  sendSuccess(res, { draft: draftService.syncDraft(req.params.draftId) });
 };
 
 exports.statistics = (req, res) => {
-  res.json({
-    success: true,
-    statistics: draftService.getStatistics(),
-  });
+  sendSuccess(res, { statistics: draftService.getStatistics() });
 };

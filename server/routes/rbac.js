@@ -3,6 +3,13 @@ import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import { requirePermission } from '../middleware/rbacMiddleware.js';
 import { adminAuditMiddleware } from '../middleware/adminAuditMiddleware.js';
 import * as rbacController from '../controllers/rbacController.js';
+import { validate } from '../middleware/validate.js';
+import {
+  createRoleSchema,
+  updateRoleSchema,
+  assignRoleSchema,
+  bulkAssignRolesSchema,
+} from '../validators/routes/rbacSchemas.js';
 
 const router = Router();
 
@@ -26,6 +33,7 @@ router.get(
 
 router.post(
   '/api/admin/rbac/roles',
+  validate(createRoleSchema),
   requirePermission('rbac:write'),
   adminAuditMiddleware,
   rbacController.createRole
@@ -33,6 +41,7 @@ router.post(
 
 router.put(
   '/api/admin/rbac/roles/:name',
+  validate(updateRoleSchema),
   requirePermission('rbac:write'),
   adminAuditMiddleware,
   rbacController.updateRole
@@ -54,6 +63,7 @@ router.get(
 
 router.post(
   '/api/admin/rbac/assign',
+  validate(assignRoleSchema),
   requirePermission('rbac:assign'),
   adminAuditMiddleware,
   rbacController.assignRole
@@ -68,6 +78,7 @@ router.delete(
 
 router.post(
   '/api/admin/rbac/bulk-assign',
+  validate(bulkAssignRolesSchema),
   requirePermission('rbac:assign'),
   adminAuditMiddleware,
   rbacController.bulkAssignRoles

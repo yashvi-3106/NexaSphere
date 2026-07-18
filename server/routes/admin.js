@@ -6,6 +6,8 @@ import { tracedFetch } from '../config/appContext.js';
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import { supabaseBreaker, HAS_SUPABASE } from '../storage/supabaseClient.js';
+import { validate } from '../middleware/validate.js';
+import { ssoInviteSchema } from '../validators/routes/adminSchemas.js';
 import { financialService } from '../services/financialService.js';
 import {
   validateConfigChange,
@@ -40,6 +42,7 @@ import {
   generateIntegrityReport,
   getConsistencyAlerts,
 } from '../utils/consistencyVerifier.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 const router = Router();
 const adminAuth = [apiRateLimiter, adminAuthMiddleware.requireAdmin];
@@ -95,7 +98,7 @@ router.get('/membership', adminAuth, async (req, res) => {
         whatsapp: row.whatsapp,
         ...row.payload,
       }));
-      return res.json({ responses });
+      return sendSuccess(res, { responses });
     } catch (err) {
       if (err.code === 'CIRCUIT_OPEN') {
         console.warn(
@@ -113,21 +116,21 @@ router.get('/membership', adminAuth, async (req, res) => {
   const secret = process.env.MEMBERSHIP_SECRET;
 
   if (!scriptUrl || !secret) {
-    return res.json({ responses: [] });
+    return sendSuccess(res, { responses: [] });
   }
 
   try {
     const data = await membershipBreaker.execute(scriptUrl, secret);
-    return res.json({ responses: data.responses || [] });
+    return sendSuccess(res, { responses: data.responses || [] });
   } catch (err) {
     if (err.code === 'CIRCUIT_OPEN') {
       console.warn(
         '[Membership] Google Apps Script circuit breaker is OPEN, returning empty responses'
       );
-      return res.json({ responses: [] });
+      return sendSuccess(res, { responses: [] });
     }
     console.error('[Membership] Failed to fetch responses from Google Apps Script:', err.message);
-    return res.status(500).json({ error: 'Failed to fetch membership responses' });
+    return sendError(req, res, 'Failed to fetch membership responses', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -135,7 +138,7 @@ router.get('/membership', adminAuth, async (req, res) => {
  * GET /me — Returns the authenticated admin's username.
  */
 router.get('/me', adminAuth, (req, res) => {
-  return res.json({ username: req.adminSession.username });
+  return sendSuccess(res, { username: req.adminSession.username });
 });
 
 /**
@@ -149,8 +152,7 @@ router.post('/api/admin/config-review', adminAuth, (req, res) => {
 
   const rollback = rollbackConfig(req.body);
 
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
     validation,
     history,
     rollback,
@@ -158,75 +160,75 @@ router.post('/api/admin/config-review', adminAuth, (req, res) => {
 });
 
 router.get('/api/admin/database-health', adminAuth, (req, res) => {
-  res.json(runIntegrityCheck());
+  sendSuccess(res, runIntegrityCheck());
 });
 
 router.get('/api/admin/database-corruption', adminAuth, (req, res) => {
-  res.json(detectCorruption());
+  sendSuccess(res, detectCorruption());
 });
 
 router.get('/api/admin/database-recovery', adminAuth, (req, res) => {
-  res.json(generateRecoveryRecommendation());
+  sendSuccess(res, generateRecoveryRecommendation());
 });
 
 router.get('/api/admin/database-audit-log', adminAuth, (req, res) => {
-  res.json(createRecoveryAuditLog());
+  sendSuccess(res, createRecoveryAuditLog());
 });
 
 router.get('/api/admin/read-only-status', adminAuth, (req, res) => {
-  res.json(getReadOnlyStatus());
+  sendSuccess(res, getReadOnlyStatus());
 });
 
 router.post('/api/admin/read-only-enable', adminAuth, (req, res) => {
-  res.json(activateReadOnlyMode());
+  sendSuccess(res, activateReadOnlyMode());
 });
 
 router.post('/api/admin/read-only-disable', adminAuth, (req, res) => {
-  res.json(deactivateReadOnlyMode());
+  sendSuccess(res, deactivateReadOnlyMode());
 });
 
 router.get('/api/admin/read-only-log', adminAuth, (req, res) => {
-  res.json(createIncidentLog());
+  sendSuccess(res, createIncidentLog());
 });
 
 router.get('/api/admin/service-status', adminAuth, (req, res) => {
-  res.json(getServiceStatus());
+  sendSuccess(res, getServiceStatus());
 });
 
 router.get('/api/admin/incidents', adminAuth, (req, res) => {
-  res.json(getIncidentTimeline());
+  sendSuccess(res, getIncidentTimeline());
 });
 
 router.get('/api/admin/maintenance', adminAuth, (req, res) => {
-  res.json(getMaintenanceSchedule());
+  sendSuccess(res, getMaintenanceSchedule());
 });
 
 router.get('/api/admin/uptime-report', adminAuth, (req, res) => {
-  res.json(getHistoricalUptime());
+  sendSuccess(res, getHistoricalUptime());
 });
 
 router.get('/api/admin/status-subscribers', adminAuth, (req, res) => {
-  res.json(getSubscriberNotifications());
+  sendSuccess(res, getSubscriberNotifications());
 });
 
 router.get('/api/admin/consistency-check', adminAuth, (req, res) => {
-  res.json(runConsistencyCheck());
+  sendSuccess(res, runConsistencyCheck());
 });
 
 router.get('/api/admin/sync-status', adminAuth, (req, res) => {
-  res.json(getSynchronizationStatus());
+  sendSuccess(res, getSynchronizationStatus());
 });
 
 router.get('/api/admin/conflicts', adminAuth, (req, res) => {
-  res.json(detectConflicts());
+  sendSuccess(res, detectConflicts());
 });
 
 router.get('/api/admin/integrity-report', adminAuth, (req, res) => {
-  res.json(generateIntegrityReport());
+  sendSuccess(res, generateIntegrityReport());
 });
 
 router.get('/api/admin/consistency-alerts', adminAuth, (req, res) => {
-  res.json(getConsistencyAlerts());
+  sendSuccess(res, getConsistencyAlerts());
 });
 
 router.get('/api/admin/dependency-report', adminAuth, async (req, res) => {
@@ -234,7 +236,7 @@ router.get('/api/admin/dependency-report', adminAuth, async (req, res) => {
 });
 
 router.get('/api/admin/security-analytics', adminAuth, async (req, res) => {
-  res.json({
+  sendSuccess(res, {
     blockedIPs,
     riskScores,
     suspiciousRequests,
@@ -266,30 +268,30 @@ router.get('/api/admin/reports/engagement', adminAuth, async (req, res) => {
     };
   });
   seedUsers.sort((a, b) => b.engagementScore - a.engagementScore);
-  res.json({ users: seedUsers });
+  sendSuccess(res, { users: seedUsers });
 });
 
 router.get('/api/admin/reports/revenue', adminAuth, async (req, res) => {
   try {
     const user = { id: req.adminSession.username, role: 'admin' };
     const report = await financialService.getRevenueReport(user);
-    res.json(report);
+    sendSuccess(res, report);
   } catch (error) {
-    res.status(500).json({ error: error.message || 'Failed to generate revenue report' });
+    sendError(req, res, error.message || 'Failed to generate revenue report', 500, 'INTERNAL_ERROR');
   }
 });
 
 import jwt from 'jsonwebtoken';
 
-router.post('/api/admin/sso-invite', adminAuth, (req, res) => {
+router.post('/api/admin/sso-invite', apiRateLimiter, validate(ssoInviteSchema), adminAuth, (req, res) => {
   const { email } = req.body;
   if (!email || typeof email !== 'string' || !email.includes('@')) {
-    return res.status(400).json({ error: 'Valid email address is required' });
+    return sendError(req, res, 'Valid email address is required', 400, 'VALIDATION_ERROR');
   }
 
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
-    return res.status(500).json({ error: 'JWT_SECRET is not configured on the server' });
+    return sendError(req, res, 'JWT_SECRET is not configured on the server', 500, 'INTERNAL_ERROR');
   }
 
   // Generate a token valid for 24 hours
@@ -300,7 +302,7 @@ router.post('/api/admin/sso-invite', adminAuth, (req, res) => {
   const baseUrl = process.env.BASE_URL || 'http://localhost:8080';
   const inviteUrl = `${baseUrl}/api/auth/google?token=${token}`;
 
-  return res.json({ token, inviteUrl });
+  return sendSuccess(res, { token, inviteUrl });
 });
 router.get('/sessions', adminAuth, adminAuthMiddleware.getSecurityOverview);
 router.delete('/sessions/:sessionId', adminAuth, adminAuthMiddleware.revokeSession);

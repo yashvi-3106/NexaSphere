@@ -5,6 +5,7 @@ const { authenticate } = require('../middleware/auth');
 const { analyzeThemes } = require('../services/feedbackAnalytics');
 const { awardXP, awardBadge } = require('../services/gamification');
 const { generateCSV, generatePDF } = require('../services/exportService');
+const { sendSuccess, sendError, sendNoContent } = require('../utils/responseHelper.js');
 
 // POST /api/feedback — submit feedback
 router.post('/', authenticate, async (req, res) => {
@@ -12,15 +13,15 @@ router.post('/', authenticate, async (req, res) => {
   const userId = req.user.id;
 
   if (!eventId || !ratings?.overall) {
-    return res.status(400).json({ error: 'eventId and overall rating required' });
+    return sendError(req, res, 'eventId and overall rating required', 400, 'VALIDATION_ERROR');
   }
   if (nps !== undefined && nps !== null && (nps < 0 || nps > 10)) {
-    return res.status(400).json({ error: 'NPS must be 0-10' });
+    return sendError(req, res, 'NPS must be 0-10', 400, 'VALIDATION_ERROR');
   }
 
   // Prevent duplicate submissions
   const existing = await db('feedback').where({ event_id: eventId, user_id: userId }).first();
-  if (existing) return res.status(409).json({ error: 'Already submitted feedback for this event' });
+  if (existing) return sendError(req, res, 'Already submitted feedback for this event', 409, 'CONFLICT');
 
   // NPS classification
   let npsCategory = null;
@@ -52,7 +53,7 @@ router.post('/', authenticate, async (req, res) => {
   const feedbackCount = await db('feedback').where({ user_id: userId }).count('id as cnt').first();
   if (feedbackCount.cnt >= 5) await awardBadge(userId, 'feedback_champion');
 
-  res.status(201).json({ id: feedbackId, xpAwarded: 25 });
+  sendSuccess(res, { id: feedbackId, xpAwarded: 25 }, 201);
 });
 
 // GET /api/feedback/analytics/:eventId — organizer analytics
@@ -61,9 +62,9 @@ router.get('/analytics/:eventId', authenticate, async (req, res) => {
 
   // Verify organizer owns event
   const event = await db('events').where({ id: eventId }).first();
-  if (!event) return res.status(404).json({ error: 'Event not found' });
+  if (!event) return sendError(req, res, 'Event not found', 404, 'NOT_FOUND');
   if (event.organizer_id !== req.user.id && !req.user.isAdmin) {
-    return res.status(403).json({ error: 'Forbidden' });
+    return sendError(req, res, 'Forbidden', 403, 'FORBIDDEN');
   }
 
   const feedbacks = await db('feedback')
@@ -71,7 +72,7 @@ router.get('/analytics/:eventId', authenticate, async (req, res) => {
     .leftJoin('users', 'feedback.user_id', 'users.id')
     .select('feedback.*', 'users.name as userName');
 
-  if (!feedbacks.length) return res.json(null);
+  if (!feedbacks.length) return sendSuccess(res, null);
 
   const totalResponses = feedbacks.length;
   const attendeeCount = await db('event_attendees')
@@ -121,7 +122,7 @@ router.get('/analytics/:eventId', authenticate, async (req, res) => {
       createdAt: f.created_at,
     }));
 
-  res.json({
+  sendSuccess(res, {
     totalResponses,
     responseRate,
     averageRatings,
@@ -143,9 +144,9 @@ router.get('/export/:eventId', authenticate, async (req, res) => {
   const { format = 'csv' } = req.query;
 
   const event = await db('events').where({ id: eventId }).first();
-  if (!event) return res.status(404).json({ error: 'Event not found' });
+  if (!event) return sendError(req, res, 'Event not found', 404, 'NOT_FOUND');
   if (event.organizer_id !== req.user.id && !req.user.isAdmin) {
-    return res.status(403).json({ error: 'Forbidden' });
+    return sendError(req, res, 'Forbidden', 403, 'FORBIDDEN');
   }
 
   const feedbacks = await db('feedback')
@@ -171,7 +172,7 @@ router.get('/check/:eventId', authenticate, async (req, res) => {
   const existing = await db('feedback')
     .where({ event_id: req.params.eventId, user_id: req.user.id })
     .first();
-  res.json({ submitted: !!existing });
+  sendSuccess(res, { submitted: !!existing });
 });
 
 module.exports = router;

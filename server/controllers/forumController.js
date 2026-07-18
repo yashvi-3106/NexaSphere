@@ -7,6 +7,7 @@ import {
   forumPaginationSchema,
   voteSchema,
 } from '../schemas/forumSchema.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 function wrapAsync(fn) {
   return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -14,13 +15,13 @@ function wrapAsync(fn) {
 
 export const listCategories = wrapAsync(async (req, res) => {
   const categories = await forumService.getCategories();
-  return res.json({ categories });
+  return sendSuccess(res, { categories });
 });
 
 export const listThreads = wrapAsync(async (req, res) => {
   const { page, limit, category, q, sort } = forumPaginationSchema.parse(req.query);
   const result = await forumService.listThreads({ page, limit, category, q, sort });
-  return res.json({
+  return sendSuccess(res, {
     threads: result.rows,
     pagination: {
       page,
@@ -33,16 +34,16 @@ export const listThreads = wrapAsync(async (req, res) => {
 
 export const getThread = wrapAsync(async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) return res.status(400).json({ error: 'Invalid thread ID' });
+  if (isNaN(id)) return sendError(req, res, 'Invalid thread ID', 400, 'VALIDATION_ERROR');
   const thread = await forumService.getThread(id);
-  if (!thread) return res.status(404).json({ error: 'Thread not found' });
+  if (!thread) return sendError(req, res, 'Thread not found', 404, 'NOT_FOUND');
   const repliesResult = await forumService.listReplies(id, req.query);
-  return res.json({ thread, replies: repliesResult.rows, pagination: repliesResult });
+  return sendSuccess(res, { thread, replies: repliesResult.rows, pagination: repliesResult });
 });
 
 export const createThread = wrapAsync(async (req, res) => {
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
   const input = createThreadSchema.parse({
     ...req.body,
@@ -50,62 +51,62 @@ export const createThread = wrapAsync(async (req, res) => {
     author_email: req.studentUser.email,
   });
   const thread = await forumService.createThread(input);
-  if (!thread) return res.status(503).json({ error: 'Forum is in offline mode' });
-  return res.status(201).json({ thread });
+  if (!thread) return sendError(req, res, 'Forum is in offline mode', 503, 'DEPENDENCY_ERROR');
+  return sendSuccess(res, { thread }, 201);
 });
 
 export const updateThread = wrapAsync(async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) return res.status(400).json({ error: 'Invalid thread ID' });
+  if (isNaN(id)) return sendError(req, res, 'Invalid thread ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const thread = await forumService.getThread(id);
-  if (!thread) return res.status(404).json({ error: 'Thread not found' });
+  if (!thread) return sendError(req, res, 'Thread not found', 404, 'NOT_FOUND');
 
   const isAdmin = req.studentUser.role === 'admin';
   if (thread.authorEmail !== req.studentUser.email && !isAdmin) {
-    return res.status(403).json({ error: 'Forbidden: You do not own this thread' });
+    return sendError(req, res, 'Forbidden: You do not own this thread', 403, 'FORBIDDEN');
   }
 
   const input = updateThreadSchema.parse(req.body);
   const updated = await forumService.updateThread(id, input);
-  return res.json({ thread: updated });
+  return sendSuccess(res, { thread: updated });
 });
 
 export const deleteThread = wrapAsync(async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) return res.status(400).json({ error: 'Invalid thread ID' });
+  if (isNaN(id)) return sendError(req, res, 'Invalid thread ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const thread = await forumService.getThread(id);
-  if (!thread) return res.status(404).json({ error: 'Thread not found' });
+  if (!thread) return sendError(req, res, 'Thread not found', 404, 'NOT_FOUND');
 
   const isAdmin = req.studentUser.role === 'admin';
   if (thread.authorEmail !== req.studentUser.email && !isAdmin) {
-    return res.status(403).json({ error: 'Forbidden: You do not own this thread' });
+    return sendError(req, res, 'Forbidden: You do not own this thread', 403, 'FORBIDDEN');
   }
 
   const deleted = await forumService.deleteThread(id);
-  if (!deleted) return res.status(404).json({ error: 'Thread not found' });
-  return res.status(204).send();
+  if (!deleted) return sendError(req, res, 'Thread not found', 404, 'NOT_FOUND');
+  return sendNoContent(res);
 });
 
 export const listReplies = wrapAsync(async (req, res) => {
   const threadId = parseInt(req.params.id, 10);
-  if (isNaN(threadId)) return res.status(400).json({ error: 'Invalid thread ID' });
+  if (isNaN(threadId)) return sendError(req, res, 'Invalid thread ID', 400, 'VALIDATION_ERROR');
   const result = await forumService.listReplies(threadId, req.query);
-  return res.json({ replies: result.rows, pagination: result });
+  return sendSuccess(res, { replies: result.rows, pagination: result });
 });
 
 export const createReply = wrapAsync(async (req, res) => {
   const threadId = parseInt(req.params.id, 10);
-  if (isNaN(threadId)) return res.status(400).json({ error: 'Invalid thread ID' });
+  if (isNaN(threadId)) return sendError(req, res, 'Invalid thread ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
   const input = createReplySchema.parse({
     ...req.body,
@@ -113,120 +114,116 @@ export const createReply = wrapAsync(async (req, res) => {
     author_email: req.studentUser.email,
   });
   const reply = await forumService.createReply(threadId, input);
-  if (!reply) return res.status(503).json({ error: 'Forum is in offline mode' });
-  return res.status(201).json({ reply });
+  if (!reply) return sendError(req, res, 'Forum is in offline mode', 503, 'DEPENDENCY_ERROR');
+  return sendSuccess(res, { reply }, 201);
 });
 
 export const updateReply = wrapAsync(async (req, res) => {
   const id = parseInt(req.params.replyId, 10);
-  if (isNaN(id)) return res.status(400).json({ error: 'Invalid reply ID' });
+  if (isNaN(id)) return sendError(req, res, 'Invalid reply ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const reply = await forumService.getReply(id);
-  if (!reply) return res.status(404).json({ error: 'Reply not found' });
+  if (!reply) return sendError(req, res, 'Reply not found', 404, 'NOT_FOUND');
 
   const isAdmin = req.studentUser.role === 'admin';
   if (reply.authorEmail !== req.studentUser.email && !isAdmin) {
-    return res.status(403).json({ error: 'Forbidden: You do not own this reply' });
+    return sendError(req, res, 'Forbidden: You do not own this reply', 403, 'FORBIDDEN');
   }
 
   const { content } = updateReplySchema.parse(req.body);
   const updated = await forumService.updateReply(id, content);
-  return res.json({ reply: updated });
+  return sendSuccess(res, { reply: updated });
 });
 
 export const deleteReply = wrapAsync(async (req, res) => {
   const id = parseInt(req.params.replyId, 10);
-  if (isNaN(id)) return res.status(400).json({ error: 'Invalid reply ID' });
+  if (isNaN(id)) return sendError(req, res, 'Invalid reply ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const reply = await forumService.getReply(id);
-  if (!reply) return res.status(404).json({ error: 'Reply not found' });
+  if (!reply) return sendError(req, res, 'Reply not found', 404, 'NOT_FOUND');
 
   const isAdmin = req.studentUser.role === 'admin';
   if (reply.authorEmail !== req.studentUser.email && !isAdmin) {
-    return res.status(403).json({ error: 'Forbidden: You do not own this reply' });
+    return sendError(req, res, 'Forbidden: You do not own this reply', 403, 'FORBIDDEN');
   }
 
   const deleted = await forumService.deleteReply(id);
-  if (!deleted) return res.status(404).json({ error: 'Reply not found' });
-  return res.status(204).send();
+  if (!deleted) return sendError(req, res, 'Reply not found', 404, 'NOT_FOUND');
+  return sendNoContent(res);
 });
 
 export const voteThread = wrapAsync(async (req, res) => {
   const threadId = parseInt(req.params.id, 10);
-  if (isNaN(threadId)) return res.status(400).json({ error: 'Invalid thread ID' });
+  if (isNaN(threadId)) return sendError(req, res, 'Invalid thread ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
   const voter_email = req.studentUser.email;
   const { vote_type } = req.body;
   const result = await forumService.voteThread(threadId, voter_email, vote_type || 'upvote');
-  return res.json({ result });
+  return sendSuccess(res, { result });
 });
 
 export const voteReply = wrapAsync(async (req, res) => {
   const replyId = parseInt(req.params.replyId, 10);
-  if (isNaN(replyId)) return res.status(400).json({ error: 'Invalid reply ID' });
+  if (isNaN(replyId)) return sendError(req, res, 'Invalid reply ID', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
   const voter_email = req.studentUser.email;
   const { vote_type } = req.body;
   const result = await forumService.voteReply(replyId, voter_email, vote_type || 'upvote');
-  return res.json({ result });
+  return sendSuccess(res, { result });
 });
 
 export const acceptReply = wrapAsync(async (req, res) => {
   const threadId = parseInt(req.params.id, 10);
   const replyId = parseInt(req.params.replyId, 10);
-  if (isNaN(threadId) || isNaN(replyId)) return res.status(400).json({ error: 'Invalid IDs' });
+  if (isNaN(threadId) || isNaN(replyId)) return sendError(req, res, 'Invalid IDs', 400, 'VALIDATION_ERROR');
   if (!req.studentUser) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const thread = await forumService.getThread(threadId);
-  if (!thread) return res.status(404).json({ error: 'Thread not found' });
+  if (!thread) return sendError(req, res, 'Thread not found', 404, 'NOT_FOUND');
 
   const isAdmin = req.studentUser.role === 'admin';
   if (thread.authorEmail !== req.studentUser.email && !isAdmin) {
-    return res.status(403).json({ error: 'Forbidden: You do not own this thread' });
+    return sendError(req, res, 'Forbidden: You do not own this thread', 403, 'FORBIDDEN');
   }
 
   await forumService.acceptReply(threadId, replyId);
-  return res.json({ success: true });
+  return sendSuccess(res, { success: true });
 });
 
 export const moderateThread = wrapAsync(async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) return res.status(400).json({ error: 'Invalid thread ID' });
+  if (isNaN(id)) return sendError(req, res, 'Invalid thread ID', 400, 'VALIDATION_ERROR');
   const { status } = req.body;
   if (!['approved', 'rejected', 'flagged'].includes(status)) {
-    return res
-      .status(400)
-      .json({ error: 'Invalid status. Must be approved, rejected, or flagged' });
+    return sendError(req, res, 'Invalid status. Must be approved, rejected, or flagged', 400, 'VALIDATION_ERROR');
   }
   const thread = await forumService.moderateThread(id, status);
-  if (!thread) return res.status(404).json({ error: 'Thread not found' });
-  return res.json({ thread });
+  if (!thread) return sendError(req, res, 'Thread not found', 404, 'NOT_FOUND');
+  return sendSuccess(res, { thread });
 });
 
 export const moderateReply = wrapAsync(async (req, res) => {
   const id = parseInt(req.params.replyId, 10);
-  if (isNaN(id)) return res.status(400).json({ error: 'Invalid reply ID' });
+  if (isNaN(id)) return sendError(req, res, 'Invalid reply ID', 400, 'VALIDATION_ERROR');
   const { status } = req.body;
   if (!['approved', 'rejected', 'flagged'].includes(status)) {
-    return res
-      .status(400)
-      .json({ error: 'Invalid status. Must be approved, rejected, or flagged' });
+    return sendError(req, res, 'Invalid status. Must be approved, rejected, or flagged', 400, 'VALIDATION_ERROR');
   }
   const reply = await forumService.moderateReply(id, status);
-  if (!reply) return res.status(404).json({ error: 'Reply not found' });
-  return res.json({ reply });
+  if (!reply) return sendError(req, res, 'Reply not found', 404, 'NOT_FOUND');
+  return sendSuccess(res, { reply });
 });
 
 export const adminListThreads = wrapAsync(async (req, res) => {
@@ -237,5 +234,5 @@ export const adminListThreads = wrapAsync(async (req, res) => {
     status,
     q,
   });
-  return res.json({ threads: result.rows, total: result.total });
+  return sendSuccess(res, { threads: result.rows, total: result.total });
 });

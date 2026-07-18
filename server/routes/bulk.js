@@ -2,7 +2,22 @@ import { Router } from 'express';
 import multer from 'multer';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import { apiRateLimiter } from '../middleware/rateLimiter.js';
+import { validate } from '../middleware/validate.js';
 import { bulkOperationsService } from '../services/bulkOperationsService.js';
+import {
+  bulkUsersPreviewSchema,
+  bulkUsersImportSchema,
+  bulkUsersRoleSchema,
+  bulkUsersStatusSchema,
+  bulkUsersTagsSchema,
+  bulkUsersEmailSchema,
+  bulkEventsPreviewSchema,
+  bulkEventsImportSchema,
+  bulkEventsStatusSchema,
+  bulkEventsCloneSchema,
+  bulkEventsRemindSchema,
+} from '../validators/routes/bulkSchemas.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 const router = Router();
 const adminAuth = [apiRateLimiter, adminAuthMiddleware.requireAdmin];
@@ -28,41 +43,41 @@ const bulkUpload = multer({
 router.get(paths('/bulk/jobs/:id'), adminAuth, (req, res) => {
   const job = bulkOperationsService.getJob(req.params.id);
   if (!job) {
-    return res.status(404).json({ error: 'Job not found' });
+    return sendError(req, res, 'Job not found', 404, 'NOT_FOUND');
   }
-  return res.json(job);
+  return sendSuccess(res, job);
 });
 
 // ---------------------------------------------------------------------------
 // User Operations
 // ---------------------------------------------------------------------------
-router.post(paths('/bulk/users/preview'), adminAuth, (req, res) => {
+router.post(paths('/bulk/users/preview'), validate(bulkUsersPreviewSchema), adminAuth, (req, res) => {
   const { csv } = req.body;
   if (!csv) {
-    return res.status(400).json({ error: 'CSV data is required' });
+    return sendError(req, res, 'CSV data is required', 400, 'VALIDATION_ERROR');
   }
   const result = bulkOperationsService.previewImportUsers(csv);
-  return res.json(result);
+  return sendSuccess(res, result);
 });
 
-router.post(paths('/bulk/users/import'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/users/import'), validate(bulkUsersImportSchema), adminAuth, async (req, res) => {
   const { csv } = req.body;
   if (!csv) {
-    return res.status(400).json({ error: 'CSV data is required' });
+    return sendError(req, res, 'CSV data is required', 400, 'VALIDATION_ERROR');
   }
   const adminId = req.adminSession.username;
   const job = await bulkOperationsService.importUsers(csv, adminId);
-  return res.status(202).json(job);
+  return sendSuccess(res, job, 202);
 });
 
 router.post(paths('/bulk/users/upload'), adminAuth, bulkUpload.single('file'), async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ error: 'CSV file is required' });
+    return sendError(req, res, 'CSV file is required', 400, 'VALIDATION_ERROR');
   }
   const csv = req.file.buffer.toString('utf-8');
   const adminId = req.adminSession.username;
   const job = await bulkOperationsService.importUsers(csv, adminId);
-  return res.status(202).json(job);
+  return sendSuccess(res, job, 202);
 });
 
 router.get(paths('/bulk/users/export'), adminAuth, async (req, res) => {
@@ -80,66 +95,66 @@ router.get(paths('/bulk/users/export'), adminAuth, async (req, res) => {
   return res.send(csv);
 });
 
-router.post(paths('/bulk/users/role'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/users/role'), validate(bulkUsersRoleSchema), adminAuth, async (req, res) => {
   const { userIds, role } = req.body;
   if (!Array.isArray(userIds) || !role) {
-    return res.status(400).json({ error: 'userIds array and role are required' });
+    return sendError(req, res, 'userIds array and role are required', 400, 'VALIDATION_ERROR');
   }
   const adminId = req.adminSession.username;
   const job = await bulkOperationsService.bulkRoleAssignment(userIds, role, adminId);
-  return res.status(202).json(job);
+  return sendSuccess(res, job, 202);
 });
 
-router.post(paths('/bulk/users/status'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/users/status'), validate(bulkUsersStatusSchema), adminAuth, async (req, res) => {
   const { userIds, status } = req.body;
   if (!Array.isArray(userIds) || !status) {
-    return res.status(400).json({ error: 'userIds array and status are required' });
+    return sendError(req, res, 'userIds array and status are required', 400, 'VALIDATION_ERROR');
   }
   const adminId = req.adminSession.username;
   const job = await bulkOperationsService.bulkStatusChange(userIds, status, adminId);
-  return res.status(202).json(job);
+  return sendSuccess(res, job, 202);
 });
 
-router.post(paths('/bulk/users/tags'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/users/tags'), validate(bulkUsersTagsSchema), adminAuth, async (req, res) => {
   const { userIds, tags } = req.body;
   if (!Array.isArray(userIds) || !Array.isArray(tags)) {
-    return res.status(400).json({ error: 'userIds array and tags array are required' });
+    return sendError(req, res, 'userIds array and tags array are required', 400, 'VALIDATION_ERROR');
   }
   const adminId = req.adminSession.username;
   const job = await bulkOperationsService.bulkTagAssignment(userIds, tags, adminId);
-  return res.status(202).json(job);
+  return sendSuccess(res, job, 202);
 });
 
-router.post(paths('/bulk/users/email'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/users/email'), validate(bulkUsersEmailSchema), adminAuth, async (req, res) => {
   const { userIds, subject, message } = req.body;
   if (!Array.isArray(userIds) || !subject || !message) {
-    return res.status(400).json({ error: 'userIds array, subject, and message are required' });
+    return sendError(req, res, 'userIds array, subject, and message are required', 400, 'VALIDATION_ERROR');
   }
   const adminId = req.adminSession.username;
   const job = await bulkOperationsService.bulkEmail(userIds, subject, message, adminId);
-  return res.status(202).json(job);
+  return sendSuccess(res, job, 202);
 });
 
 // ---------------------------------------------------------------------------
 // Event Operations
 // ---------------------------------------------------------------------------
-router.post(paths('/bulk/events/preview'), adminAuth, (req, res) => {
+router.post(paths('/bulk/events/preview'), validate(bulkEventsPreviewSchema), adminAuth, (req, res) => {
   const { csv } = req.body;
   if (!csv) {
-    return res.status(400).json({ error: 'CSV data is required' });
+    return sendError(req, res, 'CSV data is required', 400, 'VALIDATION_ERROR');
   }
   const result = bulkOperationsService.previewImportEvents(csv);
-  return res.json(result);
+  return sendSuccess(res, result);
 });
 
-router.post(paths('/bulk/events/import'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/events/import'), validate(bulkEventsImportSchema), adminAuth, async (req, res) => {
   const { csv } = req.body;
   if (!csv) {
-    return res.status(400).json({ error: 'CSV data is required' });
+    return sendError(req, res, 'CSV data is required', 400, 'VALIDATION_ERROR');
   }
   const adminId = req.adminSession.username;
   const job = await bulkOperationsService.importEvents(csv, adminId);
-  return res.status(202).json(job);
+  return sendSuccess(res, job, 202);
 });
 
 router.post(
@@ -148,41 +163,39 @@ router.post(
   bulkUpload.single('file'),
   async (req, res) => {
     if (!req.file) {
-      return res.status(400).json({ error: 'CSV file is required' });
+      return sendError(req, res, 'CSV file is required', 400, 'VALIDATION_ERROR');
     }
     const csv = req.file.buffer.toString('utf-8');
     const adminId = req.adminSession.username;
     const job = await bulkOperationsService.importEvents(csv, adminId);
-    return res.status(202).json(job);
+    return sendSuccess(res, job, 202);
   }
 );
 
-router.post(paths('/bulk/events/status'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/events/status'), validate(bulkEventsStatusSchema), adminAuth, async (req, res) => {
   const { eventIds, status } = req.body;
   if (!Array.isArray(eventIds) || !status) {
-    return res.status(400).json({ error: 'eventIds array and status are required' });
+    return sendError(req, res, 'eventIds array and status are required', 400, 'VALIDATION_ERROR');
   }
   const adminId = req.adminSession.username;
   const job = await bulkOperationsService.bulkUpdateEventStatus(eventIds, status, adminId);
-  return res.status(202).json(job);
+  return sendSuccess(res, job, 202);
 });
 
-router.post(paths('/bulk/events/clone'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/events/clone'), validate(bulkEventsCloneSchema), adminAuth, async (req, res) => {
   const { eventIds, offsetDays } = req.body;
   if (!Array.isArray(eventIds) || typeof offsetDays !== 'number') {
-    return res.status(400).json({ error: 'eventIds array and numeric offsetDays are required' });
+    return sendError(req, res, 'eventIds array and numeric offsetDays are required', 400, 'VALIDATION_ERROR');
   }
   const adminId = req.adminSession.username;
   const job = await bulkOperationsService.bulkEventCloning(eventIds, offsetDays, adminId);
-  return res.status(202).json(job);
+  return sendSuccess(res, job, 202);
 });
 
 router.get(paths('/bulk/events/export'), adminAuth, async (req, res) => {
   const { eventIds } = req.query;
   if (!eventIds) {
-    return res
-      .status(400)
-      .json({ error: 'eventIds query parameter is required (comma-separated)' });
+    return sendError(req, res, 'eventIds query parameter is required (comma-separated)', 400, 'VALIDATION_ERROR');
   }
   const ids = eventIds.split(',');
   const csv = await bulkOperationsService.exportEventData(ids);
@@ -192,14 +205,14 @@ router.get(paths('/bulk/events/export'), adminAuth, async (req, res) => {
   return res.send(csv);
 });
 
-router.post(paths('/bulk/events/remind'), adminAuth, async (req, res) => {
+router.post(paths('/bulk/events/remind'), validate(bulkEventsRemindSchema), adminAuth, async (req, res) => {
   const { eventIds } = req.body;
   if (!Array.isArray(eventIds)) {
-    return res.status(400).json({ error: 'eventIds array is required' });
+    return sendError(req, res, 'eventIds array is required', 400, 'VALIDATION_ERROR');
   }
   const adminId = req.adminSession.username;
   const job = await bulkOperationsService.bulkSendReminders(eventIds, adminId);
-  return res.status(202).json(job);
+  return sendSuccess(res, job, 202);
 });
 
 // ---------------------------------------------------------------------------
@@ -210,9 +223,9 @@ router.post(paths('/bulk/rollback/:id'), adminAuth, async (req, res) => {
   const adminId = req.adminSession.username;
   try {
     const result = await bulkOperationsService.rollback(auditLogId, adminId);
-    return res.json({ success: true, ...result });
+    return sendSuccess(res, { ...result });
   } catch (err) {
-    return res.status(400).json({ error: err.message });
+    return sendError(req, res, err.message, 400, 'VALIDATION_ERROR');
   }
 });
 

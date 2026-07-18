@@ -4,6 +4,7 @@ import {
   getAllPermissions as getAllPermissionsFromConfig,
   PERMISSIONS,
 } from '../config/rbac.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 /**
  * Get all roles (default + custom)
@@ -16,13 +17,13 @@ export async function getAllRoles(req, res) {
       ...value,
     }));
 
-    return res.json({
+    return sendSuccess(res, {
       defaultRoles,
       customRoles,
     });
   } catch (error) {
     console.error('[RBAC] Failed to get roles:', error);
-    return res.status(500).json({ error: 'Failed to retrieve roles' });
+    return sendError(req, res, 'Failed to retrieve roles', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -32,10 +33,10 @@ export async function getAllRoles(req, res) {
 export async function getAllPermissions(req, res) {
   try {
     const permissions = getAllPermissionsFromConfig();
-    return res.json({ permissions });
+    return sendSuccess(res, { permissions });
   } catch (error) {
     console.error('[RBAC] Failed to get permissions:', error);
-    return res.status(500).json({ error: 'Failed to retrieve permissions' });
+    return sendError(req, res, 'Failed to retrieve permissions', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -47,23 +48,20 @@ export async function createRole(req, res) {
     const { name, description, permissions, hierarchy } = req.body;
 
     if (!name || !permissions || !Array.isArray(permissions)) {
-      return res.status(400).json({ error: 'Name and permissions array are required' });
+      return sendError(req, res, 'Name and permissions array are required', 400, 'VALIDATION_ERROR');
     }
 
     // Validate permissions exist
     const validPermissions = Object.keys(PERMISSIONS);
     const invalidPermissions = permissions.filter((p) => !validPermissions.includes(p));
     if (invalidPermissions.length > 0) {
-      return res.status(400).json({
-        error: 'Invalid permissions',
-        invalid: invalidPermissions,
-      });
+      return sendError(req, res, 'Invalid permissions', 400, 'VALIDATION_ERROR', { invalid: invalidPermissions });
     }
 
     // Check if role already exists
     const existingRole = await rbacRepository.getRoleByName(name);
     if (existingRole) {
-      return res.status(409).json({ error: 'Role already exists' });
+      return sendError(req, res, 'Role already exists', 409, 'CONFLICT');
     }
 
     const role = await rbacRepository.createRole({
@@ -82,10 +80,10 @@ export async function createRole(req, res) {
       userAgent: req.get('user-agent'),
     });
 
-    return res.status(201).json({ role });
+    return sendSuccess(res, { role }, 201);
   } catch (error) {
     console.error('[RBAC] Failed to create role:', error);
-    return res.status(500).json({ error: 'Failed to create role' });
+    return sendError(req, res, 'Failed to create role', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -99,7 +97,7 @@ export async function updateRole(req, res) {
 
     // Check if role is a system role
     if (DEFAULT_ROLES[name]) {
-      return res.status(400).json({ error: 'Cannot modify system roles' });
+      return sendError(req, res, 'Cannot modify system roles', 400, 'VALIDATION_ERROR');
     }
 
     // Validate permissions if provided
@@ -107,10 +105,7 @@ export async function updateRole(req, res) {
       const validPermissions = Object.keys(PERMISSIONS);
       const invalidPermissions = permissions.filter((p) => !validPermissions.includes(p));
       if (invalidPermissions.length > 0) {
-        return res.status(400).json({
-          error: 'Invalid permissions',
-          invalid: invalidPermissions,
-        });
+        return sendError(req, res, 'Invalid permissions', 400, 'VALIDATION_ERROR', { invalid: invalidPermissions });
       }
     }
 
@@ -123,7 +118,7 @@ export async function updateRole(req, res) {
     });
 
     if (!updatedRole) {
-      return res.status(404).json({ error: 'Role not found or is a system role' });
+      return sendError(req, res, 'Role not found or is a system role', 404, 'NOT_FOUND');
     }
 
     // Log audit event
@@ -136,10 +131,10 @@ export async function updateRole(req, res) {
       userAgent: req.get('user-agent'),
     });
 
-    return res.json({ role: updatedRole });
+    return sendSuccess(res, { role: updatedRole });
   } catch (error) {
     console.error('[RBAC] Failed to update role:', error);
-    return res.status(500).json({ error: 'Failed to update role' });
+    return sendError(req, res, 'Failed to update role', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -152,13 +147,13 @@ export async function deleteRole(req, res) {
 
     // Check if role is a system role
     if (DEFAULT_ROLES[name]) {
-      return res.status(400).json({ error: 'Cannot delete system roles' });
+      return sendError(req, res, 'Cannot delete system roles', 400, 'VALIDATION_ERROR');
     }
 
     const deletedRole = await rbacRepository.deleteRole(name);
 
     if (!deletedRole) {
-      return res.status(404).json({ error: 'Role not found or is a system role' });
+      return sendError(req, res, 'Role not found or is a system role', 404, 'NOT_FOUND');
     }
 
     // Log audit event
@@ -170,10 +165,10 @@ export async function deleteRole(req, res) {
       userAgent: req.get('user-agent'),
     });
 
-    return res.json({ ok: true });
+    return sendSuccess(res, { ok: true });
   } catch (error) {
     console.error('[RBAC] Failed to delete role:', error);
-    return res.status(500).json({ error: 'Failed to delete role' });
+    return sendError(req, res, 'Failed to delete role', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -183,10 +178,10 @@ export async function deleteRole(req, res) {
 export async function getUsersWithRoles(req, res) {
   try {
     const users = await rbacRepository.getAllUsersWithRoles();
-    return res.json({ users });
+    return sendSuccess(res, { users });
   } catch (error) {
     console.error('[RBAC] Failed to get users:', error);
-    return res.status(500).json({ error: 'Failed to retrieve users' });
+    return sendError(req, res, 'Failed to retrieve users', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -198,13 +193,13 @@ export async function assignRole(req, res) {
     const { userId, roleName, expiresAt } = req.body;
 
     if (!userId || !roleName) {
-      return res.status(400).json({ error: 'userId and roleName are required' });
+      return sendError(req, res, 'userId and roleName are required', 400, 'VALIDATION_ERROR');
     }
 
     // Check if role exists
     const role = DEFAULT_ROLES[roleName] || (await rbacRepository.getRoleByName(roleName));
     if (!role) {
-      return res.status(404).json({ error: 'Role not found' });
+      return sendError(req, res, 'Role not found', 404, 'NOT_FOUND');
     }
 
     const assignment = await rbacRepository.assignRole(
@@ -224,10 +219,10 @@ export async function assignRole(req, res) {
       userAgent: req.get('user-agent'),
     });
 
-    return res.json({ assignment });
+    return sendSuccess(res, { assignment });
   } catch (error) {
     console.error('[RBAC] Failed to assign role:', error);
-    return res.status(500).json({ error: 'Failed to assign role' });
+    return sendError(req, res, 'Failed to assign role', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -239,13 +234,13 @@ export async function revokeRole(req, res) {
     const { userId, roleName } = req.params;
 
     if (!userId || !roleName) {
-      return res.status(400).json({ error: 'userId and roleName are required' });
+      return sendError(req, res, 'userId and roleName are required', 400, 'VALIDATION_ERROR');
     }
 
     const revoked = await rbacRepository.revokeRole(parseInt(userId), roleName);
 
     if (!revoked) {
-      return res.status(404).json({ error: 'Role assignment not found' });
+      return sendError(req, res, 'Role assignment not found', 404, 'NOT_FOUND');
     }
 
     // Log audit event
@@ -258,10 +253,10 @@ export async function revokeRole(req, res) {
       userAgent: req.get('user-agent'),
     });
 
-    return res.json({ ok: true });
+    return sendSuccess(res, { ok: true });
   } catch (error) {
     console.error('[RBAC] Failed to revoke role:', error);
-    return res.status(500).json({ error: 'Failed to revoke role' });
+    return sendError(req, res, 'Failed to revoke role', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -273,7 +268,7 @@ export async function bulkAssignRoles(req, res) {
     const { assignments } = req.body;
 
     if (!assignments || !Array.isArray(assignments)) {
-      return res.status(400).json({ error: 'assignments array is required' });
+      return sendError(req, res, 'assignments array is required', 400, 'VALIDATION_ERROR');
     }
 
     const results = await rbacRepository.bulkAssignRoles(assignments, req.adminSession.username);
@@ -287,10 +282,10 @@ export async function bulkAssignRoles(req, res) {
       userAgent: req.get('user-agent'),
     });
 
-    return res.json({ results });
+    return sendSuccess(res, { results });
   } catch (error) {
     console.error('[RBAC] Failed to bulk assign roles:', error);
-    return res.status(500).json({ error: 'Failed to bulk assign roles' });
+    return sendError(req, res, 'Failed to bulk assign roles', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -310,10 +305,10 @@ export async function getAuditLogs(req, res) {
       offset: offset ? parseInt(offset) : 0,
     });
 
-    return res.json({ logs });
+    return sendSuccess(res, { logs });
   } catch (error) {
     console.error('[RBAC] Failed to get audit logs:', error);
-    return res.status(500).json({ error: 'Failed to retrieve audit logs' });
+    return sendError(req, res, 'Failed to retrieve audit logs', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -348,9 +343,9 @@ export async function getPermissionMatrix(req, res) {
       };
     }
 
-    return res.json({ matrix });
+    return sendSuccess(res, { matrix });
   } catch (error) {
     console.error('[RBAC] Failed to get permission matrix:', error);
-    return res.status(500).json({ error: 'Failed to retrieve permission matrix' });
+    return sendError(req, res, 'Failed to retrieve permission matrix', 500, 'INTERNAL_ERROR');
   }
 }

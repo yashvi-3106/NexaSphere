@@ -163,7 +163,6 @@ export const activityAuthRateLimiter = rateLimit({
     });
   },
 });
-
 // Portfolio update rate limiter — 10 requests per IP per 15 minutes
 export const portfolioRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -174,6 +173,16 @@ export const portfolioRateLimiter = rateLimit({
     'Portfolio update rate limit exceeded',
     'Too many portfolio update attempts from this IP, please try again after 15 minutes.'
   ),
+});
+
+// Sync batch rate limiter — 30 requests per IP per 15 minutes
+export const syncRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: true,
+  store: createRateLimitStore('rate-limit:sync:'),
+  handler: createLimiterHandler('Sync rate limit exceeded', 'Too many sync requests.'),
 });
 
 // Event registration rate limiter — 10 requests per IP per hour
@@ -228,25 +237,6 @@ export const searchRateLimiter = rateLimit({
     });
     res.status(options.statusCode).json({
       error: 'Too many search requests. Please slow down.',
-    });
-  },
-});
-// ---------------------------------------------------------------------------
-// Sync batch rate limiter — 10 requests per IP per minute.
-export const syncRateLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: createRateLimitStore('rate-limit:sync:'),
-  handler: (req, res, next, options) => {
-    logger.warn('Sync batch rate limit exceeded', {
-      ip: req.ip,
-      path: req.originalUrl || req.path,
-      method: req.method,
-    });
-    res.status(options.statusCode).json({
-      error: 'Too many sync requests from this IP, please try again later.',
     });
   },
 });

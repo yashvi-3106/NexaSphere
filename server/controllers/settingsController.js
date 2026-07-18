@@ -13,6 +13,7 @@
 import { PrismaClient } from '@prisma/client';
 import redis from '../config/redis.js';
 import crypto from 'crypto';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 let prisma;
 try {
@@ -223,7 +224,7 @@ export async function getSettings(req, res) {
   const env = req.query.env || process.env.NODE_ENV || 'development';
 
   const cached = await getCached(`settings:${env}`);
-  if (cached) return res.json({ env, settings: maskSecrets(cached) });
+  if (cached) return sendSuccess(res, { env, settings: maskSecrets(cached) });
 
   const rows = await prisma.platformSetting.findMany({ where: { environment: env } });
 
@@ -233,7 +234,7 @@ export async function getSettings(req, res) {
   }
 
   await setCache(`settings:${env}`, settings);
-  return res.json({ env, settings: maskSecrets(settings) });
+  return sendSuccess(res, { env, settings: maskSecrets(settings) });
 }
 
 /**
@@ -245,13 +246,13 @@ export async function updateSettings(req, res) {
   const { env = process.env.NODE_ENV || 'development', updates, preview = false } = req.body;
 
   if (!updates || typeof updates !== 'object') {
-    return res.status(400).json({ error: 'updates must be an object' });
+    return sendError(req, res, 'updates must be an object', 400, 'VALIDATION_ERROR');
   }
 
   const errors = validateSettings(updates);
-  if (Object.keys(errors).length) return res.status(422).json({ errors });
+  if (Object.keys(errors).length) return sendError(req, res, 'Validation failed', 422, 'VALIDATION_ERROR', errors);
 
-  if (preview) return res.json({ valid: true, preview: updates });
+  if (preview) return sendSuccess(res, { valid: true, preview: updates });
 
   const userId = req.user?.id;
 
@@ -293,7 +294,7 @@ export async function updateSettings(req, res) {
   await prisma.$transaction([...upserts, ...logs]);
   await invalidateCache(env);
 
-  return res.json({ success: true, updated: Object.keys(updates) });
+  return sendSuccess(res, { success: true, updated: Object.keys(updates) });
 }
 
 /**
@@ -325,7 +326,7 @@ export async function getHistory(req, res) {
     newValue: SECRET_KEYS.has(l.key) ? '***REDACTED***' : l.newValue,
   }));
 
-  return res.json({ logs: sanitized, total, page: Number(page), pages: Math.ceil(total / take) });
+  return sendSuccess(res, { logs: sanitized, total, page: Number(page), pages: Math.ceil(total / take) });
 }
 
 /**
@@ -334,12 +335,12 @@ export async function getHistory(req, res) {
  */
 export async function rollbackSetting(req, res) {
   const { logId } = req.body;
-  if (!logId) return res.status(400).json({ error: 'logId required' });
+  if (!logId) return sendError(req, res, 'logId required', 400, 'VALIDATION_ERROR');
 
   const log = await prisma.settingsChangeLog.findUnique({ where: { id: logId } });
-  if (!log) return res.status(404).json({ error: 'Log entry not found' });
+  if (!log) return sendError(req, res, 'Log entry not found', 404, 'NOT_FOUND');
   if (log.previousValue === null)
-    return res.status(400).json({ error: 'No previous value to roll back to' });
+    return sendError(req, res, 'No previous value to roll back to', 400, 'VALIDATION_ERROR');
 
   const userId = req.user?.id;
 
@@ -362,7 +363,7 @@ export async function rollbackSetting(req, res) {
   ]);
 
   await invalidateCache(log.environment);
-  return res.json({ success: true, key: log.key, environment: log.environment });
+  return sendSuccess(res, { success: true, key: log.key, environment: log.environment });
 }
 
 /**
@@ -380,7 +381,7 @@ export async function exportSettings(req, res) {
 
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Content-Disposition', `attachment; filename="settings-${env}-${Date.now()}.json"`);
-  return res.json({ env, exportedAt: new Date().toISOString(), settings });
+  return sendSuccess(res, { env, exportedAt: new Date().toISOString(), settings });
 }
 
 /**
@@ -390,7 +391,7 @@ export async function exportSettings(req, res) {
  */
 export async function importSettings(req, res) {
   const { env = 'development', settings } = req.body;
-  if (!settings) return res.status(400).json({ error: 'settings object required' });
+  if (!settings) return sendError(req, res, 'settings object required', 400, 'VALIDATION_ERROR');
 
   // Drop redacted secrets
   const toImport = Object.fromEntries(
@@ -398,7 +399,7 @@ export async function importSettings(req, res) {
   );
 
   const errors = validateSettings(toImport);
-  if (Object.keys(errors).length) return res.status(422).json({ errors });
+  if (Object.keys(errors).length) return sendError(req, res, 'Validation failed', 422, 'VALIDATION_ERROR', errors);
 
   // Re-use updateSettings logic
   req.body = { env, updates: toImport };

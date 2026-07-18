@@ -9,6 +9,7 @@ import { forumRepository } from '../repositories/forumRepository.js';
 import { resourcesRepository } from '../repositories/resourcesRepository.js';
 import { portfolioRepository } from '../repositories/portfolioRepository.js';
 import { withDb } from '../repositories/db.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,7 +24,7 @@ export const searchController = {
       const skip = (page - 1) * limit;
 
       if (!q || q.length < 2) {
-        return res.json({ results: [], total: 0, page, limit });
+        return sendSuccess(res, { results: [], total: 0, page, limit });
       }
 
       const { isTypesenseEnabled, typesenseClient } = await import('../config/typesense.js');
@@ -112,12 +113,12 @@ export const searchController = {
           // Sort by match score
           results.sort((a, b) => b.score - a.score);
 
-          const trueTotal = results.length;
+          const typesenseTotal = results.length;
           const paginated = results.slice(skip, skip + limit);
 
-          return res.json({
+          return sendSuccess(res, {
             results: paginated,
-            total: trueTotal,
+            total: typesenseTotal,
             query: q,
             page,
             limit,
@@ -197,10 +198,157 @@ export const searchController = {
       const trueTotal = results.length;
       results = results.slice(skip, skip + limit);
 
-      return res.json({ results, total: trueTotal, page, limit, query: q });
+        try {
+          const portfolios = await portfolioRepository.listAll();
+          let allPortfolios = portfolios;
+          if (!allPortfolios || allPortfolios.length === 0) {
+            const PORTFOLIOS_FILE = path.join(__dirname, '..', 'data', 'portfolios.json');
+            try {
+              const raw = await fs.readFile(PORTFOLIOS_FILE, 'utf8');
+              const data = JSON.parse(raw);
+              allPortfolios = Object.values(data);
+            } catch {}
+          }
+          const portMatched = (allPortfolios || [])
+            .filter(
+              (p) =>
+                p.username?.toLowerCase().includes(query) ||
+                p.title?.toLowerCase().includes(query) ||
+                p.bio?.toLowerCase().includes(query) ||
+                p.skills?.some((s) => s.toLowerCase().includes(query))
+            )
+            .map((p) => ({
+              id: p.username,
+              type: 'portfolio',
+              title: p.title || p.username,
+              description: p.bio,
+              image: p.avatarUrl || p.avatar_url,
+              tags: p.skills,
+              url: `/p/${p.username}`,
+            }));
+          matchedUsers = [...matchedUsers, ...portMatched];
+        } catch (e) {
+          console.error('Search portfolios error:', e);
+        }
+
+        // Deduplicate
+        const seen = new Set();
+        const uniqueUsers = [];
+        for (const u of matchedUsers) {
+          const key = u.url.toLowerCase();
+          if (!seen.has(key)) {
+            seen.add(key);
+            uniqueUsers.push(u);
+          }
+        }
+        results = [...results, ...uniqueUsers];
+      }
+
+      if (type === 'all' || type === 'communities' || type === 'groups') {
+        try {
+          const categories = await forumRepository.getCategories();
+          let allCats = categories;
+          if (!allCats || allCats.length === 0) {
+            allCats = [
+              {
+                id: 1,
+                name: 'General',
+                slug: 'general',
+                description: 'General discussions about the club and community',
+                icon: '💬',
+              },
+              {
+                id: 2,
+                name: 'Events',
+                slug: 'events',
+                description: 'Questions and discussions about past and upcoming events',
+                icon: '📅',
+              },
+              {
+                id: 3,
+                name: 'Technical Help',
+                slug: 'technical-help',
+                description: 'Get help with technical issues, code, and projects',
+                icon: '💻',
+              },
+              {
+                id: 4,
+                name: 'Projects',
+                slug: 'projects',
+                description: 'Share and discuss community projects',
+                icon: '🚀',
+              },
+              {
+                id: 5,
+                name: 'Career',
+                slug: 'career',
+                description: 'Career advice, internships, and professional development',
+                icon: '🎯',
+              },
+            ];
+          }
+          const matched = (allCats || [])
+            .filter(
+              (c) =>
+                c.name?.toLowerCase().includes(query) ||
+                c.description?.toLowerCase().includes(query)
+            )
+            .map((c) => ({
+              id: String(c.id),
+              type: 'community',
+              title: `${c.icon || '📌'} ${c.name}`,
+              description: c.description,
+              url: `/forum?category=${c.slug}`,
+            }));
+          results = [...results, ...matched];
+        } catch (e) {
+          console.error('Search communities error:', e);
+        }
+      }
+
+      if (type === 'all' || type === 'posts' || type === 'discussions') {
+        try {
+          const threadsRes = await forumRepository.listThreads({ q: query, limit });
+          const matched = (threadsRes?.rows || []).map((t) => ({
+            id: String(t.id),
+            type: 'post',
+            title: t.title,
+            description: t.content,
+            tags: t.tags,
+            date: t.createdAt,
+            url: `/forum/${t.id}`,
+          }));
+          results = [...results, ...matched];
+        } catch (e) {
+          console.error('Search posts error:', e);
+        }
+      }
+
+      if (type === 'all' || type === 'resources') {
+        try {
+          const resourcesRes = await resourcesRepository.list({ q: query, limit });
+          const matched = (resourcesRes?.rows || []).map((r) => ({
+            id: String(r.id),
+            type: 'resource',
+            title: r.title,
+            description: r.description,
+            tags: r.tags,
+            category: r.category,
+            url: `/resources`,
+          }));
+          results = [...results, ...matched];
+        } catch (e) {
+          console.error('Search resources error:', e);
+        }
+      }
+
+      const allResultsCount = results.length;
+      results = results.slice(0, limit);
+
+      return sendSuccess(res, { results, total: allResultsCount, query: q });
     } catch (err) {
       console.error('Search error:', err);
-      return res.status(500).json({ error: 'Search failed', results: [], total: 0 });
+      return sendError(req, res, 'Search failed', 500, 'INTERNAL_ERROR', { results: [], total: 0 });
     }
   },
 
@@ -232,12 +380,13 @@ export const searchController = {
           url: `/events/${ev.id}`,
         }));
 
-      return res.json({ trending: sorted, popularSearches });
+      return sendSuccess(res, { trending: sorted, popularSearches });
     } catch (err) {
       console.error('Trending error:', err);
-      return res
-        .status(500)
-        .json({ error: 'Failed to fetch trending', trending: [], popularSearches: [] });
+      return sendError(req, res, 'Failed to fetch trending', 500, 'INTERNAL_ERROR', {
+        trending: [],
+        popularSearches: [],
+      });
     }
   },
 
@@ -295,12 +444,12 @@ export const searchController = {
           }));
       }
 
-      return res.json({ recommendations: recommended });
+      return sendSuccess(res, { recommendations: recommended });
     } catch (err) {
       console.error('Recommendations error:', err);
-      return res
-        .status(500)
-        .json({ error: 'Failed to fetch recommendations', recommendations: [] });
+      return sendError(req, res, 'Failed to fetch recommendations', 500, 'INTERNAL_ERROR', {
+        recommendations: [],
+      });
     }
   },
 };

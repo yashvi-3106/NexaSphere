@@ -1,5 +1,6 @@
 import { followsService } from '../services/followsService.js';
 import { wrapAsync } from '../middleware/asyncHandler.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 const MAX_LIMIT = 100;
 
@@ -18,39 +19,39 @@ export const followUser = wrapAsync(async (req, res) => {
   const { followingId } = req.params;
 
   if (!followerId) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const followingIdNum = parseInt(followingId, 10);
   if (isNaN(followingIdNum)) {
-    return res.status(400).json({ error: 'Invalid followingId' });
+    return sendError(req, res, 'Invalid followingId', 400, 'VALIDATION_ERROR');
   }
 
   if (followerId === followingIdNum) {
-    return res.status(400).json({ error: 'Users cannot follow themselves' });
+    return sendError(req, res, 'Users cannot follow themselves', 400, 'VALIDATION_ERROR');
   }
 
   try {
     const follow = await followsService.followUser(followerId, followingIdNum);
 
-    return res.status(201).json({
+    return sendSuccess(res, {
       success: true,
       message: 'Successfully followed user',
       follow,
-    });
+    }, 201);
   } catch (error) {
     if (
       error.message.includes('Already following') ||
       error.message.includes('already following')
     ) {
-      return res.status(400).json({ error: 'Already following this user' });
+      return sendError(req, res, 'Already following this user', 400, 'VALIDATION_ERROR');
     }
     if (error.message.includes('cannot follow themselves')) {
-      return res.status(400).json({ error: 'Users cannot follow themselves' });
+      return sendError(req, res, 'Users cannot follow themselves', 400, 'VALIDATION_ERROR');
     }
 
     console.error('[Follows] Error following user:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -63,28 +64,28 @@ export const unfollowUser = wrapAsync(async (req, res) => {
   const { followingId } = req.params;
 
   if (!followerId) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const followingIdNum = parseInt(followingId, 10);
   if (isNaN(followingIdNum)) {
-    return res.status(400).json({ error: 'Invalid followingId' });
+    return sendError(req, res, 'Invalid followingId', 400, 'VALIDATION_ERROR');
   }
 
   try {
     const unfollowed = await followsService.unfollowUser(followerId, followingIdNum);
 
     if (!unfollowed) {
-      return res.status(404).json({ error: 'Not following this user' });
+      return sendError(req, res, 'Not following this user', 404, 'NOT_FOUND');
     }
 
-    return res.json({
+    return sendSuccess(res, {
       success: true,
       message: 'Successfully unfollowed user',
     });
   } catch (error) {
     console.error('[Follows] Error unfollowing user:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -98,13 +99,13 @@ export const getUserFollowers = wrapAsync(async (req, res) => {
 
   const userIdNum = parseInt(userId, 10);
   if (isNaN(userIdNum)) {
-    return res.status(400).json({ error: 'Invalid userId' });
+    return sendError(req, res, 'Invalid userId', 400, 'VALIDATION_ERROR');
   }
 
   try {
     const result = await followsService.getFollowers(userIdNum, { page, limit });
 
-    return res.json({
+    return sendSuccess(res, {
       followers: result.followers,
       pagination: {
         page: result.page,
@@ -115,7 +116,7 @@ export const getUserFollowers = wrapAsync(async (req, res) => {
     });
   } catch (error) {
     console.error('[Follows] Error getting followers:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -129,13 +130,13 @@ export const getUserFollowing = wrapAsync(async (req, res) => {
 
   const userIdNum = parseInt(userId, 10);
   if (isNaN(userIdNum)) {
-    return res.status(400).json({ error: 'Invalid userId' });
+    return sendError(req, res, 'Invalid userId', 400, 'VALIDATION_ERROR');
   }
 
   try {
     const result = await followsService.getFollowing(userIdNum, { page, limit });
 
-    return res.json({
+    return sendSuccess(res, {
       following: result.users,
       pagination: {
         page: result.page,
@@ -146,7 +147,7 @@ export const getUserFollowing = wrapAsync(async (req, res) => {
     });
   } catch (error) {
     console.error('[Follows] Error getting following:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -159,19 +160,19 @@ export const getFollowCounts = wrapAsync(async (req, res) => {
 
   const userIdNum = parseInt(userId, 10);
   if (isNaN(userIdNum)) {
-    return res.status(400).json({ error: 'Invalid userId' });
+    return sendError(req, res, 'Invalid userId', 400, 'VALIDATION_ERROR');
   }
 
   try {
     const counts = await followsService.getFollowCounts(userIdNum);
 
-    return res.json({
+    return sendSuccess(res, {
       followersCount: counts.followersCount,
       followingCount: counts.followingCount,
     });
   } catch (error) {
     console.error('[Follows] Error getting follow counts:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -184,23 +185,23 @@ export const checkFollowStatus = wrapAsync(async (req, res) => {
   const { followingId } = req.params;
 
   if (!followerId) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   const followingIdNum = parseInt(followingId, 10);
   if (isNaN(followingIdNum)) {
-    return res.status(400).json({ error: 'Invalid followingId' });
+    return sendError(req, res, 'Invalid followingId', 400, 'VALIDATION_ERROR');
   }
 
   try {
     const isFollowing = await followsService.isFollowing(followerId, followingIdNum);
 
-    return res.json({
+    return sendSuccess(res, {
       isFollowing,
     });
   } catch (error) {
     console.error('[Follows] Error checking follow status:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -213,7 +214,7 @@ export const getFollowedUsersActivityFeed = wrapAsync(async (req, res) => {
   const { page, limit } = parsePaginationParams(req.query);
 
   if (!userId) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   try {
@@ -222,7 +223,7 @@ export const getFollowedUsersActivityFeed = wrapAsync(async (req, res) => {
       limit,
     });
 
-    return res.json({
+    return sendSuccess(res, {
       activities: result.activities,
       pagination: {
         page: result.page,
@@ -233,7 +234,7 @@ export const getFollowedUsersActivityFeed = wrapAsync(async (req, res) => {
     });
   } catch (error) {
     console.error('[Follows] Error getting activity feed:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -246,13 +247,13 @@ export const getCurrentUserFollowing = wrapAsync(async (req, res) => {
   const { page, limit } = parsePaginationParams(req.query);
 
   if (!userId) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   try {
     const result = await followsService.getFollowing(userId, { page, limit });
 
-    return res.json({
+    return sendSuccess(res, {
       following: result.users,
       pagination: {
         page: result.page,
@@ -263,7 +264,7 @@ export const getCurrentUserFollowing = wrapAsync(async (req, res) => {
     });
   } catch (error) {
     console.error('[Follows] Error getting current user following:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -276,13 +277,13 @@ export const getCurrentUserFollowers = wrapAsync(async (req, res) => {
   const { page, limit } = parsePaginationParams(req.query);
 
   if (!userId) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   try {
     const result = await followsService.getFollowers(userId, { page, limit });
 
-    return res.json({
+    return sendSuccess(res, {
       followers: result.followers,
       pagination: {
         page: result.page,
@@ -293,7 +294,7 @@ export const getCurrentUserFollowers = wrapAsync(async (req, res) => {
     });
   } catch (error) {
     console.error('[Follows] Error getting current user followers:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -305,18 +306,18 @@ export const getCurrentUserFollowCounts = wrapAsync(async (req, res) => {
   const userId = req.studentUser?.sub;
 
   if (!userId) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return sendError(req, res, 'Authentication required', 401, 'UNAUTHORIZED');
   }
 
   try {
     const counts = await followsService.getFollowCounts(userId);
 
-    return res.json({
+    return sendSuccess(res, {
       followersCount: counts.followersCount,
       followingCount: counts.followingCount,
     });
   } catch (error) {
     console.error('[Follows] Error getting current user follow counts:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });

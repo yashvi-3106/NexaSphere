@@ -1,7 +1,8 @@
 import { notificationPreferenceService } from "../services/notificationPreferenceService.js";
+import { sendSuccess } from '../utils/responseHelper.js';
 
 export const getPreferences = (req, res) => {
-  res.json(
+  sendSuccess(res,
     notificationPreferenceService.getPreferences(req.params.userId)
   );
 };
@@ -13,11 +14,11 @@ export const updatePreferences = (req, res) => {
       req.body
     );
 
-  res.json(updated);
+  sendSuccess(res, updated);
 };
 
 export const getHistory = (req, res) => {
-  res.json({
+  sendSuccess(res, {
     history:
       notificationPreferenceService.getHistory(req.params.userId),
   });

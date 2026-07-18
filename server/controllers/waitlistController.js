@@ -1,21 +1,18 @@
-import { waitlistService } from '../services/waitlistService.js';
+import { waitlistService } from "../services/waitlistService.js";
+import { sendSuccess, sendError } from "../utils/responseHelper.js";
 
 export const joinWaitlist = async (req, res) => {
   try {
     const result = await waitlistService.joinWaitlist(req.body);
 
-    return res.status(200).json({
-      success: true,
-      message: 'User added to waitlist successfully.',
+    return sendSuccess(res, {
+      message: "User added to waitlist successfully.",
       data: result,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to join waitlist.',
-    });
+    return sendError(req, res, "Failed to join waitlist.", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -25,17 +22,13 @@ export const getPosition = async (req, res) => {
 
     const position = await waitlistService.getPosition(eventId, userId);
 
-    return res.json({
-      success: true,
+    return sendSuccess(res, {
       data: position,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch waitlist position.',
-    });
+    return sendError(req, res, "Failed to fetch waitlist position.", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -45,18 +38,14 @@ export const autoEnroll = async (req, res) => {
 
     const enrolled = await waitlistService.autoEnroll(eventId);
 
-    return res.json({
-      success: true,
-      message: 'Auto-enrollment completed.',
+    return sendSuccess(res, {
+      message: "Auto-enrollment completed.",
       data: enrolled,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Auto-enrollment failed.',
-    });
+    return sendError(req, res, "Auto-enrollment failed.", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -64,18 +53,14 @@ export const getNotifications = async (req, res) => {
   try {
     const notifications = await waitlistService.notifications();
 
-    return res.json({
-      success: true,
+    return sendSuccess(res, {
       total: notifications.length,
       data: notifications,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch notifications.',
-    });
+    return sendError(req, res, "Failed to fetch notifications.", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -83,17 +68,13 @@ export const getAnalytics = async (req, res) => {
   try {
     const analytics = await waitlistService.analytics();
 
-    return res.json({
-      success: true,
+    return sendSuccess(res, {
       data: analytics,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch analytics.',
-    });
+    return sendError(req, res, "Failed to fetch analytics.", 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -103,17 +84,13 @@ export const setDeadline = async (req, res) => {
 
     const result = await waitlistService.setDeadline(eventId, deadline);
 
-    return res.json({
-      success: true,
-      message: 'Registration deadline updated.',
+    return sendSuccess(res, {
+      message: "Registration deadline updated.",
       data: result,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to update registration deadline.',
-    });
+    return sendError(req, res, "Failed to update registration deadline.", 500, 'INTERNAL_ERROR');
   }
 };

@@ -6,6 +6,7 @@ import { initTracing } from './tracing.js';
 import { httpMetricsMiddleware } from './httpMetrics.js';
 import { getMetricsText, getMetricsContentType } from './metrics.js';
 import { startBusinessMetricsCollectors } from './businessMetrics.js';
+import { sendError } from '../utils/responseHelper.js';
 
 export function initObservability(app) {
   if (process.env.OTEL_ENABLED !== 'false') {
@@ -22,7 +23,7 @@ export function initObservability(app) {
       if (authToken) {
         const provided = req.headers.authorization?.replace(/^Bearer\s+/i, '');
         if (provided !== authToken) {
-          return res.status(403).json({ error: 'Forbidden' });
+          return sendError(req, res, 'Forbidden', 403, 'FORBIDDEN');
         }
       }
 

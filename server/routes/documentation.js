@@ -10,6 +10,7 @@ import specs from '../config/swagger.js';
 import logger from '../utils/logger.js';
 import yaml from 'yaml';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 const router = express.Router();
 
@@ -80,8 +81,7 @@ router.get('/swagger.yaml', requireAdminInProd, (req, res) => {
  */
 router.get('/docs-info', requireAdminInProd, (req, res) => {
   try {
-    res.json({
-      success: true,
+    sendSuccess(res, {
       message: 'API Documentation Available',
       documentation: {
         swagger_ui: 'http://localhost:3000/api/docs',
@@ -94,7 +94,7 @@ router.get('/docs-info', requireAdminInProd, (req, res) => {
     });
   } catch (error) {
     logger.error('Error getting docs info', { error: error.message });
-    res.status(500).json({ success: false, error: error.message });
+    sendError(req, res, error.message, 500, 'INTERNAL_ERROR');
   }
 });
 

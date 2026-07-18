@@ -6,16 +6,17 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const db = require('../db');
+const { sendSuccess, sendError, sendNoContent } = require('../utils/responseHelper');
 
 // ── GET /api/albums?eventId=xxx ───────────────────────────────────────────────
 router.get('/', authenticate, async (req, res) => {
   try {
     const { eventId } = req.query;
-    if (!eventId) return res.status(400).json({ error: 'eventId required' });
+    if (!eventId) return sendError(req, res, 'eventId required', 400, 'VALIDATION_ERROR');
     const albums = await db.albums.forEvent(eventId);
-    res.json({ albums });
+    sendSuccess(res, { albums });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -23,7 +24,7 @@ router.get('/', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
   try {
     const { eventId, name, description, parentAlbumId, isCollaborative } = req.body;
-    if (!eventId || !name) return res.status(400).json({ error: 'eventId and name required' });
+    if (!eventId || !name) return sendError(req, res, 'eventId and name required', 400, 'VALIDATION_ERROR');
 
     const album = await db.albums.create({
       eventId,
@@ -36,9 +37,9 @@ router.post('/', authenticate, async (req, res) => {
       photoCount: 0,
     });
 
-    res.status(201).json(album);
+    sendSuccess(res, album, 201);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -46,8 +47,8 @@ router.post('/', authenticate, async (req, res) => {
 router.patch('/:id', authenticate, async (req, res) => {
   try {
     const album = await db.albums.findById(req.params.id);
-    if (!album) return res.status(404).json({ error: 'Album not found' });
-    if (album.createdById !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    if (!album) return sendError(req, res, 'Album not found', 404, 'NOT_FOUND');
+    if (album.createdById !== req.user.id) return sendError(req, res, 'Forbidden', 403, 'FORBIDDEN');
 
     const { name, description, coverPhotoId } = req.body;
     const updated = await db.albums.update(req.params.id, {
@@ -56,9 +57,9 @@ router.patch('/:id', authenticate, async (req, res) => {
       ...(coverPhotoId && { coverPhotoId }),
     });
 
-    res.json(updated);
+    sendSuccess(res, updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -66,13 +67,13 @@ router.patch('/:id', authenticate, async (req, res) => {
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     const album = await db.albums.findById(req.params.id);
-    if (!album) return res.status(404).json({ error: 'Album not found' });
-    if (album.createdById !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    if (!album) return sendError(req, res, 'Album not found', 404, 'NOT_FOUND');
+    if (album.createdById !== req.user.id) return sendError(req, res, 'Forbidden', 403, 'FORBIDDEN');
 
     await db.albums.delete(req.params.id);
-    res.status(204).end();
+    sendNoContent(res);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -81,12 +82,12 @@ router.delete('/:id', authenticate, async (req, res) => {
 router.post('/:id/featured', authenticate, async (req, res) => {
   try {
     const { photoId } = req.body;
-    if (!photoId) return res.status(400).json({ error: 'photoId required' });
+    if (!photoId) return sendError(req, res, 'photoId required', 400, 'VALIDATION_ERROR');
 
     await db.albums.featurePhoto(req.params.id, photoId, req.user.id);
-    res.status(204).end();
+    sendNoContent(res);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 });
 

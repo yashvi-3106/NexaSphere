@@ -2,7 +2,7 @@
 // DB persistence + Prisma models are TODO.
 
 import crypto from 'crypto';
-import { renderCertificatePdf } from '../services/certificates/certificatePdfGenerator.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 // --- Helpers ---
 function buildCertificateCode({ userId, eventId }) {
@@ -21,8 +21,7 @@ export async function verifyCertificate(req, res) {
 
   // TODO: lookup certificate by code.
   // Placeholder response shape per acceptance criteria.
-  return res.json({
-    ok: true,
+  return sendSuccess(res, {
     certificate: {
       code,
       attendeeName: 'Demo Attendee',
@@ -39,40 +38,20 @@ export async function verifyCertificate(req, res) {
 
 export async function getMyCertificates(req, res) {
   // TODO: use req.studentUser / DB
-  return res.json({
+  return sendSuccess(res, {
     certificates: [],
   });
 }
 
 export async function downloadCertificatePdf(req, res) {
-  try {
-    const { id } = req.params;
-    // Mock data based on id
-    const variables = {
-      code: id || 'DEMO-1234',
-      attendeeName: 'Demo Attendee',
-      eventName: 'NexaSphere Event',
-      date: new Date().toISOString().slice(0, 10),
-      verifyUrl: `${process.env.PUBLIC_APP_URL || 'http://localhost:3000'}/certificates/verify/${id || 'DEMO-1234'}`,
-    };
-
-    const pdfBuffer = await renderCertificatePdf({ variables });
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=certificate-${id || 'demo'}.pdf`);
-    res.setHeader('Content-Length', pdfBuffer.length);
-
-    return res.end(pdfBuffer);
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    return res.status(500).json({ error: 'Failed to generate certificate PDF' });
-  }
+  // TODO: stream from S3
+  return sendError(req, res, 'PDF download not implemented yet (S3 + storage layer TODO).', 501, 'NOT_IMPLEMENTED');
 }
 
 export async function getOpenBadge(req, res) {
   // TODO: return OpenBadges compliant JSON from stored badge assertion.
   const { id } = req.params;
-  return res.json({
+  return sendSuccess(res, {
     id,
     openBadges: {
       '@context': 'https://w3.org/2018/credentials/v1',
@@ -88,7 +67,7 @@ export async function getCertificateVerificationShare(req, res) {
   const { id } = req.params;
   const verifyUrl = `${process.env.PUBLIC_APP_URL || ''}/certificates/verify/${id}`;
 
-  return res.json({
+  return sendSuccess(res, {
     id,
     linkedin: {
       shareUrl: verifyUrl,
@@ -109,7 +88,7 @@ export async function issueCertificates(req, res) {
   const attendeeIds = Array.isArray(body.attendeeIds) ? body.attendeeIds : [];
 
   if (!eventId || attendeeIds.length === 0) {
-    return res.status(400).json({ error: 'eventId and attendeeIds[] are required' });
+    return sendError(req, res, 'eventId and attendeeIds[] are required', 400, 'VALIDATION_ERROR');
   }
 
   // TODO: generate PDF/QR/badge and persist
@@ -123,5 +102,5 @@ export async function issueCertificates(req, res) {
     };
   });
 
-  return res.json({ ok: true, issued });
+  return sendSuccess(res, { issued });
 }

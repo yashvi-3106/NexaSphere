@@ -1,6 +1,15 @@
 import { Router } from 'express';
 import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
+import { validate } from '../middleware/validate.js';
 import * as financialController from '../controllers/financialController.js';
+import {
+  createBudgetSchema,
+  updateBudgetSchema,
+  cloneBudgetSchema,
+  createExpenseSchema,
+  updateExpenseSchema,
+  createRevenueSchema,
+} from '../validators/routes/financialsSchemas.js';
 
 const router = Router();
 
@@ -8,21 +17,21 @@ const router = Router();
 router.use(requireStudentAuth);
 
 // Budgets
-router.post('/budgets', financialController.createBudget);
+router.post('/budgets', validate(createBudgetSchema), financialController.createBudget);
 router.get('/budgets', financialController.getBudgets);
 router.get('/budgets/:id', financialController.getBudgetById);
-router.put('/budgets/:id', financialController.updateBudget);
+router.put('/budgets/:id', validate(updateBudgetSchema), financialController.updateBudget);
 router.delete('/budgets/:id', financialController.deleteBudget);
-router.post('/budgets/:id/clone', financialController.cloneBudget);
+router.post('/budgets/:id/clone', validate(cloneBudgetSchema), financialController.cloneBudget);
 
 // Expenses
-router.post('/expenses', financialController.createExpense);
+router.post('/expenses', validate(createExpenseSchema), financialController.createExpense);
 router.get('/expenses', financialController.getExpenses);
-router.put('/expenses/:id', financialController.updateExpense);
+router.put('/expenses/:id', validate(updateExpenseSchema), financialController.updateExpense);
 router.delete('/expenses/:id', financialController.deleteExpense);
 
 // Revenue
-router.post('/revenues', financialController.createRevenue);
+router.post('/revenues', validate(createRevenueSchema), financialController.createRevenue);
 router.get('/revenues', financialController.getRevenues);
 router.delete('/revenues/:id', financialController.deleteRevenue);
 

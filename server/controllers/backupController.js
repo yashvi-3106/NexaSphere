@@ -1,14 +1,15 @@
 import { backupService } from '../services/backupService.js';
 import logger from '../utils/logger.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 export const getBackups = async (req, res) => {
   try {
     const backups = await backupService.getBackupHistory();
     const stats = await backupService.getStorageStats();
-    res.json({ backups, stats });
+    sendSuccess(res, { backups, stats });
   } catch (err) {
     logger.error('[BackupController] Failed to get backups:', err.message);
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -22,10 +23,10 @@ export const runManualBackup = async (req, res) => {
     } else {
       key = await backupService.performBackup(type || 'full');
     }
-    res.json({ message: 'Backup triggered successfully', key });
+    sendSuccess(res, { message: 'Backup triggered successfully', key });
   } catch (err) {
     logger.error('[BackupController] Manual backup failed:', err.message);
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -38,22 +39,22 @@ export const runRestore = async (req, res) => {
     } else if (backupKey) {
       result = await backupService.runRestore(backupKey);
     } else {
-      return res.status(400).json({ error: 'Either backupKey or targetTime must be provided' });
+      return sendError(req, res, 'Either backupKey or targetTime must be provided', 400, 'VALIDATION_ERROR');
     }
-    res.json({ message: 'Restore completed successfully', result });
+    sendSuccess(res, { message: 'Restore completed successfully', result });
   } catch (err) {
     logger.error('[BackupController] Restore failed:', err.message);
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
 export const getRestoreHistory = async (req, res) => {
   try {
     const history = await backupService.getRecoveryTestHistory();
-    res.json({ history });
+    sendSuccess(res, { history });
   } catch (err) {
     logger.error('[BackupController] Failed to get restore history:', err.message);
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -61,12 +62,12 @@ export const deleteBackup = async (req, res) => {
   try {
     const { key } = req.body;
     if (!key) {
-      return res.status(400).json({ error: 'Backup key is required' });
+      return sendError(req, res, 'Backup key is required', 400, 'VALIDATION_ERROR');
     }
     await backupService.deleteBackupFile(key);
-    res.json({ message: 'Backup deleted successfully' });
+    sendSuccess(res, { message: 'Backup deleted successfully' });
   } catch (err) {
     logger.error('[BackupController] Delete backup failed:', err.message);
-    res.status(500).json({ error: err.message });
+    sendError(req, res, err.message, 500, 'INTERNAL_ERROR');
   }
 };

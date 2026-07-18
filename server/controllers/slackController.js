@@ -1,6 +1,7 @@
 import { slackRepository } from '../repositories/slackRepository.js';
 import { eventsRepository } from '../repositories/eventsRepository.js';
 import logger from '../utils/logger.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 export const startSlackAuth = (req, res) => {
   const clientId = process.env.SLACK_CLIENT_ID;
@@ -139,7 +140,7 @@ export const handleSlackCommand = async (req, res) => {
 export const getSlackConfig = async (req, res) => {
   try {
     const config = await slackRepository.getConfig();
-    return res.json({
+    return sendSuccess(res, {
       connected: !!config?.bot_token,
       channel_name: config?.channel_name || null,
       channel_id: config?.channel_id || null,
@@ -148,7 +149,7 @@ export const getSlackConfig = async (req, res) => {
       notify_announcements: config?.notify_announcements !== false,
     });
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to retrieve Slack configuration' });
+    return sendError(req, res, 'Failed to retrieve Slack configuration', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -161,17 +162,17 @@ export const updateSlackConfig = async (req, res) => {
       notify_announcements,
       webhook_url,
     });
-    return res.json({ success: true, config: updated });
+    return sendSuccess(res, { config: updated });
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to update Slack configuration: ' + err.message });
+    return sendError(req, res, 'Failed to update Slack configuration: ' + err.message, 500, 'INTERNAL_ERROR');
   }
 };
 
 export const disconnectSlack = async (req, res) => {
   try {
     await slackRepository.deleteConfig();
-    return res.json({ success: true });
+    return sendSuccess(res, { success: true });
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to disconnect Slack workspace: ' + err.message });
+    return sendError(req, res, 'Failed to disconnect Slack workspace: ' + err.message, 500, 'INTERNAL_ERROR');
   }
 };

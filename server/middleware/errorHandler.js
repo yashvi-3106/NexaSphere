@@ -1,6 +1,9 @@
 /**
  * Global Error Handler Middleware
- * Handles all errors in a centralized location
+ * Handles all errors in a centralized location.
+ *
+ * Produces the standardized error shape:
+ *   { error: { code, message, details?, traceId? } }
  */
 
 import logger from '../utils/logger.js';
@@ -8,33 +11,68 @@ import { captureException } from '../utils/sentry.js';
 import { sendSlackAlert } from '../utils/slack.js';
 import { trackError } from '../utils/errorTracker.js';
 import { logError } from '../services/errorTrackingService.js';
+import { ErrorCodes } from '../utils/errors.js';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function resolveUserId(req) {
   return req.user?.id || req.adminSession?.username || null;
 }
 
 /**
- * Main error handler middleware
- * @param {Error} err - Error object
- * @param {Object} req - Express request
- * @param {Object} res - Express response
- * @param {Function} next - Express next
+ * Map an HTTP status code to a machine-readable error code.
+ * Used when the thrown error does not carry its own `code` property.
+ */
+function statusToCode(status) {
+  if (status >= 500) return ErrorCodes.INTERNAL_ERROR;
+  const map = {
+    400: ErrorCodes.VALIDATION_ERROR,
+    401: ErrorCodes.UNAUTHORIZED,
+    403: ErrorCodes.FORBIDDEN,
+    404: ErrorCodes.NOT_FOUND,
+    409: ErrorCodes.CONFLICT,
+    429: ErrorCodes.RATE_LIMITED,
+    502: ErrorCodes.DEPENDENCY_ERROR,
+  };
+  return map[status] || ErrorCodes.INTERNAL_ERROR;
+}
+
+// ---------------------------------------------------------------------------
+// Main error handler
+// ---------------------------------------------------------------------------
+
+/**
+ * @param {Error}      err - Error object
+ * @param {Object}     req - Express request
+ * @param {Object}     res - Express response
+ * @param {Function}   next - Express next
  */
 const errorHandler = (err, req, res, next) => {
-  // Determine error status code
+  // Determine error metadata
   const status = err.statusCode || err.status || 500;
-  const message = err.message || 'Internal Server Error';
+  const code = err.code || statusToCode(status);
+  const message =
+    process.env.NODE_ENV === 'production' && status >= 500
+      ? 'Internal server error'
+      : err.message || 'Internal server error';
+  const traceId = req.reqId || null;
+  const details = err.details || undefined;
+
+  // ---- Tracking & instrumentation ----
   const trackedError = trackError(err);
   logger.error('Tracked Error', trackedError);
 
-  // Log error details
   const errorLog = {
     status,
+    code,
     message,
     url: req.originalUrl,
     method: req.method,
     ip: req.ip,
     userId: resolveUserId(req),
+    traceId,
     timestamp: new Date().toISOString(),
     stack: err.stack,
   };
@@ -69,17 +107,11 @@ const errorHandler = (err, req, res, next) => {
     userId: resolveUserId(req),
     requestPath: req.originalUrl,
     method: req.method,
-    tags: { errorType: err.name, status },
+    tags: { errorType: err.name, code, status },
     extra: { errorLog },
   });
 
-  // Send Slack alert for server-side incidents only.
-  // 401 responses are expected client behavior (bots, scanners, health checks,
-  // and users acting before login) and previously fired an alert for every
-  // unauthenticated request, flooding the channel and masking real incidents.
-  // Restricting alerts to status >= 500 keeps the signal limited to genuine
-  // server faults. The query string is stripped from the alerted URL so any
-  // sensitive query parameter values are not forwarded to Slack.
+  // Slack alert for ≥500 only (avoids noise from 401 scanners, etc.)
   if (status >= 500) {
     const pathOnly = req.originalUrl.split('?')[0];
     sendSlackAlert({
@@ -93,46 +125,51 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Send response
+  // ---- Standardized error response ----
   res.status(status).json({
-    success: false,
-    recoveryRequired: status >= 500,
     error: {
-      status,
-      message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : message,
-      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
+      code,
+      message,
+      ...(details !== undefined && { details }),
+      ...(traceId && { traceId }),
     },
-    timestamp: new Date().toISOString(),
   });
 };
 
-/**
- * 404 Not Found handler
- * @param {Object} req - Express request
- * @param {Object} res - Express response
- */
+// ---------------------------------------------------------------------------
+// 404 handler
+// ---------------------------------------------------------------------------
+
 const notFoundHandler = (req, res) => {
   const status = 404;
   const message = `Route ${req.originalUrl} not found`;
+  const traceId = req.reqId || null;
 
   logger.warn('404 Not Found', {
     url: req.originalUrl,
     method: req.method,
     ip: req.ip,
+    traceId,
   });
 
   res.status(status).json({
-    success: false,
     error: {
-      status,
+      code: ErrorCodes.NOT_FOUND,
       message,
+      ...(traceId && { traceId }),
     },
   });
 };
 
+// ---------------------------------------------------------------------------
+// Validation error formatter  (does NOT send a response — returns a shape)
+// ---------------------------------------------------------------------------
+
 /**
- * Validation error handler
- * @param {Array} errors - Array of validation errors
+ * Format an array of validation errors into a consistent structure.
+ *
+ * @param {Array} errors - Array of validation error objects (from express-validator etc.)
+ * @returns {{ status: number, message: string, errors: Array<{ field, message, value }> }}
  */
 const validationErrorHandler = (errors) => {
   const formattedErrors = errors.map((err) => ({
@@ -150,9 +187,12 @@ const validationErrorHandler = (errors) => {
   };
 };
 
+// ---------------------------------------------------------------------------
+// Async error wrapper
+// ---------------------------------------------------------------------------
+
 /**
- * Async error wrapper
- * Wraps async route handlers to catch errors
+ * Wrap async route handlers so thrown errors are forwarded to `next()`.
  * @param {Function} fn - Async function
  */
 const asyncHandler = (fn) => (req, res, next) => {

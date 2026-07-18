@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { activityTimelineService } from '../services/activityTimelineService.js';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 const router = Router();
 
@@ -10,14 +11,14 @@ router.get('/admin/users/timeline', adminAuthMiddleware.requireAdmin, async (req
   try {
     const { email, username } = req.query;
     if (!email && !username) {
-      return res.status(400).json({ error: 'Must provide either email or username' });
+      return sendError(req, res, 'Must provide either email or username', 400, 'VALIDATION_ERROR');
     }
 
     const timeline = await activityTimelineService.getUserTimeline({ email, username });
-    return res.json({ timeline });
+    return sendSuccess(res, { timeline });
   } catch (error) {
     console.error('Error fetching user timeline:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -25,7 +26,7 @@ router.get('/admin/users/timeline/export', adminAuthMiddleware.requireAdmin, asy
   try {
     const { email, username } = req.query;
     if (!email && !username) {
-      return res.status(400).send('Must provide either email or username');
+      return sendError(req, res, 'Must provide either email or username', 400, 'VALIDATION_ERROR');
     }
 
     const timeline = await activityTimelineService.getUserTimeline({ email, username });
@@ -49,7 +50,7 @@ router.get('/admin/users/timeline/export', adminAuthMiddleware.requireAdmin, asy
     return res.send(csvContent);
   } catch (error) {
     console.error('Error exporting user timeline:', error);
-    return res.status(500).send('Internal server error');
+    return sendError(req, res, 'Internal server error', 500, 'INTERNAL_ERROR');
   }
 });
 

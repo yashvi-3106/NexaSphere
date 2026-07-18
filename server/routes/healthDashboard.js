@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireStudentAuth } from '../middleware/studentAuthMiddleware.js';
 import os from 'os';
 import { performance } from 'perf_hooks';
+import { sendSuccess, sendError } from '../utils/responseHelper.js';
 
 const router = Router();
 
@@ -161,8 +162,7 @@ router.get('/dashboard', requireStudentAuth, async (req, res) => {
       alerts.push({ severity: 'critical', message: 'System is unhealthy' });
     }
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: {
         system,
         process: process_info,
@@ -172,19 +172,16 @@ router.get('/dashboard', requireStudentAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch dashboard data',
-    });
+    sendError(req, res, 'Failed to fetch dashboard data', 500, 'INTERNAL_ERROR');
   }
 });
 
 router.get('/service-status', requireStudentAuth, async (req, res) => {
   try {
     const services = await checkServiceHealth();
-    res.status(200).json({ success: true, data: services });
+    sendSuccess(res, { data: services });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch service status' });
+    sendError(req, res, 'Failed to fetch service status', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -192,12 +189,11 @@ router.get('/system-metrics', requireStudentAuth, (req, res) => {
   try {
     const system = getSystemMetrics();
     const process_info = getProcessMetrics();
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
       data: { system, process: process_info, timestamp: new Date().toISOString() },
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch system metrics' });
+    sendError(req, res, 'Failed to fetch system metrics', 500, 'INTERNAL_ERROR');
   }
 });
 

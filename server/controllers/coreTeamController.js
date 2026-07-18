@@ -2,6 +2,7 @@
 import { coreTeamApplicationsRepository } from '../repositories/coreTeamApplicationsRepository.js';
 import { wrapAsync } from '../middleware/asyncHandler.js';
 import { NotFoundError } from '../utils/errors.js';
+import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
 function toSafeString(value, max = 4000) {
   return String(value ?? '')
@@ -33,7 +34,7 @@ function isEmail(s) {
 
 export const adminListCoreTeamMembers = wrapAsync(async (req, res) => {
   const members = await coreTeamService.listMembers();
-  return res.json({ members });
+  return sendSuccess(res, { members });
 });
 
 export const publicListMembers = wrapAsync(async (req, res) => {
@@ -50,9 +51,9 @@ export const publicListMembers = wrapAsync(async (req, res) => {
         whatsapp: 'https://chat.whatsapp.com/FhpJEaod2g419jFMfqrhGZ',
       };
     });
-    return res.json({ members });
+    return sendSuccess(res, { members });
   } catch (e) {
-    return res.status(500).json({ error: e?.message || 'Failed to load core team' });
+    return sendError(req, res, e?.message || 'Failed to load core team', 500, 'INTERNAL_ERROR');
   }
 });
 
@@ -72,10 +73,10 @@ export const adminAddCoreTeamMember = wrapAsync(async (req, res) => {
   };
 
   if (!member.name || !member.role || !member.year || !member.branch || !member.email) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return sendError(req, res, 'Missing required fields', 400, 'VALIDATION_ERROR');
   }
   if (!isEmail(member.email)) {
-    return res.status(400).json({ error: 'Invalid email format' });
+    return sendError(req, res, 'Invalid email format', 400, 'VALIDATION_ERROR');
   }
 
   const saved = await coreTeamService.addMember(member);
@@ -85,7 +86,7 @@ export const adminAddCoreTeamMember = wrapAsync(async (req, res) => {
     member: saved,
     timestamp: new Date().toISOString(),
   });
-  return res.status(201).json(saved);
+  return sendSuccess(res, saved, 201);
 });
 
 export const adminUpdateCoreTeamMember = wrapAsync(async (req, res) => {
@@ -105,10 +106,10 @@ export const adminUpdateCoreTeamMember = wrapAsync(async (req, res) => {
   };
 
   if (!member.name || !member.role || !member.year || !member.branch || !member.email) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return sendError(req, res, 'Missing required fields', 400, 'VALIDATION_ERROR');
   }
   if (!isEmail(member.email)) {
-    return res.status(400).json({ error: 'Invalid email format' });
+    return sendError(req, res, 'Invalid email format', 400, 'VALIDATION_ERROR');
   }
 
   const updated = await coreTeamService.updateMember(id, member);
@@ -119,14 +120,14 @@ export const adminUpdateCoreTeamMember = wrapAsync(async (req, res) => {
     member: updated,
     timestamp: new Date().toISOString(),
   });
-  return res.json(updated);
+  return sendSuccess(res, updated);
 });
 
 export const adminDeleteCoreTeamMember = wrapAsync(async (req, res) => {
   const id = String(req.params.id || '').trim();
   const deleted = await coreTeamService.deleteMember(id);
   if (!deleted) throw new NotFoundError('Member not found');
-  return res.json({ ok: true });
+  return sendSuccess(res, { ok: true });
 });
 
 // ── Core Team Application Workflow ──────────────────────────────────────────
@@ -139,7 +140,7 @@ export const submitApplication = wrapAsync(async (req, res) => {
   const { name, email, year, branch, section, whatsapp, reason } = req.body;
 
   if (!name || !email || !year || !branch || !section || !whatsapp || !reason) {
-    return res.status(400).json({ error: 'All fields are required.' });
+    return sendError(req, res, 'All fields are required.', 400, 'VALIDATION_ERROR');
   }
 
   // Use student session if available, otherwise use email as identifier.
@@ -148,10 +149,7 @@ export const submitApplication = wrapAsync(async (req, res) => {
   // Prevent duplicate applications.
   const existing = await coreTeamApplicationsRepository.findByStudentId(studentId);
   if (existing) {
-    return res.status(409).json({
-      error: 'You already have a pending or approved application.',
-      status: existing.status,
-    });
+    return sendError(req, res, 'You already have a pending or approved application.', 409, 'CONFLICT', { status: existing.status });
   }
 
   const application = await coreTeamApplicationsRepository.create({
@@ -165,10 +163,7 @@ export const submitApplication = wrapAsync(async (req, res) => {
     reason: toSafeString(reason, 2000),
   });
 
-  return res.status(201).json({
-    message: 'Application submitted successfully.',
-    application,
-  });
+  return sendSuccess(res, { message: 'Application submitted successfully.', application }, 201);
 });
 
 /**
@@ -180,7 +175,7 @@ export const listApplications = wrapAsync(async (req, res) => {
   const validStatuses = ['pending', 'approved', 'rejected'];
   const filter = validStatuses.includes(status) ? status : null;
   const applications = await coreTeamApplicationsRepository.list(filter);
-  return res.json({ applications });
+  return sendSuccess(res, { applications });
 });
 
 /**
@@ -196,9 +191,7 @@ export const approveApplication = wrapAsync(async (req, res) => {
   if (!application) throw new NotFoundError('Application not found');
 
   if (application.status !== 'pending') {
-    return res.status(409).json({
-      error: `Application is already ${application.status}.`,
-    });
+    return sendError(req, res, `Application is already ${application.status}.`, 409, 'CONFLICT');
   }
 
   // Update application status.
@@ -216,7 +209,7 @@ export const approveApplication = wrapAsync(async (req, res) => {
     whatsapp: application.whatsapp,
   });
 
-  return res.json({
+  return sendSuccess(res, {
     message: 'Application approved and member added to core team.',
     application: updated,
   });
@@ -235,16 +228,14 @@ export const rejectApplication = wrapAsync(async (req, res) => {
   if (!application) throw new NotFoundError('Application not found');
 
   if (application.status !== 'pending') {
-    return res.status(409).json({
-      error: `Application is already ${application.status}.`,
-    });
+    return sendError(req, res, `Application is already ${application.status}.`, 409, 'CONFLICT');
   }
 
   const updated = await coreTeamApplicationsRepository.updateStatus(
     id, 'rejected', reviewedBy, toSafeString(reviewNote ?? '', 500)
   );
 
-  return res.json({
+  return sendSuccess(res, {
     message: 'Application rejected.',
     application: updated,
   });

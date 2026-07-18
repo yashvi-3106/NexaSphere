@@ -1,53 +1,54 @@
 import operationalInsightsService from '../services/operationalInsightsService.js';
+import { sendSuccess } from '../utils/responseHelper.js';
 
 export const getDashboardOverview = (req, res) => {
-  res.status(200).json(operationalInsightsService.getDashboardOverview());
+  sendSuccess(res, operationalInsightsService.getDashboardOverview());
 };
 
 export const getSystemHealth = (req, res) => {
-  res.status(200).json(operationalInsightsService.getSystemHealth());
+  sendSuccess(res, operationalInsightsService.getSystemHealth());
 };
 
 export const getActiveUsers = (req, res) => {
-  res.status(200).json(operationalInsightsService.getActiveUsers());
+  sendSuccess(res, operationalInsightsService.getActiveUsers());
 };
 
 export const getApiTraffic = (req, res) => {
-  res.status(200).json(operationalInsightsService.getApiTraffic());
+  sendSuccess(res, operationalInsightsService.getApiTraffic());
 };
 
 export const getDatabasePerformance = (req, res) => {
-  res.status(200).json(operationalInsightsService.getDatabasePerformance());
+  sendSuccess(res, operationalInsightsService.getDatabasePerformance());
 };
 
 export const getBackgroundJobs = (req, res) => {
-  res.status(200).json(operationalInsightsService.getBackgroundJobs());
+  sendSuccess(res, operationalInsightsService.getBackgroundJobs());
 };
 
 export const getStorageUsage = (req, res) => {
-  res.status(200).json(operationalInsightsService.getStorageUsage());
+  sendSuccess(res, operationalInsightsService.getStorageUsage());
 };
 
 export const getNotificationStats = (req, res) => {
-  res.status(200).json(operationalInsightsService.getNotificationStats());
+  sendSuccess(res, operationalInsightsService.getNotificationStats());
 };
 
 export const getErrorLogs = (req, res) => {
-  res.status(200).json(operationalInsightsService.getErrorLogs());
+  sendSuccess(res, operationalInsightsService.getErrorLogs());
 };
 
 export const getMaintenanceSchedule = (req, res) => {
-  res.status(200).json(operationalInsightsService.getMaintenanceSchedule());
+  sendSuccess(res, operationalInsightsService.getMaintenanceSchedule());
 };
 
 export const getDependencies = (req, res) => {
-  res.status(200).json(operationalInsightsService.getDependencies());
+  sendSuccess(res, operationalInsightsService.getDependencies());
 };
 
 export const getResourceUsage = (req, res) => {
-  res.status(200).json(operationalInsightsService.getResourceUsage());
+  sendSuccess(res, operationalInsightsService.getResourceUsage());
 };
 
 export const getOperationalReports = (req, res) => {
-  res.status(200).json(operationalInsightsService.getOperationalReports());
+  sendSuccess(res, operationalInsightsService.getOperationalReports());
 };
