@@ -1,5 +1,6 @@
 import { getRedisClient } from './utils/redis.js';
 import 'dotenv/config';
+﻿import 'dotenv/config';
 import { tracedFetch } from './config/appContext.js';
 import { initObservability } from './observability/index.js';
 import { setTraceIdResolver } from './utils/logContext.js';
@@ -21,8 +22,6 @@ import analyticsRouter from './routes/analytics.js';
 import customEventsRouter from './routes/customEvents.js';
 import apiRouter from './routes/api.js';
 import formSubmissionsRouter from './routes/forms.js';
-import { logEvent } from './controllers/analyticsController.js';
-import healthDashboardRouter from './routes/healthDashboard.js';
 import complianceRouter from './routes/compliance.js';
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
@@ -56,6 +55,7 @@ import userGroupsRouter from './routes/userGroups.js';
 import notificationsRouter from './routes/notifications.js';
 import notificationPreferenceRoutes from './routes/notificationPreference.js';
 import adminRouter from './routes/admin.js';
+import projectHealthRouter from './routes/projectHealth.js';
 import portfolioAnalyticsRouter from './routes/portfolioAnalytics.js';
 import announcementsRouter from './routes/announcements.js';
 import bulkRouter from './routes/bulk.js';
@@ -308,16 +308,14 @@ app.use(
         : false,
 
     // ✅ FIXED: Strict Content Security Policy with ALL directives
+    // Strict Content Security Policy with ALL directives
     contentSecurityPolicy: {
       useDefaults: false,
 
       directives: {
         defaultSrc: ["'self'"],
-
         scriptSrc: ["'self'", 'https://challenges.cloudflare.com'],
-
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-
         imgSrc: [
           "'self'",
           'data:',
@@ -325,9 +323,7 @@ app.use(
           'https://api.dicebear.com',
           'https://images.unsplash.com',
         ],
-
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
-
         connectSrc: [
           "'self'",
           'https://challenges.cloudflare.com',
@@ -336,7 +332,6 @@ app.use(
           process.env.FRONTEND_URL || 'http://localhost:5173',
           `wss://${process.env.DOMAIN || 'localhost'}`,
         ],
-
         objectSrc: ["'none'"],
 
         // ✅ CRITICAL FIX: Missing directives added below
@@ -364,17 +359,16 @@ app.use(
           'https://www.google.co.in',
         ],
         childSrc: ["'none'"],
+        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
         reportUri: '/api/v1/csp-violation',
       },
     },
 
     // Safer cross-origin behavior
     crossOriginEmbedderPolicy: false,
-
     crossOriginOpenerPolicy: {
       policy: 'same-origin',
     },
-
     crossOriginResourcePolicy: {
       policy: 'same-origin',
     },
@@ -548,6 +542,7 @@ app.use('/api/faqs', faqRouter);
 app.use('/api', userGroupsRouter);
 app.use('/api', notificationsRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/admin', projectHealthRouter);
 app.use('/api', learningPathRouter);
 app.use('/', syncRouter);
 app.use('/api/feedback', feedbackRouter);
