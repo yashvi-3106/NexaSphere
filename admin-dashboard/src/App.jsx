@@ -1,5 +1,6 @@
-import PlatformSettings from './pages/dashboard/PlatformSettings';
-import AuditLogViewer from './pages/dashboard/AuditLogViewer';
+import React, { Suspense } from 'react';
+import RateLimitMonitor from './pages/dashboard/RateLimitMonitor';
+const AuditLogViewer = React.lazy(() => import('./pages/dashboard/AuditLogViewer'));
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { Sidebar } from './components/Sidebar';
@@ -9,14 +10,13 @@ import { ImpersonationBanner } from './components/ImpersonationBanner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { LoginPage } from './pages/LoginPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
-import { ComprehensiveAnalytics } from './pages/ComprehensiveAnalytics';
+const ComprehensiveAnalytics = React.lazy(() => import('./pages/ComprehensiveAnalytics').then(module => ({ default: module.ComprehensiveAnalytics })));
 import { FunnelAnalysis } from './pages/FunnelAnalysis';
 import { CustomEventTracking } from './pages/CustomEventTracking';
 import { ForumManager } from './pages/ForumManager';
 import { MentorshipManager } from './pages/MentorshipManager';
 import { DashboardHome } from './pages/DashboardHome';
-import { ProjectHealthDashboard } from './pages/ProjectHealthDashboard';
-import { EventsManager } from './pages/EventsManager';
+const EventsManager = React.lazy(() => import('./pages/EventsManager').then(module => ({ default: module.EventsManager })));
 import { ActivityEventsManager } from './pages/ActivityEventsManager';
 import { ScheduledTasksManager } from './pages/ScheduledTasksManager';
 import UserGroups from './pages/UserGroups';
@@ -67,7 +67,9 @@ function DashboardLayout() {
       <Sidebar />
       <main className="main-content" id="main-content">
         <ErrorBoundary>
-          <Outlet />
+          <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading module...</div>}>
+            <Outlet />
+          </Suspense>
         </ErrorBoundary>
       </main>
       <Toast />
