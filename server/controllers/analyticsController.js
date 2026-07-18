@@ -1,4 +1,4 @@
-import { analyticsService, FUNNEL_STEP_TYPES } from '../services/analyticsService.js';
+﻿import { analyticsService, FUNNEL_STEP_TYPES } from '../services/analyticsService.js';
 import { analyticsRepository } from '../repositories/analyticsRepository.js';
 import { sendSuccess, sendError, sendNoContent } from '../utils/responseHelper.js';
 
@@ -47,72 +47,20 @@ export const getCustomFunnel = wrapAsync(async (req, res) => {
   // Validate step names against known types
   const invalid = steps.filter((s) => !FUNNEL_STEP_TYPES.includes(s));
   if (invalid.length > 0) {
-    return sendError(req, res, `Invalid step type(s): ${invalid.join(', ')}`, 400, 'VALIDATION_ERROR', { validTypes: FUNNEL_STEP_TYPES });
+    return sendError(
+      req,
+      res,
+      `Invalid step type(s): ${invalid.join(', ')}`,
+      400,
+      'VALIDATION_ERROR',
+      { validTypes: FUNNEL_STEP_TYPES }
+    );
   }
 
   const funnel = await analyticsService.getFunnelAnalysis(steps);
   return sendSuccess(res, { funnel, validStepTypes: FUNNEL_STEP_TYPES });
 });
 
-export const adminGetCohortAnalysis = async (req, res) => {
-  try {
-    const { month } = req.query; // YYYY-MM
-    if (!month) return res.status(400).json({ error: 'month required' });
-    const data = await analyticsRepository.getCohortData(month);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-export const logEvent = wrapAsync(async (req, res) => {
-  const { type, path, metadata } = req.body;
-  const userId = req.user?.id; // Optional
-  const sessionId = req.headers['x-session-id'] || req.ip;
-
-  await analyticsService.logEvent({ type, userId, sessionId, path, metadata });
-  res.status(202).json({ success: true });
-});
-
-export const getDashboardSummary = wrapAsync(async (req, res) => {
-  const summary = await analyticsService.getDashboardSummary();
-  res.json({ success: true, summary });
-});
-
-export const getUserAnalytics = wrapAsync(async (req, res) => {
-  const analytics = await analyticsService.getUserAnalytics();
-  res.json({ success: true, analytics });
-});
-
-export const getEngagementFunnel = wrapAsync(async (req, res) => {
-  const funnel = await analyticsService.getEngagementFunnel();
-  res.json({ success: true, funnel });
-});
-
-/**
- * POST /api/admin/analytics/funnel/custom
- * Body: { steps: ['PAGE_VIEW', 'EVENT_REGISTER', 'EVENT_ATTEND'] }
- * Returns detailed funnel analysis with drop-off and time-between-steps.
- */
-export const getCustomFunnel = wrapAsync(async (req, res) => {
-  const { steps } = req.body;
-
-  if (!Array.isArray(steps) || steps.length < 2) {
-    return res.status(400).json({ error: 'At least 2 funnel steps are required' });
-  }
-
-  // Validate step names against known types
-  const invalid = steps.filter((s) => !FUNNEL_STEP_TYPES.includes(s));
-  if (invalid.length > 0) {
-    return res.status(400).json({
-      error: `Invalid step type(s): ${invalid.join(', ')}`,
-      validTypes: FUNNEL_STEP_TYPES,
-    });
-  }
-
-  const funnel = await analyticsService.getFunnelAnalysis(steps);
-  res.json({ success: true, funnel, validStepTypes: FUNNEL_STEP_TYPES });
-});
 /**
  * GET /api/admin/analytics/funnel/steps
  * Returns the list of valid step types for the UI to build the step selector.

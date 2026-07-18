@@ -1,4 +1,4 @@
-import { slackRepository } from '../repositories/slackRepository.js';
+﻿import { slackRepository } from '../repositories/slackRepository.js';
 import { eventsRepository } from '../repositories/eventsRepository.js';
 import logger from '../utils/logger.js';
 import { sendSuccess, sendError } from '../utils/responseHelper.js';
@@ -11,7 +11,13 @@ export const startSlackAuth = (req, res) => {
 
   if (!clientId) {
     logger.warn('[SlackController] Client ID is not configured.');
-    return res.status(400).send('Slack integration Client ID is not configured on the server.');
+    return sendError(
+      req,
+      res,
+      'Slack integration Client ID is not configured on the server.',
+      400,
+      'VALIDATION_ERROR'
+    );
   }
 
   const slackAuthUrl = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=chat:write,commands,incoming-webhook,users:read,users:read.email&redirect_uri=${encodeURIComponent(redirectUri)}`;
@@ -94,7 +100,7 @@ export const handleSlackCommand = async (req, res) => {
         type: 'header',
         text: {
           type: 'plain_text',
-          text: '📅 Upcoming NexaSphere Events',
+          text: 'ðŸ“… Upcoming NexaSphere Events',
           emoji: true,
         },
       },
@@ -110,7 +116,7 @@ export const handleSlackCommand = async (req, res) => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*${event.name}*\n📅 *When:* ${event.date || 'TBD'}\n📝 ${event.description ? event.description.substring(0, 120) + '...' : 'No description.'}`,
+          text: `*${event.name}*\nðŸ“… *When:* ${event.date || 'TBD'}\nðŸ“ ${event.description ? event.description.substring(0, 120) + '...' : 'No description.'}`,
         },
         accessory: {
           type: 'button',
@@ -132,7 +138,7 @@ export const handleSlackCommand = async (req, res) => {
     logger.error('[SlackController] Error executing Slack Command:', err.message);
     return res.json({
       response_type: 'ephemeral',
-      text: '⚠️ An error occurred while retrieving upcoming events.',
+      text: 'âš ï¸ An error occurred while retrieving upcoming events.',
     });
   }
 };
@@ -164,7 +170,13 @@ export const updateSlackConfig = async (req, res) => {
     });
     return sendSuccess(res, { config: updated });
   } catch (err) {
-    return sendError(req, res, 'Failed to update Slack configuration: ' + err.message, 500, 'INTERNAL_ERROR');
+    return sendError(
+      req,
+      res,
+      'Failed to update Slack configuration: ' + err.message,
+      500,
+      'INTERNAL_ERROR'
+    );
   }
 };
 
@@ -173,6 +185,12 @@ export const disconnectSlack = async (req, res) => {
     await slackRepository.deleteConfig();
     return sendSuccess(res, { success: true });
   } catch (err) {
-    return sendError(req, res, 'Failed to disconnect Slack workspace: ' + err.message, 500, 'INTERNAL_ERROR');
+    return sendError(
+      req,
+      res,
+      'Failed to disconnect Slack workspace: ' + err.message,
+      500,
+      'INTERNAL_ERROR'
+    );
   }
 };
