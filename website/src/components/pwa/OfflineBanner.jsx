@@ -189,12 +189,32 @@ export default function OfflineBanner() {
         </div>
       </div>
 
-      {toast && (
-        <div className="pwa-toast-container bottom-right" aria-live="polite">
-          <div
-            className="pwa-toast-card"
-            role={toast.variant === 'error' ? 'alert' : 'status'}
-            aria-label={toast.title}
+      <div className="pwa-banner__right">
+        {isSyncing && <span className="pwa-spinner" aria-hidden="true" />}
+
+        {!isOnline && queuedCount > 0 && (
+          <span className="pwa-banner__badge" aria-label={`${queuedCount} actions queued`}>
+            <span className="pwa-dot" aria-hidden="true" />
+            {queuedCount} queued
+          </span>
+        )}
+
+        {!isOnline && queuedCount > 0 && 'Notification' in window && Notification.permission === 'default' && (
+          <button
+            className="pwa-banner__sync-btn"
+            style={{ marginLeft: '8px' }}
+            onClick={() => Notification.requestPermission()}
+            aria-label="Notify me when synced"
+          >
+            Notify when synced
+          </button>
+        )}
+
+        {isOnline && !isSyncing && queuedCount > 0 && (
+          <button
+            className="pwa-banner__sync-btn"
+            onClick={syncNow}
+            aria-label="Sync queued changes now"
           >
             <div className="pwa-toast-header">
               <div

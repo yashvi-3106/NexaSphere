@@ -18,8 +18,9 @@ import {
   precacheAndRoute,
   cleanupOutdatedCaches,
   createHandlerBoundToURL,
+  matchPrecache,
 } from 'workbox-precaching';
-import { registerRoute, NavigationRoute } from 'workbox-routing';
+import { registerRoute, NavigationRoute, setCatchHandler } from 'workbox-routing';
 import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
@@ -156,6 +157,21 @@ registerRoute(
 
 const bgSyncPlugin = new BackgroundSyncPlugin('nexasphere-offline-queue', {
   maxRetentionTime: 48 * 60, // retain queued requests for up to 48 hours (in minutes)
+  onSync: async ({ queue }) => {
+    try {
+      await queue.replayRequests();
+      // Emptied successfully! Trigger notification if permitted
+      if (self.registration && self.Notification && self.Notification.permission === 'granted') {
+        self.registration.showNotification('Changes Synced', {
+          body: 'Your offline actions have been successfully synchronized with NexaSphere.',
+          icon: '/pwa-192x192.png'
+        });
+      }
+    } catch (error) {
+      console.error('[Service Worker] Sync failed', error);
+      throw error;
+    }
+  }
 });
 
 // Intercept mutating requests to our API — queue them when offline
@@ -197,4 +213,16 @@ self.addEventListener('sync', (event) => {
   if (event.tag === 'nexasphere-offline-queue') {
     console.log('[SW] Background sync triggered for offline queue.');
   }
+});
+
+// "?"? 5. Offline Fallback "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
+// Serve offline.html when a document request fails and there is no cache match.
+setCatchHandler(async ({ request }) => {
+  if (request.destination === 'document') {
+    return (await matchPrecache('offline.html')) || 
+           (await matchPrecache('/offline.html')) || 
+           (await caches.match('/offline.html')) || 
+           Response.error();
+  }
+  return Response.error();
 });
