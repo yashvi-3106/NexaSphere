@@ -37,6 +37,7 @@
     "vite": "^8.1.0",
     "vite": "^8.1.5",
     "vitest": "^4.1.7"
+    "vitest": "^4.1.10"
   },
   "overrides": {
     "engine.io-client": "^6.6.2",
