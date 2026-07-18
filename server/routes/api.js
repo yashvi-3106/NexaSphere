@@ -381,6 +381,10 @@ router.get(
 );
 
 router.post('/api/portfolio/:username/visit', portfolioAnalyticsController.recordPortfolioVisit);
+router.post(
+  '/api/portfolio/:username/visit',
+  portfolioAnalyticsController.recordPortfolioVisit
+);
 
 router.get(
   '/api/portfolio/:username/monthly-report',
@@ -474,6 +478,7 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   const active = impersonationService.getActive(req.adminSession.token);
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
+
 router.use(
   "/api/announcements",
   announcementPriorityRouter
