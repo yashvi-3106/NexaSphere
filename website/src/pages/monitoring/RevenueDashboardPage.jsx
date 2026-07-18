@@ -49,7 +49,7 @@ export default function RevenueDashboardPage() {
         <h1 style={styles.heading}>Revenue Analytics Dashboard</h1>
         <div style={styles.loadingGrid}>
           {[...Array(3)].map((_, i) => (
-            <div key={i} style={styles.skeletonCard} />
+            <div key={`revenue-skeleton-card-${i}`} style={styles.skeletonCard} />
           ))}
         </div>
       </div>
