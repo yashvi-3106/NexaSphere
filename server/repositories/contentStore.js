@@ -43,7 +43,15 @@ export async function supabasePaginatedRequest(pathname, page, limit) {
     throw new Error(`Supabase error (${res.status}): ${text}`);
   }
   const text = await res.text();
-  const rows = text ? JSON.parse(text) : [];
+  let rows = [];
+  if (text) {
+    try {
+      rows = JSON.parse(text);
+    } catch (e) {
+      console.error('[contentStore] Failed to parse Supabase response:', e);
+      rows = [];
+    }
+  }
   // Content-Range format from PostgREST: "0-19/150" or "*/0" when empty
   const contentRange = res.headers.get('content-range') || '';
   const totalMatch = contentRange.match(/\/(\d+)$/);
