@@ -306,6 +306,7 @@ app.use(
             preload: true,
           }
         : false,
+
     // ✅ FIXED: Strict Content Security Policy with ALL directives
     contentSecurityPolicy: {
       useDefaults: false,

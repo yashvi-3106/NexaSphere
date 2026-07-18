@@ -13,6 +13,7 @@ import * as attendanceController from '../controllers/attendanceController.js';
 import * as eventAnalyticsController from '../controllers/eventAnalyticsController.js';
 import * as bannersController from '../controllers/bannersController.js';
 import { adminAuditMiddleware, attachOldState } from '../middleware/adminAuditMiddleware.js';
+import { healthRepository } from '../repositories/healthRepository.js';
 import { eventsRepository } from '../repositories/eventsRepository.js';
 import { authRateLimiter, protectedActionRateLimiter } from '../middleware/authRateLimiter.js';
 import { eventRegistrationLimiter } from '../middleware/rateLimiter.js';
@@ -47,6 +48,7 @@ const upload = multer({
 
 import apiAnalyticsRoutes from './apiAnalytics.js';
 import budgetRoutes from './budget.js';
+import eventRecurringRoutes from "./eventRecurringRoutes.js";
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
@@ -473,7 +475,7 @@ router.use('/api/announcements', announcementPriorityRouter);
 router.use('/api/events', eventConflictRouter);
 
 router.use('/api/admin/waitlist', waitlistRoutes);
-
+router.use("/api/events/recurring", eventRecurringRoutes);
 // Audit Log Viewer APIs
 router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
 
@@ -481,6 +483,10 @@ router.get(
   '/api/admin/audit-logs/stats',
   adminAuthMiddleware.requireAdmin,
   auditLogController.getStats
+);
+router.use(
+  "/recommendations",
+  recommendationEngine
 );
 router.use('/recommendations', recommendationEngine);
 
