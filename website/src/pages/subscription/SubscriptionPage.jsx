@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useStudentAuth } from '../../context/StudentAuthContext';
 
 const TIERS = [
@@ -57,6 +57,13 @@ export default function SubscriptionPage({ onBack }) {
   const [showInvoice, setShowInvoice] = useState(false);
   const [lastInvoice, setLastInvoice] = useState(null);
   const [loading, setLoading] = useState(false);
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleSubscribe = async (tierId) => {
     if (tierId === 'free') return;
@@ -66,6 +73,7 @@ export default function SubscriptionPage({ onBack }) {
     }
     setLoading(true);
     await new Promise((r) => setTimeout(r, 1000));
+    if (!isMountedRef.current) return;
     setCurrentTier(tierId);
     setLastInvoice({
       id: Date.now().toString(),
