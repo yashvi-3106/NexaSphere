@@ -1,0 +1,19 @@
+﻿{
+  "name": "nexasphere-graphql-gateway",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Phase 1: GraphQL facade over the existing NexaSphere REST API. Precursor to full Apollo Federation (see README).",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.11.0",
+    "graphql": "^16.9.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
