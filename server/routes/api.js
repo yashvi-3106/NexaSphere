@@ -58,6 +58,7 @@ import * as gamificationController from '../controllers/gamificationController.j
 
 import multer from 'multer';
 import * as analyticsController from '../controllers/analyticsController.js';
+const workflowAutomationRoutes = require("./workflowAutomation"); 
 const router = Router();
 const apiAnalyticsRoutes = require('./apiAnalytics');
 
@@ -571,6 +572,8 @@ router.get(
   '/api/admin/audit-logs/stats',
   adminAuthMiddleware.requireAdmin,
   auditLogController.getStats
+  "/recommendations",
+  recommendationEngine
 );
 router.use(
   "/recommendations",
@@ -600,18 +603,9 @@ router.get(
   followsController.checkFollowStatus
 );
 
-// Get followers and following lists
-router.get('/api/student/users/:userId/followers', followsController.getUserFollowers);
-router.get('/api/student/users/:userId/following', followsController.getUserFollowing);
-
-// Get follow counts
-router.get('/api/student/users/:userId/follow-counts', followsController.getFollowCounts);
-
-// Current user endpoints
-router.get(
-  '/api/student/me/followers',
-  requireStudentAuth,
-  followsController.getCurrentUserFollowers
+router.use(
+  "/workflow-automation",
+  workflowAutomationRoutes
 );
 router.get(
   '/api/student/me/following',

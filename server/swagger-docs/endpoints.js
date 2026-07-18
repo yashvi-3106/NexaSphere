@@ -1072,325 +1072,35 @@
 
 /**
  * @swagger
- * /api/search/trending:
- *   get:
- *     summary: Trending Searches
- *     description: Returns the most popular search queries.
- *     tags:
- *       - Global Search
- *     responses:
- *       200:
- *         description: Trending searches retrieved successfully.
- */
-
-/**
- * @swagger
- * /api/search/recent:
- *   get:
- *     summary: Recent Searches
- *     description: Returns the user's recent search history.
- *     tags:
- *       - Global Search
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Recent searches returned successfully.
- */
-
-/**
- * @swagger
- * /api/search/suggestions:
- *   get:
- *     summary: Instant Search Suggestions
- *     description: Returns autocomplete suggestions while typing.
- *     tags:
- *       - Global Search
- *     parameters:
- *       - in: query
- *         name: q
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Suggestions returned successfully.
- */
-
-/**
- * @swagger
- * /api/admin/search/analytics:
- *   get:
- *     summary: Search Analytics Dashboard
- *     description: Returns analytics about search usage, popular keywords and categories.
- *     tags:
- *       - Global Search
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Analytics retrieved successfully.
- */
-
-/**
- * @swagger
- * /api/activity-timeline/{userId}:
- *   get:
- *     summary: Get user activity timeline
- *     tags:
- *       - Activity Timeline
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: User activity timeline
- */
-
-/**
- * @swagger
- * /api/activity-timeline/{userId}:
- *   post:
- *     summary: Add activity to timeline
- *     tags:
- *       - Activity Timeline
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *     responses:
- *       200:
- *         description: Activity added successfully
- */
-
-/**
- * @swagger
- * /api/budgets/{id}/remaining:
- *   get:
- *     summary: Get remaining budget
- *     tags: [Budget Management]
- *     responses:
- *       200:
- *         description: Remaining budget calculated successfully
- * /api/activity-timeline/{userId}/summary:
- *   get:
- *     summary: Monthly activity summary
- *     tags:
- *       - Activity Timeline
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Monthly summary
- */
-
-/**
- * @swagger
- * /api/budgets/{id}/categories:
- *   get:
- *     summary: Category-wise spending
- *     tags: [Budget Management]
- *     responses:
- *       200:
- *         description: Category-wise spending retrieved
- */
-
-/**
- * @swagger
- * /api/budgets/vendors:
- *   get:
- *     summary: Get vendors
- *     tags: [Budget Management]
- *     responses:
- *       200:
- *         description: Vendors retrieved successfully
- *
- *   post:
- *     summary: Add vendor
- *     tags: [Budget Management]
- *     requestBody:
- *       required: true
- *     responses:
- *       201:
- *         description: Vendor added successfully
- */
-
-/**
- * @swagger
- * /api/budgets/reports:
- *   get:
- *     summary: Financial reports
- *     tags: [Budget Management]
- *     responses:
- *       200:
- *         description: Financial reports retrieved
- */
-
-/**
- * @swagger
- * /api/budgets/alerts:
- *   get:
- *     summary: Budget alerts
- *     tags: [Budget Management]
- *     responses:
- *       200:
- *         description: Budget alerts retrieved
- */
-
-/**
- * @swagger
- * /api/budgets/export:
- *   get:
- *     summary: Export expense statements
- *     tags: [Budget Management]
- *     responses:
- *       200:
- *         description: Expense statements exported
- */
-
-/**
- * @swagger
- * /api/budgets/history:
- *   get:
- *     summary: Historical budget comparison
- *     tags: [Budget Management]
- *     responses:
- *       200:
- *         description: Historical comparison retrieved
- */
-
-/**
- * @swagger
  * tags:
- *   - name: API Analytics
- *     description: Platform-Wide API Usage Analytics & Developer Portal
+ *   name: Workflow Automation
+ *   description: APIs for managing approval workflows, requests, analytics, and audit logs.
  */
 
 /**
  * @swagger
- * /api/api-analytics/dashboard:
+ * /api/workflow-automation/workflows:
  *   get:
- *     summary: Get API usage dashboard
- *     tags: [API Analytics]
+ *     summary: Get all workflows
+ *     tags: [Workflow Automation]
  *     responses:
  *       200:
- *         description: Dashboard retrieved successfully
- */
-
-/**
- * @swagger
- * /api/api-analytics/requests:
- *   get:
- *     summary: Get request analytics
- *     tags: [API Analytics]
- *     responses:
- *       200:
- *         description: Request analytics retrieved successfully
- */
-
-/**
- * @swagger
- * /api/api-analytics/response-times:
- *   get:
- *     summary: Get response time metrics
- *     tags: [API Analytics]
- *     responses:
- *       200:
- *         description: Response time metrics retrieved successfully
- */
-
-/**
- * @swagger
- * /api/api-analytics/errors:
- *   get:
- *     summary: Get API error analytics
- *     tags: [API Analytics]
- *     responses:
- *       200:
- *         description: Error analytics retrieved successfully
- */
-
-/**
- * @swagger
- * /api/api-analytics/docs:
- *   get:
- *     summary: Get interactive API documentation
- *     tags: [API Analytics]
- *     responses:
- *       200:
- *         description: Documentation retrieved successfully
- */
-
-/**
- * @swagger
- * /api/api-analytics/sdk:
- *   get:
- *     summary: Get SDK documentation
- *     tags: [API Analytics]
- *     responses:
- *       200:
- *         description: SDK documentation retrieved successfully
- */
-
-/**
- * @swagger
- * /api/api-analytics/changelog:
- *   get:
- *     summary: Get API changelog
- *     tags: [API Analytics]
- *     responses:
- *       200:
- *         description: Changelog retrieved successfully
- */
-
-/**
- * @swagger
- * /api/api-analytics/versions:
- *   get:
- *     summary: Get API versions
- *     tags: [API Analytics]
- *     responses:
- *       200:
- *         description: API versions retrieved successfully
- */
-
-/**
- * @swagger
- * /api/api-analytics/keys:
- *   get:
- *     summary: Get API keys
- *     tags: [API Analytics]
- *     responses:
- *       200:
- *         description: API keys retrieved successfully
+ *         description: List of workflows retrieved successfully
  *
  *   post:
- *     summary: Generate API key
- *     tags: [API Analytics]
- *     requestBody:
- *       required: true
+ *     summary: Create a new workflow
+ *     tags: [Workflow Automation]
  *     responses:
  *       201:
- *         description: API key generated successfully
+ *         description: Workflow created successfully
  */
 
 /**
  * @swagger
- * /api/api-analytics/keys/{id}:
- *   delete:
- *     summary: Revoke API key
- *     tags: [API Analytics]
+ * /api/workflow-automation/workflows/{id}:
+ *   get:
+ *     summary: Get workflow by ID
+ *     tags: [Workflow Automation]
  *     parameters:
  *       - in: path
  *         name: id
@@ -1399,39 +1109,155 @@
  *           type: integer
  *     responses:
  *       200:
- *         description: API key revoked successfully
+ *         description: Workflow retrieved successfully
+ *
+ *   put:
+ *     summary: Update workflow
+ *     tags: [Workflow Automation]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Workflow updated successfully
+ *
+ *   delete:
+ *     summary: Delete workflow
+ *     tags: [Workflow Automation]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Workflow deleted successfully
  */
 
 /**
  * @swagger
- * /api/api-analytics/rate-limits:
- *   get:
- *     summary: Get rate limit usage
- *     tags: [API Analytics]
+ * /api/workflow-automation/requests:
+ *   post:
+ *     summary: Submit a workflow request
+ *     tags: [Workflow Automation]
  *     responses:
- *       200:
- *         description: Rate limit information retrieved successfully
+ *       201:
+ *         description: Request submitted successfully
  */
 
 /**
  * @swagger
- * /api/api-analytics/sandbox:
- *   get:
- *     summary: Get API testing sandbox
- *     tags: [API Analytics]
+ * /api/workflow-automation/requests/{id}/approve:
+ *   put:
+ *     summary: Approve a workflow request
+ *     tags: [Workflow Automation]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
- *         description: Sandbox information retrieved successfully
+ *         description: Request approved successfully
  */
 
 /**
  * @swagger
- * /api/api-analytics/announcements:
- *   get:
- *     summary: Get developer announcements
- *     tags: [API Analytics]
+ * /api/workflow-automation/requests/{id}/reject:
+ *   put:
+ *     summary: Reject a workflow request
+ *     tags: [Workflow Automation]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
- *         description: Developer announcements retrieved successfully
+ *         description: Request rejected successfully
  */
+
+/**
+ * @swagger
+ * /api/workflow-automation/requests/bulk-approve:
+ *   post:
+ *     summary: Bulk approve workflow requests
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Requests approved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/requests/pending:
+ *   get:
+ *     summary: Get pending workflow requests
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Pending requests retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/history:
+ *   get:
+ *     summary: Get approval history
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Approval history retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/templates:
+ *   get:
+ *     summary: Get workflow templates
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Workflow templates retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/analytics:
+ *   get:
+ *     summary: Get workflow analytics
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Workflow analytics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/escalate:
+ *   post:
+ *     summary: Escalate pending workflow requests
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Pending requests escalated successfully
+ */
+
+/**
+ * @swagger
+ * /api/workflow-automation/audit-logs:
+ *   get:
+ *     summary: Get workflow audit logs
+ *     tags: [Workflow Automation]
+ *     responses:
+ *       200:
+ *         description: Audit logs retrieved successfully
+ */
+
 export default {};
