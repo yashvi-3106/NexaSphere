@@ -179,6 +179,49 @@ function doPost(e) {
       }
     }
 
+    if (data.action === 'batchSync') {
+      var token = data.token;
+      var SECRET_TOKEN = PropertiesService.getScriptProperties().getProperty('MEMBERSHIP_SECRET');
+      if (!SECRET_TOKEN || !token || token !== SECRET_TOKEN) {
+        return _respond({ ok: false, error: 'Unauthorized' });
+      }
+
+      try {
+        var sheet = getOrCreateSheet();
+        var rowsToAppend = data.rows.map(function (row) {
+          return [
+            row.timestamp || new Date().toISOString(),
+            row.fullName || '',
+            row.collegeEmail || '',
+            row.rollNumber || '',
+            row.course || '',
+            row.branch || '',
+            row.section || '',
+            row.semester || '',
+            row.whatsapp || '',
+            Array.isArray(row.groups) ? row.groups.join(', ') : row.groups || '',
+            row.whyJoin || '',
+            row.submittedAt || row.timestamp || new Date().toISOString(),
+            row.userAgent || '',
+          ];
+        });
+
+        if (rowsToAppend.length > 0) {
+          var lastRow = sheet.getLastRow();
+          sheet
+            .getRange(lastRow + 1, 1, rowsToAppend.length, HEADER_ROW.length)
+            .setValues(rowsToAppend);
+        }
+
+        return _respond({
+          ok: true,
+          count: rowsToAppend.length,
+        });
+      } catch (err) {
+        return _respond({ ok: false, error: err.message });
+      }
+    }
+
     // CAPTCHA validation only for public submissions
     if (!verifyTurnstileToken(data.turnstileToken)) {
       return _respond({
@@ -344,4 +387,56 @@ function verifyTurnstileToken(token) {
     console.error('Turnstile verification failed: ' + e.toString());
     return false;
   }
+}
+
+/**
+ * Automatically triggered when the spreadsheet is edited.
+ */
+function onEditTrigger(e) {
+  var range = e.range;
+  var sheet = range.getSheet();
+  var sheetName = sheet.getName();
+
+  if (sheetName !== SHEET_TAB_NAME) return;
+
+  var rowNum = range.getRow();
+  if (rowNum === 1) return; // Skip header edits
+
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var rowValues = sheet.getRange(rowNum, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  var payload = {
+    action: 'sheetRowEdited',
+    sheetName: sheetName,
+    row: rowNum,
+    data: {},
+  };
+
+  for (var j = 0; j < headers.length; j++) {
+    var key = headers[j]
+      .toString()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+(.)/g, function (m, chr) {
+        return chr.toUpperCase();
+      })
+      .replace(/[^a-z0-9]/gi, '');
+    payload.data[key] = rowValues[j];
+  }
+
+  var SECRET_TOKEN = PropertiesService.getScriptProperties().getProperty('MEMBERSHIP_SECRET');
+  var backendUrl = PropertiesService.getScriptProperties().getProperty('BACKEND_WEBHOOK_URL');
+
+  if (!backendUrl) return;
+
+  var options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    headers: {
+      'X-Sheets-Secret': SECRET_TOKEN || '',
+    },
+    muteHttpExceptions: true,
+  };
+
+  UrlFetchApp.fetch(backendUrl, options);
 }

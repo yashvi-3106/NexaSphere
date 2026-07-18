@@ -18,7 +18,7 @@ from slowapi.errors import RateLimitExceeded
 from observability.metrics import collect_celery_queue_depth
 from observability.tracing import init_tracing
 from prompts.system_prompt import SYSTEM_PROMPT
-from routers import certificates, forms, health, notifications, portfolio, recommend, review
+from routers import certificates, forms, health, notifications, portfolio, recommend, review, webhooks, sync
 from services.sync_worker import periodic_sync_worker
 from utils.security import limiter
 
@@ -143,6 +143,8 @@ async def root():
 
 
 app.include_router(forms.router)
+app.include_router(webhooks.router)
+app.include_router(sync.router)
 app.include_router(recommend.router)
 app.include_router(certificates.router)
 app.include_router(notifications.router)

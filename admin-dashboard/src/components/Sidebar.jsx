@@ -64,6 +64,7 @@ const links = [
     requiredScope: 'settings:admin',
   },
   { to: '/dashboard/membership', label: 'Membership', icon: 'FileText' },
+  { to: '/dashboard/sync-monitor', label: 'Sync Monitor', icon: 'Database' },
   { to: '/dashboard/recruitment', label: 'Recruitment', icon: 'UserPlus' },
   { to: '/dashboard/certificates', label: 'Certificates', icon: 'Award' },
   { to: '/dashboard/announcements', label: 'Announcements', icon: 'Megaphone' },
