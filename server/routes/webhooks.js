@@ -14,6 +14,12 @@ router.get('/events', protectedActionRateLimiter, adminAuthMiddleware.requireAdm
     res.status(500).json({ success: false, error: error.message });
   }
 });
+router.get(
+  '/events',
+  protectedActionRateLimiter,
+  adminAuthMiddleware.requireAdmin,
+  async (req, res) => {
+);
 
 router.post('/', protectedActionRateLimiter, adminAuthMiddleware.requireAdmin, async (req, res) => {
   try {
@@ -112,5 +118,18 @@ router.post('/deliveries/:deliveryId/replay', protectedActionRateLimiter, adminA
     res.status(status).json({ success: false, error: error.message });
   }
 });
+router.get(
+  '/:webhookId',
+  protectedActionRateLimiter,
+  adminAuthMiddleware.requireAdmin,
+  async (req, res) => {
+);
+router.put(
+router.delete(
+router.post(
+  '/:webhookId/test',
+  '/:webhookId/deliveries',
+  '/:webhookId/stats',
+  '/deliveries/:deliveryId/replay',
 
 export default router;

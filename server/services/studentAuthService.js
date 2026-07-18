@@ -61,13 +61,16 @@ export const studentAuthService = {
     return crypto.createHash('sha256').update(code).digest('hex');
   },
 
+  hashRecoveryCode(code) {
+    return crypto.createHash('sha256').update(code).digest('hex');
+  },
+
   async createRecoveryRequest(email) {
     const code = this.generateRecoveryCode();
     const hashed = this.hashRecoveryCode(code);
     await studentUsersRepository.saveRecoveryCode(email, hashed);
     return { email, code };
   },
-
   async verifyRecoveryCode(email, enteredCode) {
     const hashed = this.hashRecoveryCode(enteredCode);
     const stored = await studentUsersRepository.getRecoveryCode(email);

@@ -53,7 +53,6 @@ router.post('/ai-check', requireStudentAuth, async (req, res) => {
     return res.json({ flags: [], confidence: 0, explanation: 'AI moderation unavailable' });
   }
 });
-
 // Public endpoint for submitting reports
 router.post('/reports', moderationController.createFlag);
 

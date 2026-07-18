@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { apiClient } from '../../utils/apiClient';
+
 import { useTranslation } from 'react-i18next';
 
 import { BRAND_LOGO_ICON } from '../../shared/brandAssets';

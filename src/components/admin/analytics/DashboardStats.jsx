@@ -15,7 +15,7 @@ function formatValue(value) {
   return typeof value === 'number' ? value.toLocaleString() : value;
 }
 
-export default function DashboardStats({ stats, loading }) {
+export default function DashboardStats({ stats }) {
   const safeStats = stats ?? {};
 
   return (
@@ -26,11 +26,7 @@ export default function DashboardStats({ stats, loading }) {
             <Icon size={22} />
           </span>
           <div>
-            {loading ? (
-              <div className="ns-skeleton" style={{ width: '80px', height: '32px', borderRadius: '6px', marginBottom: '4px' }} />
-            ) : (
-              <div className="stat-value">{formatValue(safeStats[key])}</div>
-            )}
+            <div className="stat-value">{formatValue(safeStats[key])}</div>
             <div className="stat-label">{label}</div>
           </div>
         </article>

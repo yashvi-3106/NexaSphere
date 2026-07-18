@@ -3,13 +3,7 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
-  font-size: 16px;
 }
-
-html[data-fontsize="normal"] { font-size: 16px; }
-html[data-fontsize="large"] { font-size: 18px; }
-html[data-fontsize="extra-large"] { font-size: 20px; }
-
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--c1) var(--bg);
@@ -17,7 +11,15 @@ html[data-fontsize="extra-large"] { font-size: 20px; }
 body {
   background: var(--bg);
   color: var(--t1);
-  font-family: 'Rajdhani', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    'Rajdhani',
+    'Inter',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  font-size: 16px;
   line-height: 1.65;
   overflow-x: hidden;
   text-rendering: optimizeLegibility;

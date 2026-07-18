@@ -384,18 +384,11 @@ export async function getAdminEventRecommendations() {
 
   const registrationsByEvent = {};
 
-  if (events.length > 0) {
-    const eventIds = events.map((e) => e.id);
-    const allRegistrations = await registrationsRepository.findByEventIds(eventIds);
-
-    // Group registrations by event_id
-    for (const reg of allRegistrations) {
-      if (!registrationsByEvent[reg.event_id]) {
-        registrationsByEvent[reg.event_id] = [];
-      }
-      registrationsByEvent[reg.event_id].push(reg);
-    }
-  }
+  await Promise.all(
+    events.map(async (event) => {
+      registrationsByEvent[event.id] = await registrationsRepository.findByEventId(event.id);
+    })
+  );
 
   return buildEventRecommendations(events, registrationsByEvent);
 }

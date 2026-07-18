@@ -27,6 +27,7 @@ import * as subscriptionsController from '../controllers/subscriptionsController
 import * as followsController from '../controllers/followsController.js';
 import * as portfolioAnalyticsController from '../controllers/portfolioAnalyticsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
+import * as analyticsController from '../controllers/analyticsController.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import announcementPriorityRouter from './announcementPriority.js';
 import eventConflictRouter from './eventConflict.js';
@@ -37,6 +38,12 @@ import * as localAuthController from '../controllers/localAuthController.js';
 import * as whiteboardController from '../controllers/whiteboardController.js';
 import bookmarkRoutes from './bookmark.js';
 import operationalInsightsRoutes from './operationalInsights.js';
+import * as recommendationsController from '../controllers/recommendationsController.js';
+import * as gamificationController from '../controllers/gamificationController.js';
+import multer from 'multer';
+const upload = multer({
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+});
 
 import apiAnalyticsRoutes from './apiAnalytics.js';
 import budgetRoutes from './budget.js';
@@ -126,6 +133,7 @@ router.post('/account-recovery/request', authRateLimiter, async (req, res) => {
   });
 });
 router.post('/account-recovery/verify', authRateLimiter, async (req, res) => {
+router.post('/account-recovery/verify', async (req, res) => {
   const { email, enteredCode } = req.body;
   if (!email || !enteredCode) {
     return res.status(400).json({ error: 'Email and code are required' });
@@ -173,7 +181,6 @@ router.post('/api/admin/login', authRateLimiter, adminAuthMiddleware.login);
 
 // Local User Auth
 router.post('/api/auth/local/login', authRateLimiter, localAuthController.localLogin);
-
 router.post('/api/admin/2fa/verify', authRateLimiter, adminAuthMiddleware.verifyTwoFactor);
 router.post(
   '/api/admin/2fa/setup/verify',
@@ -279,6 +286,35 @@ router.delete(
   bannersController.deleteBanner
 );
 
+router.post(
+  '/api/admin/subscriptions/:userId/cancel',
+  adminAuthMiddleware.requireScope('events:write'),
+  adminAuditMiddleware,
+  subscriptionsController.cancelSubscription
+);
+router.get(
+  '/api/admin/subscriptions/:userId/billing',
+  adminAuthMiddleware.requireScope('events:read'),
+  subscriptionsController.getBillingHistory
+);
+
+// Subscription management APIs
+router.get(
+  '/api/admin/subscriptions',
+  adminAuthMiddleware.requireScope('events:read'),
+  subscriptionsController.listSubscriptions
+);
+router.get(
+  '/api/admin/subscriptions/stats',
+  adminAuthMiddleware.requireScope('events:read'),
+  subscriptionsController.getStats
+);
+router.post(
+  '/api/admin/subscriptions',
+  adminAuthMiddleware.requireScope('events:write'),
+  adminAuditMiddleware,
+  subscriptionsController.createSubscription
+);
 router.post(
   '/api/admin/subscriptions/:userId/cancel',
   adminAuthMiddleware.requireScope('events:write'),

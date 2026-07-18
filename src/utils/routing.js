@@ -2,12 +2,15 @@ import { activityPages } from '../data/activities/index';
 import { events as fallbackEvents } from '../data/eventsData';
 
 function titleCase(str) {
-  return str.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  return str
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
 }
 
 export function stateToUrl(page) {
   if (!page) return '/';
-  
+
   switch (page.type) {
     case 'section':
       return `/${page.section.toLowerCase()}`;
@@ -31,24 +34,24 @@ export function urlToState(path) {
   if (parts.length === 0) return { page: null, activeTab: 'Home' };
 
   const [part1, part2] = parts;
-  
+
   if (part1 === 'activities' && part2) {
     const slug = decodeURIComponent(part2).replace(/-/g, ' ');
-    const key = Object.keys(activityPages).find(k => k.toLowerCase() === slug) || titleCase(slug);
+    const key = Object.keys(activityPages).find((k) => k.toLowerCase() === slug) || titleCase(slug);
     return { page: { type: 'activity', activityKey: key }, activeTab: 'Activities' };
   }
 
   if (part1 === 'events' && part2) {
     const id = decodeURIComponent(part2);
     // Find event in fallbackEvents
-    let ev = fallbackEvents.find(e => e.id === id);
+    let ev = fallbackEvents.find((e) => e.id === id);
     let activityKey = ev?.activityKey || 'Insight Session';
 
     // If not found, search in activityPages
     if (!ev) {
       for (const [key, activity] of Object.entries(activityPages)) {
         if (activity.conductedEvents) {
-          const e = activity.conductedEvents.find(e => e.id === id);
+          const e = activity.conductedEvents.find((e) => e.id === id);
           if (e) {
             ev = e;
             activityKey = key;
@@ -56,7 +59,7 @@ export function urlToState(path) {
           }
         }
         if (activity.upcomingEvents) {
-          const e = activity.upcomingEvents.find(e => e.id === id);
+          const e = activity.upcomingEvents.find((e) => e.id === id);
           if (e) {
             ev = e;
             activityKey = key;

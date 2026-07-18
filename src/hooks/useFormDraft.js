@@ -27,7 +27,7 @@ export function useFormDraft(storageKey, form, step, setForm, setStep, initialFo
       isInitialMount.current = false;
       return;
     }
-    
+
     try {
       const timeout = setTimeout(() => {
         localStorage.setItem(storageKey, JSON.stringify({ form, step }));

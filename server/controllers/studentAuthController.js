@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { studentUsersRepository } from '../repositories/studentUsersRepository.js';
 import { studentAuthService } from '../services/studentAuthService.js';
-import { withDb } from '../repositories/db.js';
+
 
 export const googleAuth = (req, res, next) => {
   const state = req.query.token || '';
@@ -78,6 +78,7 @@ export const getMe = async (req, res) => {
   if (!req.studentUser) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
+  // Load fresh user data including theme from DB
   let freshUser = null;
   try {
     freshUser = await studentUsersRepository.findByProvider(
@@ -151,191 +152,5 @@ export const logout = async (req, res) => {
     console.error('Logout error:', err);
     return res.status(500).json({ error: 'Logout failed' });
   }
-};
 
-// ── NEW: Student Profile endpoints ──────────────────────────────────────────
-
-export const getProfile = async (req, res) => {
-  if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-  try {
-    const userId = req.studentUser.sub || req.studentUser.id;
-
-    const user =
-      (await studentUsersRepository.findByProvider(req.studentUser.provider, userId)) ||
-      (await studentUsersRepository.findByEmail(req.studentUser.email));
-
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    // Safely count related data — tables may not exist yet in all envs
-    let registrations = [];
-    let forumPosts = 0;
-    let mentorSessions = 0;
-
-    try {
-      const { default: db } = await import('../db/index.js');
-      registrations = await db('registrations')
-        .where({ user_id: user.id })
-        .leftJoin('events', 'registrations.event_id', 'events.id')
-        .select(
-          'registrations.*',
-          'events.title as event_title',
-          'events.date  as event_date',
-          'events.location as event_location'
-        )
-        .orderBy('registrations.created_at', 'desc');
-    } catch (_) {
-      /* table may not exist yet */
-    }
-
-    try {
-      const { default: db } = await import('../db/index.js');
-      const [{ count }] = await db('forum_threads')
-        .where({ author_id: user.id })
-        .count('id as count');
-      forumPosts = Number(count);
-    } catch (_) {
-      /* table may not exist yet */
-    }
-
-    try {
-      const { default: db } = await import('../db/index.js');
-      const [{ count }] = await db('mentor_sessions')
-        .where({ mentee_id: user.id })
-        .count('id as count');
-      mentorSessions = Number(count);
-    } catch (_) {
-      /* table may not exist yet */
-    }
-
-    const attendedEvents = registrations.filter(
-      (r) => r.attended || r.status === 'attended'
-    ).length;
-
-    return res.json({
-      id: user.id,
-      fullName: user.full_name,
-      email: user.email,
-      avatar: user.avatar_url,
-      bio: user.bio || '',
-      socialLinks: user.social_links || {},
-      role: user.role,
-      createdAt: user.created_at,
-      stats: {
-        totalRegistrations: registrations.length,
-        attendedEvents,
-        forumPosts,
-        mentorSessions,
-      },
-      registrations,
-    });
-  } catch (err) {
-    console.error('getProfile error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
-  }
-};
-
-export const updateProfile = async (req, res) => {
-  if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-  try {
-    const userId = req.studentUser.sub || req.studentUser.id;
-    const allowed = ['fullName', 'bio', 'socialLinks'];
-    const updates = {};
-    for (const key of allowed) {
-      if (req.body[key] !== undefined) updates[key] = req.body[key];
-    }
-
-    // Map camelCase keys to snake_case DB columns
-    const dbUpdates = {};
-    if (updates.fullName !== undefined) dbUpdates.full_name = updates.fullName;
-    if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
-    if (updates.socialLinks !== undefined)
-      dbUpdates.social_links = JSON.stringify(updates.socialLinks);
-
-    const updatedUser = await studentUsersRepository.updateProfile(userId, dbUpdates);
-    if (!updatedUser) return res.status(404).json({ error: 'User not found' });
-
-    return res.json({
-      id: updatedUser.id,
-      fullName: updatedUser.full_name,
-      email: updatedUser.email,
-      bio: updatedUser.bio || '',
-      socialLinks: updatedUser.social_links || {},
-    });
-  } catch (err) {
-    console.error('updateProfile error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
-  }
-};
-
-export const getRegistrations = async (req, res) => {
-  if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-  try {
-    const user = await studentUsersRepository.findByEmail(req.studentUser.email);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    let registrations = [];
-    try {
-      const { default: db } = await import('../db/index.js');
-      registrations = await db('registrations')
-        .where({ user_id: user.id })
-        .leftJoin('events', 'registrations.event_id', 'events.id')
-        .select(
-          'registrations.*',
-          'events.title    as event_title',
-          'events.date     as event_date',
-          'events.location as event_location'
-        )
-        .orderBy('registrations.created_at', 'desc');
-    } catch (_) {
-      /* table may not exist yet */
-    }
-
-    return res.json(registrations);
-  } catch (err) {
-    console.error('getRegistrations error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
-  }
-};
-
-export const deleteAccount = async (req, res) => {
-  if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-  try {
-    const email = req.studentUser.email;
-    const user = await studentUsersRepository.findByEmail(email);
-    if (user && user.id) {
-      await withDb(async (client) => {
-        await client.query('DELETE FROM student_users WHERE id = $1', [user.id]);
-      });
-    }
-    res.clearCookie('ns_student_token');
-    return res.json({ success: true, message: 'Account deleted' });
-  } catch (err) {
-    console.error('deleteAccount error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
-  }
-};
-
-export const exportData = async (req, res) => {
-  if (!req.studentUser) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-  try {
-    const email = req.studentUser.email;
-    const user = await studentUsersRepository.findByEmail(email);
-    return res.json({
-      profile: user,
-      exportedAt: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.error('exportData error:', err);
-    return res.status(500).json({ error: 'Server error', detail: err.message });
-  }
 };

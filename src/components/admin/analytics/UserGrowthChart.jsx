@@ -20,7 +20,7 @@ function formatTick(value) {
   }).format(date);
 }
 
-export default function UserGrowthChart({ data = [], loading }) {
+export default function UserGrowthChart({ data = [] }) {
   return (
     <section className="chart-container">
       <div className="chart-header">
@@ -28,11 +28,7 @@ export default function UserGrowthChart({ data = [], loading }) {
         <p>Daily registrations over the selected period.</p>
       </div>
 
-      {loading ? (
-        <div className="chart-shell">
-          <div className="ns-skeleton" style={{ width: '100%', height: '280px', borderRadius: '12px' }} />
-        </div>
-      ) : data.length > 0 ? (
+      {data.length > 0 ? (
         <div className="chart-shell">
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={data}>

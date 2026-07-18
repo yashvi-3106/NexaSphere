@@ -1,18 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search,
-  X,
-  ArrowRight,
-  Calendar,
-  Zap,
-  Users,
-  BookOpen,
-  User,
-  Folder,
-  MessageSquare,
-} from 'lucide-react';
+import { Search, X, ArrowRight, Calendar, Zap, Users, BookOpen } from 'lucide-react';
 import { useEventSearch } from '../hooks/useEventSearch';
 
 function Highlight({ text, query }) {
@@ -128,36 +117,10 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
   const inputRef = useRef(null);
   const listRef = useRef(null);
   const [focusIdx, setFocusIdx] = useState(-1);
-  const {
-    query,
-    setQuery,
-    filter,
-    setFilter,
-    results,
-    groupedResults,
-    loading,
-    error,
-    clearSearch,
-    recentSearches,
-    addRecentSearch,
-    removeRecentSearch,
-  } = useEventSearch(activities, events);
-
-  const [localQuery, setLocalQuery] = useState('');
-  const timeoutRef = useRef(null);
-
-  const handleInputChange = (e) => {
-    const val = e.target.value;
-    setLocalQuery(val);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      setQuery(val);
-    }, 350);
-  };
-
-  useEffect(() => {
-    setLocalQuery(query);
-  }, [query]);
+  const { query, setQuery, filter, setFilter, results, loading, clearSearch } = useEventSearch(
+    activities,
+    events
+  );
 
   useEffect(() => {
     if (open) {
@@ -178,15 +141,11 @@ export default function SearchBar({ open, onClose, activities, events, onNavigat
       if (result.type === 'activity') onNavigate('activity', result.key || result.id);
       else if (result.type === 'event')
         onEventClick(result.event || { id: result.id, name: result.title });
-      else if (result.type === 'member') window.location.href = result.url || '/team';
-      else if (result.type === 'user' || result.type === 'portfolio')
-        window.location.href = result.url;
-      else if (result.type === 'community' || result.type === 'post' || result.type === 'resource')
-        navigate(result.url);
+      else if (result.type === 'member') navigate(result.url || '/team');
       onClose();
       clearSearch();
     },
-    [onNavigate, onEventClick, onClose, clearSearch, addRecentSearch, query, navigate]
+    [onNavigate, onEventClick, onClose, clearSearch, navigate]
   );
 
   useEffect(() => {

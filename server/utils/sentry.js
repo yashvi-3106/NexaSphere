@@ -62,7 +62,7 @@ async function initializeSentry(app) {
     // Graceful fallback if os import fails
   }
 
-  Sentry.addEventProcessor((event) => {
+  Sentry.addGlobalEventProcessor((event) => {
     const ctx = getLogContext();
     event.tags = event.tags || {};
     if (ctx.reqId) event.tags.reqId = ctx.reqId;

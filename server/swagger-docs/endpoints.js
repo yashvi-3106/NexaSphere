@@ -631,6 +631,7 @@
  *     responses:
  *       200:
  *         description: Notification history returned successfully
+ * ...
  */
 
 /**

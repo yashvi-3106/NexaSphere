@@ -224,51 +224,7 @@ export function useNotifications() {
         createdAt: new Date().toISOString(),
       };
       setNotifications((prev) => [note, ...prev]);
-    };
 
-    const handleEventPublished = (data) => {
-      const note = {
-        id: `event-published-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        type: 'system',
-        title: 'New Event Published! 📅',
-        message: data.eventName
-          ? `"${data.eventName}" is now open for registration!`
-          : 'A new event has been published.',
-        isRead: false,
-        createdAt: new Date().toISOString(),
-        link: data.eventId ? `/events/${data.eventId}` : '/events',
-      };
-      setNotifications((prev) => [note, ...prev]);
-    };
-
-    const handleProjectApproved = (data) => {
-      const note = {
-        id: `project-approved-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        type: 'system',
-        title: 'Project Approved! 🚀',
-        message: data.projectName
-          ? `Your project "${data.projectName}" has been approved and published.`
-          : 'Your project has been approved.',
-        isRead: false,
-        createdAt: new Date().toISOString(),
-        link: '/projects',
-      };
-      setNotifications((prev) => [note, ...prev]);
-    };
-
-    const handleNewComment = (data) => {
-      const note = {
-        id: `new-comment-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        type: 'message',
-        title: 'New Reply on Forum! 💬',
-        message: data.authorName && data.threadTitle
-          ? `${data.authorName} replied to "${data.threadTitle}"`
-          : 'Someone replied to your thread.',
-        isRead: false,
-        createdAt: new Date().toISOString(),
-        link: data.threadId ? `/forum/thread/${data.threadId}` : '/forum',
-      };
-      setNotifications((prev) => [note, ...prev]);
     };
 
     // Note: The backend seems to emit 'registration-confirmed' but previously it mapped to 'registrationConfirmed'

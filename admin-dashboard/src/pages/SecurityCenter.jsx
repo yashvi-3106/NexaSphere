@@ -39,21 +39,13 @@ export function SecurityCenter() {
   }, []);
 
   const revoke = async (sessionId) => {
-    try {
-      await adminSecurity.revokeSession(sessionId);
-      await load();
-    } catch (err) {
-      setError(err.message || 'Failed to revoke session');
-    }
+    await adminSecurity.revokeSession(sessionId);
+    await load();
   };
 
   const logoutOthers = async () => {
-    try {
-      await adminSecurity.logoutOtherSessions();
-      await load();
-    } catch (err) {
-      setError(err.message || 'Failed to logout other sessions');
-    }
+    await adminSecurity.logoutOtherSessions();
+    await load();
   };
 
   return (

@@ -5,6 +5,7 @@
 
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
+import adminAuthMiddleware from '../middleware/adminAuthMiddleware.js';
 import { auditToolsRepository } from '../repositories/auditToolsRepository.js';
 import { runComplianceAudit } from '../services/complianceAuditEngine.js';
 import { apiRateLimiter } from '../middleware/rateLimiter.js';

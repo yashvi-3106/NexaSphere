@@ -56,6 +56,10 @@ export const forumService = {
     return forumRepository.getReplyById(id);
   },
 
+  async getReply(id) {
+    return forumRepository.getReplyById(id);
+  },
+
   async updateReply(id, content) {
     return forumRepository.updateReply(id, content);
   },

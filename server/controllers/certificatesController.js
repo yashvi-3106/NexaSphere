@@ -2,6 +2,7 @@
 // DB persistence + Prisma models are TODO.
 
 import crypto from 'crypto';
+import { renderCertificatePdf } from '../services/certificates/certificatePdfGenerator.js';
 
 // --- Helpers ---
 function buildCertificateCode({ userId, eventId }) {
@@ -44,10 +45,28 @@ export async function getMyCertificates(req, res) {
 }
 
 export async function downloadCertificatePdf(req, res) {
-  // TODO: stream from S3
-  return res
-    .status(501)
-    .json({ error: 'PDF download not implemented yet (S3 + storage layer TODO).' });
+  try {
+    const { id } = req.params;
+    // Mock data based on id
+    const variables = {
+      code: id || 'DEMO-1234',
+      attendeeName: 'Demo Attendee',
+      eventName: 'NexaSphere Event',
+      date: new Date().toISOString().slice(0, 10),
+      verifyUrl: `${process.env.PUBLIC_APP_URL || 'http://localhost:3000'}/certificates/verify/${id || 'DEMO-1234'}`,
+    };
+
+    const pdfBuffer = await renderCertificatePdf({ variables });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=certificate-${id || 'demo'}.pdf`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    return res.end(pdfBuffer);
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    return res.status(500).json({ error: 'Failed to generate certificate PDF' });
+  }
 }
 
 export async function getOpenBadge(req, res) {

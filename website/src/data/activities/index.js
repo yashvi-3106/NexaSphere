@@ -28,7 +28,7 @@ export const activities = [
   {
     ...hackathon,
     id: 1,
-    difficultyLevel: 'intermediate',
+
     chips: ['Team Event', 'Coding', 'Innovation', 'Prizes'],
     features: [
       '24–48 hour team sprints',
@@ -40,7 +40,7 @@ export const activities = [
   {
     ...codathon,
     id: 2,
-    difficultyLevel: 'advanced',
+
     chips: ['Competitive', 'Algorithms', 'DSA', 'Leaderboard'],
     features: [
       'Multi-round elimination format',
@@ -52,7 +52,7 @@ export const activities = [
   {
     ...ideathon,
     id: 3,
-    difficultyLevel: 'beginner',
+
     chips: ['No-Code', 'Creativity', 'Pitching', 'Strategy'],
     features: [
       'Open to all branches',
@@ -64,7 +64,7 @@ export const activities = [
   {
     ...promptathon,
     id: 4,
-    difficultyLevel: 'beginner',
+
     chips: ['Prompt Engineering', 'AI Tools', 'Creative Thinking', 'Problem Solving'],
     features: [
       'Multi-round prompt battles',
@@ -76,7 +76,7 @@ export const activities = [
   {
     ...workshop,
     id: 5,
-    difficultyLevel: 'beginner',
+
     chips: ['New Technologies', 'Practical Skills', 'Tool Mastery', 'Applied Learning'],
     features: [
       'Live coding sessions',
@@ -88,7 +88,7 @@ export const activities = [
   {
     ...insightSession,
     id: 6,
-    difficultyLevel: 'beginner',
+
     chips: ['Career', 'Industry Trends', 'Panels', 'Networking'],
     features: [
       'Expert & alumni speakers',
@@ -100,7 +100,7 @@ export const activities = [
   {
     ...openSourceDay,
     id: 7,
-    difficultyLevel: 'beginner',
+
     chips: ['Git', 'Open Source', 'Code Review', 'Documentation'],
     features: [
       'First-PR guidance',
@@ -112,7 +112,7 @@ export const activities = [
   {
     ...techDebate,
     id: 8,
-    difficultyLevel: 'intermediate',
+
     chips: ['Public Speaking', 'Critical Thinking', 'Tech Topics', 'Audience Vote'],
     features: [
       'Structured Oxford-style format',
@@ -123,8 +123,3 @@ export const activities = [
   },
 ];
 
-export const difficultyLevels = [
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
-];

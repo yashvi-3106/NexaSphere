@@ -9,11 +9,9 @@ function wrapAsync(fn) {
 
 function validateProperties(properties) {
   if (!Array.isArray(properties)) return 'properties must be an array';
-  if (properties.length > MAX_PROPERTIES)
-    return `Maximum ${MAX_PROPERTIES} properties allowed`;
+  if (properties.length > MAX_PROPERTIES) return `Maximum ${MAX_PROPERTIES} properties allowed`;
   for (const prop of properties) {
-    if (!prop.name || typeof prop.name !== 'string')
-      return 'Each property must have a string name';
+    if (!prop.name || typeof prop.name !== 'string') return 'Each property must have a string name';
     if (!VALID_PROPERTY_TYPES.includes(prop.type))
       return `Invalid property type "${prop.type}". Must be one of: ${VALID_PROPERTY_TYPES.join(', ')}`;
   }
@@ -150,9 +148,8 @@ export const exportEventData = wrapAsync(async (req, res) => {
   const csvRows = [
     headerCols.join(','),
     ...logs.map((log) => {
-      const props = typeof log.properties === 'string'
-        ? JSON.parse(log.properties)
-        : log.properties || {};
+      const props =
+        typeof log.properties === 'string' ? JSON.parse(log.properties) : log.properties || {};
       return [
         log.id,
         log.user_id || '',

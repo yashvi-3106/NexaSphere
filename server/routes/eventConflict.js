@@ -12,6 +12,7 @@ router.get(
   adminAuthMiddleware.requireAdmin,
   eventConflictController.getConflicts
 );
+router.get('/conflicts', adminAuthMiddleware.requireAdmin, eventConflictController.getConflicts);
 
 /**
  * Check venue availability
@@ -61,3 +62,4 @@ router.get(
 );
 
 export default router;
+router.get('/alerts', adminAuthMiddleware.requireAdmin, eventConflictController.getOrganizerAlerts);

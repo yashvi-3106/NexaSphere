@@ -13,7 +13,7 @@
 
 import { useEffect, useState } from 'react';
 import { getApiBase } from '../../utils/runtimeConfig';
-import { isSafari } from '../../utils/deviceDetection';
+
 import apiClient from '../../utils/apiClient.js';
 
 // ---------------------------------------------------------------------------

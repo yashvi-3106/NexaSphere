@@ -26,7 +26,7 @@ import Chatbot from './shared/Chatbot';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import GamificationDashboard from './components/gamification/GamificationDashboard';
 import RecommendationWidget from './components/recommendation/RecommendationWidget';
-import SettingsPage from './pages/settings/SettingsPage';
+
 
 import {
   AmbientOrbs,
@@ -73,12 +73,12 @@ const NAV_TABS = [
 
 export default function App() {
   const [cinDone, setCinDone] = useState(false);
-  
+
   // Use lazy initialization for state derived from the URL
   const [activeTab, setActiveTab] = useState(() => urlToState(window.location.pathname).activeTab);
   const [page, setPage] = useState(() => urlToState(window.location.pathname).page);
   const [mobile, setMobile] = useState(window.innerWidth <= 768);
-  const [fontSize, setFontSize] = useState(() => localStorage.getItem('nexa-fontsize') || 'normal');
+
 
   const { theme, toggleTheme } = useThemeManagement();
   const eventsData = useDynamicEvents(fallbackEvents);
@@ -95,18 +95,26 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Sync state changes to browser history
   useEffect(() => {
-    document.documentElement.setAttribute('data-fontsize', fontSize);
-    localStorage.setItem('nexa-fontsize', fontSize);
-  }, [fontSize]);
+    const url = stateToUrl(page);
+    if (window.location.pathname !== url) {
+      window.history.pushState(null, '', url);
+    }
+  }, [page]);
 
-  const toggleFontSize = () => {
-    setFontSize((prev) => {
-      if (prev === 'normal') return 'large';
-      if (prev === 'large') return 'extra-large';
-      return 'normal';
-    });
-  };
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const { page: newPage, activeTab: newTab } = urlToState(window.location.pathname);
+      performTransition(() => {
+        setPage(newPage);
+        setActiveTab(newTab);
+      });
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [performTransition]);
 
   useInteractionEffects(cinDone, page);
   useBackToTop();
@@ -164,7 +172,7 @@ export default function App() {
             onTabChange={handleTabChange}
             onToggleTheme={toggleTheme}
             theme={theme}
-            onSettings={actions.openSettings}
+
           />
         </>
       )}
@@ -265,11 +273,6 @@ export default function App() {
             </PageIn>
           )}
 
-          {page?.type === 'settings' && (
-            <PageIn k="pg-settings">
-              <SettingsPage onBack={actions.onBackHome} />
-            </PageIn>
-          )}
 
           {!page && cinDone && (
             <PageIn k="main">

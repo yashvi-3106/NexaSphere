@@ -67,12 +67,10 @@ export class BackupStorageService {
     const response = await this.client.send(command);
     if (!response.Contents) return [];
 
-    return response.Contents
-      .filter((obj) => obj.Key && obj.LastModified)
-      .map((obj) => ({
-        key: obj.Key as string,
-        createdAt: obj.LastModified as Date,
-      }));
+    return response.Contents.filter((obj) => obj.Key && obj.LastModified).map((obj) => ({
+      key: obj.Key as string,
+      createdAt: obj.LastModified as Date,
+    }));
   }
 
   /**
@@ -83,12 +81,12 @@ export class BackupStorageService {
       Bucket: this.bucket,
       Key: objectKey,
     });
-    
+
     const response = await this.client.send(command);
     if (!response.Body) {
       throw new Error('No body returned from S3');
     }
-    
+
     const arrayBuffer = await response.Body.transformToByteArray();
     await fs.writeFile(downloadPath, Buffer.from(arrayBuffer));
   }

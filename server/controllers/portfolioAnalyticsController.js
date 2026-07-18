@@ -1,11 +1,8 @@
-import { portfolioAnalyticsService } from "../services/portfolioAnalyticsService.js";
+import { portfolioAnalyticsService } from '../services/portfolioAnalyticsService.js';
 
 export async function getPortfolioAnalytics(req, res) {
   try {
-    const analytics =
-      await portfolioAnalyticsService.getAnalytics(
-        req.params.username
-      );
+    const analytics = await portfolioAnalyticsService.getAnalytics(req.params.username);
 
     res.json({
       success: true,
@@ -21,10 +18,7 @@ export async function getPortfolioAnalytics(req, res) {
 
 export async function recordPortfolioVisit(req, res) {
   try {
-    const response =
-      await portfolioAnalyticsService.recordVisit(
-        req.params.username
-      );
+    const response = await portfolioAnalyticsService.recordVisit(req.params.username);
 
     res.json(response);
   } catch (err) {
@@ -37,10 +31,7 @@ export async function recordPortfolioVisit(req, res) {
 
 export async function getMonthlyReport(req, res) {
   try {
-    const report =
-      await portfolioAnalyticsService.getMonthlyReport(
-        req.params.username
-      );
+    const report = await portfolioAnalyticsService.getMonthlyReport(req.params.username);
 
     res.json({
       success: true,

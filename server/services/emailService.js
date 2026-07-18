@@ -47,25 +47,10 @@ const emailBreaker = circuitBreakerRegistry.register(
   })
 );
 
-async function renderTemplate(templateName, data, customTemplateContent = null) {
-  if (customTemplateContent) {
-    return ejs.render(customTemplateContent, data);
-  }
-
+async function renderTemplate(templateName, data) {
   if (typeof templateName !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(templateName)) {
     throw new Error('Invalid email template name');
   }
-
-  try {
-    const { emailTemplateRepository } = await import('../repositories/emailTemplateRepository.js');
-    const dbTemplate = await emailTemplateRepository.getByName(templateName);
-    if (dbTemplate && dbTemplate.body) {
-      return ejs.render(dbTemplate.body, data);
-    }
-  } catch (err) {
-    console.warn(`[Email Service] Failed to load DB template ${templateName}, falling back to file`, err.message);
-  }
-
   const templatePath = path.join(__dirname, 'templates', `${templateName}.ejs`);
   const templateStr = await fs.readFile(templatePath, 'utf-8');
   return ejs.render(templateStr, data);
@@ -161,11 +146,9 @@ export async function sendWaitlistPromotionEmail(to, data) {
 }
 
 export async function sendEventReminderEmail(to, data) {
-  const timeText =
-    data.timeUntilEvent && data.timeUntilEvent !== 'soon' ? `in ${data.timeUntilEvent}` : 'soon';
   return sendEmail({
     to,
-    subject: `Reminder: ${data.eventName} is starting ${timeText}`,
+    subject: `Reminder: ${data.eventName} is starting soon`,
     templateName: 'event-reminder',
     data: { name: data.name, ...data },
   });

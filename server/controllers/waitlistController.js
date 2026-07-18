@@ -1,4 +1,4 @@
-import { waitlistService } from "../services/waitlistService.js";
+import { waitlistService } from '../services/waitlistService.js';
 
 export const joinWaitlist = async (req, res) => {
   try {
@@ -6,7 +6,7 @@ export const joinWaitlist = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "User added to waitlist successfully.",
+      message: 'User added to waitlist successfully.',
       data: result,
     });
   } catch (err) {
@@ -14,7 +14,7 @@ export const joinWaitlist = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to join waitlist.",
+      message: 'Failed to join waitlist.',
     });
   }
 };
@@ -34,7 +34,7 @@ export const getPosition = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch waitlist position.",
+      message: 'Failed to fetch waitlist position.',
     });
   }
 };
@@ -47,7 +47,7 @@ export const autoEnroll = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Auto-enrollment completed.",
+      message: 'Auto-enrollment completed.',
       data: enrolled,
     });
   } catch (err) {
@@ -55,7 +55,7 @@ export const autoEnroll = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Auto-enrollment failed.",
+      message: 'Auto-enrollment failed.',
     });
   }
 };
@@ -74,7 +74,7 @@ export const getNotifications = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch notifications.",
+      message: 'Failed to fetch notifications.',
     });
   }
 };
@@ -92,7 +92,7 @@ export const getAnalytics = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch analytics.",
+      message: 'Failed to fetch analytics.',
     });
   }
 };
@@ -105,7 +105,7 @@ export const setDeadline = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Registration deadline updated.",
+      message: 'Registration deadline updated.',
       data: result,
     });
   } catch (err) {
@@ -113,7 +113,7 @@ export const setDeadline = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to update registration deadline.",
+      message: 'Failed to update registration deadline.',
     });
   }
 };

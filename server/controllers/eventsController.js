@@ -41,32 +41,18 @@ export const listEvents = wrapAsync(async (req, res) => {
     }
   }
 
-  // Redis caching (15 min). Cache key must include studentGroups scope.
-  const { hashKeyParts, getOrSet } = await import('../utils/endpointCache.js');
-  const scopeHash = hashKeyParts(studentGroups || []);
-  const cacheKey = `cache:endpoint:events:listing:${hashKeyParts(
-    req.query?.status,
+  const { rows, total } = await eventsService.listEvents({
     page,
     limit,
-    scopeHash
-  )}`;
-
-  const { data, hit } = await getOrSet({
-    key: cacheKey,
-    ttlSeconds: 60 * 15,
-    getValue: async () => {
-      const { rows, total } = await eventsService.listEvents({
-        page,
-        limit,
-        status,
-        studentGroups,
-      });
-      return { events: rows, pagination: buildPaginationMeta(page, limit, total) };
-    },
+    status,
+    studentGroups,
+    startDate,
+    endDate,
+    category,
+    location,
+    search,
   });
-
-  res.setHeader('X-Cache', hit ? 'HIT' : 'MISS');
-  return res.json(data);
+  return res.json({ events: rows, pagination: buildPaginationMeta(page, limit, total) });
 });
 
 export const adminListEvents = wrapAsync(async (req, res) => {
@@ -106,14 +92,6 @@ export const adminUpdateEvent = wrapAsync(async (req, res) => {
   const updated = await eventsService.updateEvent(id, req.body, updateSeries);
   if (!updated) return res.status(404).json({ error: 'Event not found' });
 
-  // Invalidate event listing cache (and event detail cache if added later)
-  try {
-    const { invalidateByPrefix } = await import('../utils/endpointCache.js');
-    // Events listing cache prefix: cache:endpoint:events:listing:*
-    await invalidateByPrefix('events:listing');
-  } catch {
-    // ignore
-  }
 
   // Broadcast real-time update to all calendar views
   emitToRole('user', 'calendar:event-updated', updated);

@@ -21,46 +21,16 @@ import {
 import '../../styles/portfolio.css';
 
 const THEMES = [
-  {
-    id: 'minimalist-light',
-    name: 'Minimalist Light',
-    dark: false,
-    image: '/templates/minimalist-light.png',
-    description: 'Clean, bright, and professional.',
-  },
-  {
-    id: 'modern-dark',
-    name: 'Modern Dark',
-    dark: true,
-    image: '/templates/modern-dark.png',
-    description: 'Deep grays with neon accents.',
-  },
-  {
-    id: 'creative',
-    name: 'Creative',
-    dark: true,
-    image: '/templates/creative.png',
-    description: 'Vibrant colors and bold typography.',
-  },
-  {
-    id: 'cyberpunk',
-    name: 'Cyberpunk',
-    dark: true,
-    image: '/templates/cyberpunk.png',
-    description: 'Futuristic neon pink and cyan.',
-  },
-  {
-    id: 'elegant',
-    name: 'Elegant',
-    dark: true,
-    image: '/templates/elegant.png',
-    description: 'Luxurious dark with gold accents.',
-  },
+  { id: 'minimalist-light', name: 'Minimalist Light', dark: false },
+  { id: 'modern-dark', name: 'Modern Dark', dark: true },
+  { id: 'creative', name: 'Creative', dark: true },
   { id: 'academic', name: 'Academic', dark: false },
   { id: 'startup', name: 'Startup', dark: false },
+  { id: 'cyberpunk', name: 'Cyberpunk', dark: true },
   { id: 'glassmorphic', name: 'Glassmorphic', dark: true },
   { id: 'retro', name: 'Retro', dark: false },
   { id: 'brutalist', name: 'Brutalist', dark: false },
+  { id: 'elegant', name: 'Elegant', dark: true },
 ];
 
 const AdvancedCustomizer = ({ currentConfig, onUpdate }) => {
@@ -202,86 +172,17 @@ const AdvancedCustomizer = ({ currentConfig, onUpdate }) => {
             {activeTab === 'themes' && (
               <div className="builder-section-card">
                 <span className="builder-section-title">
-                  <Palette /> Template Gallery
+                  <Palette /> Theme Library
                 </span>
-                <p className="switch-subtext" style={{ marginBottom: '16px' }}>
-                  Select a curated professional template to apply instantly to your profile.
-                </p>
-                <div
-                  className="template-gallery-grid"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                    gap: '16px',
-                  }}
-                >
+                <div className="theme-selector-grid">
                   {THEMES.map((t) => (
-                    <div
+                    <button
                       key={t.id}
                       onClick={() => updateConfig({ themeId: t.id })}
-                      className={`template-card ${currentConfig.themeId === t.id ? 'active-template' : ''}`}
-                      style={{
-                        cursor: 'pointer',
-                        border:
-                          currentConfig.themeId === t.id
-                            ? '2px solid var(--accent-portfolio, #cc1111)'
-                            : '1px solid var(--border-portfolio, #ccc)',
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        background: 'var(--bg-panel-portfolio, #fff)',
-                        transition: 'all 0.2s ease',
-                      }}
+                      className={`theme-card ${currentConfig.themeId === t.id ? 'active' : ''}`}
                     >
-                      {t.image ? (
-                        <div
-                          style={{
-                            width: '100%',
-                            height: '120px',
-                            backgroundImage: `url(${t.image})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: '100%',
-                            height: '120px',
-                            background: t.dark ? '#333' : '#eee',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <span style={{ color: t.dark ? '#fff' : '#666', fontSize: '12px' }}>
-                            No Preview
-                          </span>
-                        </div>
-                      )}
-                      <div style={{ padding: '12px' }}>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 'bold' }}>
-                          {t.name}
-                        </h4>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                          }}
-                        >
-                          <span
-                            style={{ fontSize: '12px', color: 'var(--text-sub-portfolio, #666)' }}
-                          >
-                            {t.dark ? 'Dark Mode' : 'Light Mode'}
-                          </span>
-                          {currentConfig.themeId === t.id && (
-                            <CheckCircle size={14} color="var(--accent-portfolio, #cc1111)" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                      {t.name}
+                    </button>
                   ))}
                 </div>
               </div>

@@ -6,3 +6,7 @@ import { trackEvents } from '../controllers/analytics.controller.js';
 router.post('/event', trackEvents);
 
 export default router;
+const express = require('express');
+const analyticsController = require('../controllers/analytics.controller');
+router.post('/event', analyticsController.trackEvents);
+module.exports = router;

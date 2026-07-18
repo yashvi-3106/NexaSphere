@@ -300,7 +300,7 @@ class RealTimeEventManager extends EventEmitter {
           if (prefPush.deliver) {
             await sendPushNotification(data.pushToken, {
               title: `⏰ ${data.eventName} is coming up!`,
-              body: `Don't forget: ${data.eventName} is starting in ${data.timeUntilEvent || 'soon'}`,
+              body: `Don't forget: ${data.eventName} on ${data.eventDate}`,
               data: { eventId: data.eventId, type: 'reminder' },
               link: `/events/${data.eventId}`,
               tag: 'reminder',
@@ -309,7 +309,7 @@ class RealTimeEventManager extends EventEmitter {
         } catch (e) {
           await sendPushNotification(data.pushToken, {
             title: `⏰ ${data.eventName} is coming up!`,
-            body: `Don't forget: ${data.eventName} is starting in ${data.timeUntilEvent || 'soon'}`,
+            body: `Don't forget: ${data.eventName} on ${data.eventDate}`,
             data: { eventId: data.eventId, type: 'reminder' },
             link: `/events/${data.eventId}`,
             tag: 'reminder',

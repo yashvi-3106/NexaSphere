@@ -28,12 +28,7 @@ export const reminderWorker = connection
           throw new Error(`Event ${eventId} not found`);
         }
 
-        if (
-          type === 'event-reminder' ||
-          type === 'event-reminder-24h' ||
-          type === 'event-reminder-1h' ||
-          type === 'deadline-reminder'
-        ) {
+        if (type === 'event-reminder' || type === 'deadline-reminder') {
           // Fetch confirmed attendees
           let attendees = [];
           await withDb(async (client) => {
@@ -60,17 +55,12 @@ export const reminderWorker = connection
             return { sent: 0 };
           }
 
-          let timeUntilEvent = 'soon';
-          if (type === 'event-reminder-24h') timeUntilEvent = '24 hours';
-          if (type === 'event-reminder-1h' || type === 'event-reminder') timeUntilEvent = '1 hour';
 
           let sentCount = 0;
           for (const attendee of attendees) {
             try {
               // Emit internal event so eventEmitterService handles preferences, emails, and push notifications
-              // Use 'event-reminder' as the base event name so listeners don't have to change
-              const emitType = type.startsWith('event-reminder') ? 'event-reminder' : type;
-              eventManager.emit(emitType, {
+              eventManager.emit(type, {
                 userId: attendee.user_id,
                 userEmail: attendee.email,
                 userName: attendee.full_name,
@@ -80,7 +70,7 @@ export const reminderWorker = connection
                 eventLocation: event.location || 'TBA',
                 eventId: event.id,
                 pushToken: attendee.push_token,
-                timeUntilEvent,
+                timeUntilEvent: 'soon', // could be dynamically computed
               });
               sentCount++;
             } catch (err) {

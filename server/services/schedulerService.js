@@ -13,8 +13,7 @@ import notificationsService from './notificationsService.js';
 import { withDb } from '../repositories/db.js';
 import { HAS_SUPABASE } from '../storage/supabaseClient.js';
 import { backupService } from './backupService.js';
-import { segmentationService } from './segmentationService.js';
-import { portfolioRepository } from '../repositories/portfolioRepository.js';
+import { sendEmail } from './emailService.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -228,14 +227,7 @@ const TASK_DEFINITIONS = [
     category: 'email',
     enabled: true,
   },
-  {
-    id: 'portfolio-github-sync',
-    name: 'Portfolio GitHub Sync',
-    description: 'Refreshes cached GitHub activity for portfolios with a linked GitHub username',
-    cron: '0 3 * * 1', // Weekly, Mondays at 03:00
-    category: 'portfolio',
-    enabled: true,
-  },
+
 ];
 
 // ─── In-memory state ──────────────────────────────────────────────────────────
@@ -366,9 +358,7 @@ class SchedulerService extends EventEmitter {
         break;
       case 'weekly-analytics-report':
         await this._generateWeeklyAnalyticsReport();
-        break;
-      case 'auto-user-segmentation':
-        await segmentationService.runAutoSegmentation();
+
         break;
       case 'inactive-user-check':
         await this._flagInactiveUsers();
@@ -392,9 +382,7 @@ class SchedulerService extends EventEmitter {
       case 'email-queue-processor':
         await this._processEmailQueue();
         break;
-      case 'portfolio-github-sync':
-        await this._syncPortfolioGithubData();
-        break;
+
       default:
         throw new Error(`No implementation for task "${task.id}"`);
     }
@@ -467,6 +455,31 @@ class SchedulerService extends EventEmitter {
 
   async _backupDatabase() {
     logger.info('[Scheduler] Starting database full backup');
+    if (!HAS_SUPABASE) {
+      logger.info('[Scheduler] No database configured, skipping backup');
+      return;
+    }
+    const tables = [
+      'events',
+      'student_users',
+      'core_team_members',
+      'resources',
+      'push_subscriptions',
+    ];
+    let totalRows = 0;
+    await withDb(async (client) => {
+      for (const table of tables) {
+        try {
+          const { rows } = await client.query(`SELECT COUNT(*) as count FROM ${table}`);
+          totalRows += parseInt(rows[0]?.count || '0', 10);
+        } catch {
+          logger.warn(`[Scheduler] Backup: table ${table} not found, skipping`);
+        }
+      }
+    });
+    logger.info(`[Scheduler] Backup summary: ${tables.length} tables, ${totalRows} total rows`);
+
+    // Run the actual daily backup service
     await backupService.runDailyBackup();
   }
 
@@ -666,49 +679,6 @@ class SchedulerService extends EventEmitter {
     }
   }
 
-  async _syncPortfolioGithubData() {
-    logger.info('[Scheduler] Starting weekly portfolio GitHub sync');
-    try {
-      const portfolios = await portfolioRepository.listAll();
-      const withGithub = portfolios.filter((p) => p.githubUsername);
-
-      if (withGithub.length === 0) {
-        logger.info('[Scheduler] No portfolios with a linked GitHub username, skipping');
-        return;
-      }
-
-      let checked = 0;
-      let failed = 0;
-
-      for (const portfolio of withGithub) {
-        try {
-          const res = await fetch(
-            `https://api.github.com/users/${encodeURIComponent(portfolio.githubUsername)}`
-          );
-          if (!res.ok) {
-            failed++;
-            continue;
-          }
-          checked++;
-          // Rate-limit friendly: small delay between unauthenticated GitHub
-          // API calls to avoid tripping the 60 req/hour anonymous limit.
-          await new Promise((resolve) => setTimeout(resolve, 1200));
-        } catch (err) {
-          failed++;
-          logger.warn(
-            `[Scheduler] GitHub sync failed for @${portfolio.githubUsername}: ${err.message}`
-          );
-        }
-      }
-
-      logger.info(
-        `[Scheduler] Portfolio GitHub sync complete: ${checked} verified, ${failed} failed, out of ${withGithub.length} linked portfolios`
-      );
-    } catch (err) {
-      logger.error('[Scheduler] Portfolio GitHub sync error:', err.message);
-      throw err;
-    }
-  }
 
   // ── Public API ───────────────────────────────────────────────────────────────
 

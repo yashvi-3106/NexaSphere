@@ -14,6 +14,7 @@ import { requireNotificationPrefAuth } from '../middleware/auth/customAuth.js';
 import notificationsService from '../services/notificationsService.js';
 import { pushSubscriptionsRepository } from '../repositories/pushSubscriptionsRepository.js';
 import { notificationPreferencesRepository } from '../repositories/notificationPreferencesRepository.js';
+import { studentAuthService } from '../services/studentAuthService.js';
 import { notificationSchema } from '../validators/notificationSchemas.js';
 
 const router = Router();
@@ -351,6 +352,7 @@ router.get('/notifications', async (req, res) => {
     const offset = parseInt(req.query.offset, 10) || 0;
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
     const list = await notificationsService.getNotifications({ userId, offset, limit, tab, q });
+    const list = await notificationsService.getNotifications(userId, offset, limit);
     return res.json({ notifications: list });
   } catch (err) {
     return res.status(500).json({ error: err.message });

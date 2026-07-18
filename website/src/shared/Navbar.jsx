@@ -6,8 +6,7 @@ import { ThemeToggle } from '../components/common/ThemeToggle';
 import { useStudentAuth } from '../context/StudentAuthContext';
 import LanguageSelector from '../components/common/LanguageSelector';
 import { useTranslation } from 'react-i18next';
-import { useWalkthroughStep } from '../hooks/useWalkthroughStep';
-import { WalkthroughWrapper } from '../components/walkthrough/WalkthroughWrapper';
+
 
 const TABS = [
   'Home',
@@ -189,24 +188,14 @@ export default function Navbar({
             <ThemeToggle />
             <LanguageSelector />
             {isAuthenticated && (
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span
-                  className="ns-nav-user-badge"
-                  onClick={() => navigate('/settings/account')}
-                  style={{ cursor: 'pointer', fontSize: '1rem', color: 'var(--t1)' }}
-                  title="Settings & Privacy"
-                >
-                  ⚙️
-                </span>
-                <span
-                  className="ns-nav-user-badge"
-                  onClick={() => navigate('/dashboard')}
-                  style={{ cursor: 'pointer', fontSize: '0.8rem', color: 'var(--t1)' }}
-                  title={user?.name || user?.email}
-                >
-                  👤
-                </span>
-              </div>
+              <span
+                className="ns-nav-user-badge"
+                onClick={() => navigate('/dashboard')}
+                style={{ cursor: 'pointer', fontSize: '0.8rem', color: 'var(--t1)' }}
+                title={user?.name || user?.email}
+              >
+                👤
+              </span>
             )}
           </div>
         </div>

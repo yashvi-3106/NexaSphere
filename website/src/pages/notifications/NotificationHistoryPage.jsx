@@ -4,12 +4,7 @@ import apiClient from '../../utils/apiClient';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import { useStudentAuth } from '../../context/StudentAuthContext';
 import { NotificationSkeleton } from '../../components/ui/skeleton/NotificationSkeleton';
-import {
-  initializeSocket,
-  joinRoom,
-  on as socketOn,
-  off as socketOff,
-} from '../../utils/socketClient';
+
 
 const TYPE_ICONS = {
   message: '💬',
@@ -37,15 +32,9 @@ export default function NotificationHistoryPage({ userId }) {
       setLoading(true);
       try {
         const currentOffset = reset ? 0 : offset;
-        const params = new URLSearchParams();
-        params.set('userId', effectiveUserId);
-        params.set('offset', String(currentOffset));
-        params.set('limit', String(limit));
-
-        if (filter && filter !== 'all') params.set('tab', filter);
-        if (q && q.trim()) params.set('q', q.trim());
-
-        const data = await apiClient(`/api/notifications?${params.toString()}`);
+        const data = await apiClient(
+          `/api/notifications?userId=${effectiveUserId}&offset=${currentOffset}&limit=${limit}`
+        );
         const list = data.notifications || [];
 
         setNotifications(list);
@@ -56,39 +45,13 @@ export default function NotificationHistoryPage({ userId }) {
       }
       setLoading(false);
     },
-    [effectiveUserId, offset, filter, q]
+    [effectiveUserId, offset]
   );
 
   useEffect(() => {
     setOffset(0);
     fetchNotifications(true);
-  }, [effectiveUserId, fetchNotifications]);
-
-  // Real-time updates via WebSocket
-  useEffect(() => {
-    const socket = initializeSocket();
-    if (!socket) return;
-
-    joinRoom('notifications-room');
-
-    const handler = (payload) => {
-      try {
-        if (!payload) return;
-        if (payload.userId && effectiveUserId && payload.userId !== effectiveUserId) return;
-        fetchNotifications(true);
-      } catch {
-        // ignore
-      }
-    };
-
-    socketOn('notifications:new', handler);
-    socketOn('notifications:updated', handler);
-
-    return () => {
-      socketOff('notifications:new', handler);
-      socketOff('notifications:updated', handler);
-    };
-  }, [effectiveUserId, fetchNotifications]);
+  }, [effectiveUserId]);
 
   const markRead = useCallback(
     async (id) => {
@@ -348,11 +311,55 @@ export default function NotificationHistoryPage({ userId }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {filteredList.map((n) => (
-            <div key={n.id || n.groupKey || n.groupType}>
-              {n.notifications && Array.isArray(n.notifications) ? (
-                <ExpandableGroup group={n} />
-              ) : (
-                renderItem(n)
+            <div
+              key={n.id}
+              onClick={() => {
+                if (!n.isRead) markRead(n.id);
+                if (n.link) navigate(n.link);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '1rem',
+                padding: '1rem 1.25rem',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                background: n.isRead ? 'transparent' : 'rgba(204,17,17,0.06)',
+                border: '1px solid',
+                borderColor: n.isRead ? 'var(--border)' : 'rgba(204,17,17,0.15)',
+                transition: 'background 0.15s',
+              }}
+            >
+              <span style={{ fontSize: '1.3rem' }}>{TYPE_ICONS[n.type] || '🔔'}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: n.isRead ? 400 : 600, color: 'var(--t1)' }}>
+                  {n.title}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--t2)', marginTop: '2px' }}>
+                  {n.message}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--t2)',
+                    marginTop: '4px',
+                    opacity: 0.6,
+                  }}
+                >
+                  {formatRelativeTime(n.createdAt)}
+                </div>
+              </div>
+              {!n.isRead && (
+                <span
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: 'var(--c1)',
+                    flexShrink: 0,
+                    marginTop: '6px',
+                  }}
+                />
               )}
             </div>
           ))}

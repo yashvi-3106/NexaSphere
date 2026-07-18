@@ -18,12 +18,12 @@ export default class SentryTransport extends Transport {
     // We only forward 'error' and 'warn' levels to Sentry to avoid noise.
     if (info.level === 'error' || info.level === 'warn') {
       const level = info.level === 'error' ? 'error' : 'warning';
-      
+
       const { message, level: _level, timestamp, stack, reqId, userId, ...extra } = info;
       const context = {
         level,
         extra,
-        tags: {}
+        tags: {},
       };
 
       if (reqId) context.tags.reqId = reqId;

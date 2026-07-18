@@ -1,3 +1,4 @@
+import { getRedisClient } from './utils/redis.js';
 import 'dotenv/config';
 import { tracedFetch } from './config/appContext.js';
 import { initObservability } from './observability/index.js';
@@ -17,6 +18,7 @@ import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { adminAuthMiddleware } from './middleware/adminAuthMiddleware.js';
 import analyticsRouter from './routes/analytics.js';
+import customEventsRouter from './routes/customEvents.js';
 import apiRouter from './routes/api.js';
 import formSubmissionsRouter from './routes/forms.js';
 import { logEvent } from './controllers/analyticsController.js';
@@ -33,11 +35,22 @@ import faqRouter from './routes/faqRoutes.js';
 import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
 import healthRouter from './routes/health.js';
+import dashboardRouter from './routes/dashboard.js';
 import coreTeamRouter from './routes/coreTeam.js';
 import segmentsRouter from './routes/segments.js';
 import formsRouter from './routes/forms.js';
 import portfolioRouter from './routes/portfolio.js';
 import recoveryRouter from './routes/recovery.js';
+import healthDashboardRouter from './routes/healthDashboard.js';
+import complianceRouter from './routes/compliance.js';
+import auditToolsRouter from './routes/auditTools.js';
+import certificatesRouter from './routes/certificates.js';
+import { logEvent } from './controllers/analyticsController.js';
+import { createBullBoard } from '@bull-board/api';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { ExpressAdapter } from '@bull-board/express';
+import { eventRemindersQueue } from './services/queueService.js';
+import './workers/reminderWorker.js';
 import portfolioExportRouter from './routes/portfolioExport.js';
 import userGroupsRouter from './routes/userGroups.js';
 import notificationsRouter from './routes/notifications.js';
@@ -54,6 +67,8 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { notificationAnalyticsRepository } from './repositories/notificationAnalyticsRepository.js';
 import { notificationPreferencesRepository } from './repositories/notificationPreferencesRepository.js';
 import notificationsService from './services/notificationsService.js';
+import { studentAuthService } from './services/studentAuthService.js';
+import { slackIntegrationService } from './services/slackIntegrationService.js';
 import { initializeSentry, addSentryErrorHandler } from './utils/sentry.js';
 import { recordCompressionRatio } from './observability/metrics.js';
 import {
@@ -81,6 +96,8 @@ import './workers/bulkWorker.js';
 import './workers/waitlistWorker.js';
 import * as activityEventsController from './controllers/activityEventsController.js';
 import * as streamController from './controllers/streamController.js';
+import * as coreTeamController from './controllers/coreTeamController.js';
+import { coreTeamService } from './services/coreTeamService.js';
 import { HAS_SUPABASE, SUPABASE_URL, SUPABASE_SERVICE_KEY } from './storage/supabaseClient.js';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
@@ -97,6 +114,7 @@ import { requireStudentAuth } from './middleware/studentAuthMiddleware.js';
 import { loadPersistedPushSubscriptions } from './routes/notifications.js';
 import * as mentorshipController from './controllers/mentorshipController.js';
 import { xssSanitizer } from './middleware/xssSanitizer.js';
+import { sqlInjectionGuard } from './middleware/sqlInjectionGuard.js';
 import { tierRateLimiter } from './middleware/tierRateLimiter.js';
 import { readOnlyGuard } from './services/readOnlyService.js';
 import { startWebhookRetryProcessor } from './services/webhookRetryProcessor.js';
@@ -119,6 +137,43 @@ import activityTimelineRoutes from './routes/activityTimeline.js';
 import { initializeTypesenseCollections } from './config/typesense.js';
 import moderationRouter from './routes/moderation.js';
 import rbacRouter from './routes/rbac.js';
+import { startStreamingWorkers } from './streaming/startStreamingWorkers.js';
+import {
+  listEventsStore,
+  createEventStore,
+  updateEventStore,
+  deleteEventStore,
+  listActivityEventsStore,
+  createActivityEventStore,
+  deleteActivityEventStore,
+  listCoreTeamStore,
+  createCoreTeamStore,
+  deleteCoreTeamStore,
+  appendToSupabaseForms,
+  timingSafeStringEqual,
+  toSafeString,
+  validateWhatsApp,
+  validateSection,
+  sanitizeEvent,
+  normalizePhone,
+} from './repositories/contentStore.js';
+  checkPasskeyLockout,
+  recordFailedPasskeyAttempt,
+  clearPasskeyAttempts,
+} from './middleware/auth/passkeyLockout.js';
+  checkActivityAuthLockout,
+  recordFailedActivityAuth,
+  clearActivityAuthAttempts,
+  canManageActivityEvent,
+} from './middleware/auth/activityAuth.js';
+  requireNotificationPrefAuth,
+  requireMentorshipAuth,
+} from './middleware/auth/customAuth.js';
+  uploadWithMagicCheck,
+  validateMagicBytes,
+  UPLOADS_DIR,
+} from './middleware/uploadMiddleware.js';
+import circuitBreakerRouter from './routes/circuitBreaker.js';
 
 validateLimiters();
 
@@ -154,7 +209,6 @@ const ADMIN_PASSWORD = requiredStrongPassword('ADMIN_PASSWORD');
 const app = express();
 
 const useStructuredHttpLog = (process.env.LOG_FORMAT || '').toLowerCase() === 'json';
-
 // RECTIFIED: Enable 'trust proxy' to correctly extract client IPs from X-Forwarded-For headers when behind ALBs/Serverless layers
 app.set('trust proxy', 1);
 
@@ -210,7 +264,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
 const corsOrigin =
   process.env.CORS_ORIGIN ||
   (process.env.NODE_ENV === 'test' ? 'http://localhost,http://127.0.0.1' : '');
@@ -295,7 +348,21 @@ app.use(
         frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'], // Restricts iframe sources
         childSrc: ["'none'"], // Restricts child browsing contexts
         upgradeInsecureRequests: [], // Upgrades HTTP to HTTPS
-
+        baseUri: ["'self'"],
+        frameAncestors: ["'none'"],
+        formAction: ["'self'"],
+        upgradeInsecureRequests: [],
+        workerSrc: ["'self'", 'blob:'],
+        manifestSrc: ["'self'"],
+        mediaSrc: ["'self'"],
+        frameSrc: [
+          "'self'",
+          'https://challenges.cloudflare.com',
+          'https://maps.google.com',
+          'https://www.google.com',
+          'https://www.google.co.in',
+        ],
+        childSrc: ["'none'"],
         reportUri: '/api/v1/csp-violation',
       },
     },
@@ -349,6 +416,20 @@ app.use(
             return callback(null, true);
           }
         } catch {}
+      if (origin && allowedOrigins.includes(origin)) {
+      }
+      if (process.env.NODE_ENV === 'test') {
+        try {
+          const url = new URL(origin);
+          if (
+            url.hostname === 'localhost' ||
+            url.hostname === '127.0.0.1' ||
+            url.hostname === '[::1]' ||
+            url.hostname === '::1'
+          ) {
+            return callback(null, true);
+          }
+        } catch {}
       }
       return callback(new Error('CORS Policy: Origin not allowed.'));
     },
@@ -368,10 +449,66 @@ app.use(enhancedTracingMiddleware);
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(xssSanitizer);
+app.use(sqlInjectionGuard);
+if (!useStructuredHttpLog) {
+  app.use(morgan('combined'));
+}
 app.use(apiLogger);
 app.use(performanceMonitor);
 app.use(cookieParser());
 
+// Verify Redis URL protocol in production
+const redisSessionUrl = process.env.REDIS_URL || '';
+if (process.env.NODE_ENV === 'production' && !redisSessionUrl.startsWith('rediss://')) {
+  console.warn('Security Warning: Redis URL should use rediss:// for TLS in production.');
+}
+// Reuse the existing getRedisClient if possible, else create a new one
+let sessionClient = getRedisClient();
+if (!sessionClient) {
+  sessionClient = new Redis(redisSessionUrl);
+app.use(
+  session({
+    store: new RedisStore({ client: sessionClient, prefix: 'session:express:' }),
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    name: 'ns_session',
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: 'strict',
+      maxAge: process.env.NODE_ENV === 'production' ? 8 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000,
+    },
+  })
+);
+// Session logging middleware
+app.use((req, res, next) => {
+  if (req.session && !req.session.created_at) {
+    req.session.created_at = Date.now();
+    req.session.ip = req.ip || req.connection?.remoteAddress || 'unknown';
+    console.log('[Session] New session created:', req.sessionID, 'IP:', req.session.ip);
+  } else if (
+    req.session &&
+    req.session.ip &&
+    req.session.ip !== (req.ip || req.connection?.remoteAddress)
+  ) {
+    console.warn(
+      '[Session] Suspicious activity: Session accessed from different IP. Original:',
+      req.session.ip,
+      'New:',
+      req.ip || req.connection?.remoteAddress
+  next();
+});
+// Idle timeout middleware (30 mins)
+  if (req.session) {
+    const now = Date.now();
+    if (req.session.lastActive && now - req.session.lastActive > 30 * 60 * 1000) {
+      console.log('[Session] Destroying idle session:', req.sessionID);
+      req.session.destroy((err) => {
+        if (err) console.error('[Session] Error destroying idle session:', err);
+        return res.status(401).json({ error: 'Session expired due to inactivity' });
+      return;
+    req.session.lastActive = now;
 // Track app activity for smart notification frequency adjustment
 app.use((req, res, next) => {
   if (req.studentUser || req.adminSession) {
@@ -390,20 +527,24 @@ app.use('/api', tierRateLimiter());
 
 // Read-only guard — blocks non-GET requests when system is in maintenance mode
 app.use(readOnlyGuard);
-
+// CSRF protection — double-submit cookie pattern for all state-changing endpoints
+// Global API rate limiter — protects all /api routes from request flooding
 // Mount route modules
 app.post('/api/analytics/track', logEvent);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/health-dashboard', healthDashboardRouter);
 app.use('/api', documentationRouter);
+app.use('/', dashboardRouter);
 app.use('/', apiRouter);
 app.use('/', healthRouter);
 app.use('/', coreTeamRouter);
+app.use('/', announcementsRouter);
 app.use('/api', formsRouter);
 app.use('/api', portfolioAnalyticsRouter);
 app.use('/api', portfolioRouter);
 app.use('/api', recoveryRouter);
 app.use('/api/faqs', faqRouter);
+app.use('/api', userGroupsRouter);
 app.use('/api', notificationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', learningPathRouter);
@@ -428,7 +569,6 @@ app.use('/api/moderation', adminAuth, moderationRouter);
 
 // Role-Based Access Control
 app.use('/api/admin/rbac', adminAuth, rbacRouter);
-
 // Database Backup & Recovery Endpoints
 app.get('/api/admin/backups', adminAuth, backupController.getBackups);
 app.post('/api/admin/backups/manual', adminAuth, backupController.runManualBackup);
@@ -541,20 +681,29 @@ const uploadWithMagicCheck = (req, res, next) => {
 };
 
 // Serve uploaded files statically
+function requiredStrongPassword(name) {
+  const value = String(process.env[name] || '').trim();
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
+  const hasLower = /[a-z]/.test(value);
+  const hasUpper = /[A-Z]/.test(value);
+  const hasNumber = /\d/.test(value);
+  const hasSymbol = /[^A-Za-z0-9]/.test(value);
+  if (value.length < 12 || !hasLower || !hasUpper || !hasNumber || !hasSymbol) {
+    throw new Error(
+      `${name} must be at least 12 characters and include uppercase, lowercase, number, and symbol`
+    );
+  return value;
+const ADMIN_EVENT_PASSWORD = requiredStrongPassword('ADMIN_EVENT_PASSWORD');
+const SESSION_SECRET = requiredStrongPassword('SESSION_SECRET');
+// ── File Upload Configuration ──
 app.use('/uploads', express.static(UPLOADS_DIR));
 
-getPublicAppUrl();
+// Compliance & Legal Documents (handles both public and admin routes internally)
+app.use('/api/compliance', complianceRouter);
 
-async function ensureContentFile() {
-  const dir = path.dirname(CONTENT_FILE);
-  await fsp.mkdir(dir, { recursive: true });
-  try {
-    await fsp.access(CONTENT_FILE);
-  } catch {
-    await fsp.writeFile(CONTENT_FILE, JSON.stringify(defaultContent, null, 2), 'utf8');
-  }
-}
-const fileMutex = new Mutex();
+// Compliance & Accessibility Audit Tools (#1801)
+app.use('/api', auditToolsRouter);
 
 export async function runWithFileLock(callback) {
   return await fileMutex.runExclusive(callback);
@@ -1197,13 +1346,25 @@ function recordFailedActivityAuth(ip) {
 function clearActivityAuthAttempts(ip) {
   failedActivityAuthAttempts.delete(ip);
 }
+// Event Certification & Digital Badges (#1787)
+app.use('/api', certificatesRouter);
 
 // Compliance & Legal Documents (handles both public and admin routes internally)
 app.use('/api/compliance', complianceRouter);
 
 // Admin Analytics & Metrics (mounted with admin auth)
 app.use('/api/admin/analytics', adminAuth, analyticsRouter);
+app.use('/api/admin/custom-events', adminAuth, customEventsRouter);
 app.use('/api/admin/metrics', adminAuth, adminStreamRouter);
+
+// Setup Bull Board for background job monitoring
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath('/api/admin/queues');
+createBullBoard({
+  queues: eventRemindersQueue ? [new BullMQAdapter(eventRemindersQueue)] : [],
+  serverAdapter,
+});
+app.use('/api/admin/queues', adminAuth, serverAdapter.getRouter());
 
 // Setup Bull Board for background job monitoring
 const serverAdapter = new ExpressAdapter();
@@ -1471,6 +1632,21 @@ app.put('/api/notifications/preferences/bulk', adminAuth, async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
+// Public listings
+// Admin Team Management
+app.get(
+  '/api/admin/core-team',
+  adminAuthMiddleware.requireScope('settings:admin'),
+  coreTeamController.adminListCoreTeamMembers
+);
+app.post(
+  coreTeamController.adminAddCoreTeamMember
+app.put(
+  '/api/admin/core-team/:id',
+  coreTeamController.adminUpdateCoreTeamMember
+app.delete(
+  coreTeamController.adminDeleteCoreTeamMember
+app.use('/api/admin/circuit-breaker', circuitBreakerRouter);
 
 // Notification analytics (lightweight collector)
 app.post('/api/notifications/analytics', async (req, res) => {
@@ -1616,6 +1792,8 @@ app.get('/api/search', searchRateLimiter, searchController.search);
 app.get('/api/search/trending', searchRateLimiter, searchController.trending);
 app.get('/api/recommendations', searchRateLimiter, searchController.recommendations);
 // â”€â”€ Resource Library Routes â”€â”€
+// ── Search, Discovery & Recommendation Engine ──
+// ── Resource Library Routes ──
 // Public resource endpoints
 app.get('/api/resources', resourcesController.listResources);
 app.get('/api/resources/:id', resourcesController.getResource);
@@ -1664,12 +1842,24 @@ if (process.env.NODE_ENV !== 'test') {
     const boot = HAS_SUPABASE
       ? Promise.all([studentUsersRepository.ensureSchema(), slackRepository.ensureSchema()])
       : ensureContentFile();
-    boot.then(() => {
+    boot.then(async () => {
       loadPersistedPushSubscriptions();
+
+      // Start background streaming workers (outbox dispatcher)
+      try {
+        await startStreamingWorkers();
+      } catch (err) {
+        console.error('[streamingWorkers] failed to start', err?.message || err);
+      }
       slackIntegrationService.init();
       server = app.listen(port, () => {
         console.log(`NexaSphere server listening on http://localhost:${port}`);
         schedulerService.init();
+
+        // Register Learning Path Nudges (Runs daily)
+        schedulerService.schedule('0 10 * * *', async () => {
+          await learningPathService.runNudgeJob();
+        });
       });
       server.on('error', (err) => {
         console.error('SERVER LISTEN ERROR:', err.code, err.message);

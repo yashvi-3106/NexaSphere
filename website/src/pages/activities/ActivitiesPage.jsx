@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
-import { activities, difficultyLevels } from '../../data/activities';
+import { useEffect, useRef } from 'react';
+import { activities } from '../../data/activities';
 import { BannerOrbs } from '../../shared/MotionLayer';
 import Footer from '../../shared/Footer';
 import { DynamicIcon } from '../../shared/Icons';

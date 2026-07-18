@@ -30,7 +30,7 @@ import { getScopesForRole } from '../config/rbac.js';
 
 // lgtm[js/weak-cryptographic-algorithm]
 function safeEqual(a, b) {
-  if (a == null || b == null) return false;
+  if (!a || !b) return false;
   const hashA = crypto.createHash('sha256').update(String(a)).digest();
   const hashB = crypto.createHash('sha256').update(String(b)).digest();
 
@@ -136,10 +136,7 @@ async function recordLoginAttempt(ip) {
       expiresAt: now + LOGIN_WINDOW_MS,
     };
     loginAttemptsByIp.set(ip, entry);
-    if (loginAttemptsByIp.size > LOGIN_MAX_TRACKED_IPS) {
-      const oldestKey = loginAttemptsByIp.keys().next().value;
-      if (oldestKey) loginAttemptsByIp.delete(oldestKey);
-    }
+
     return entry;
   } catch (err) {
     console.error('[Redis Error] Failed to record login attempt:', err.message);
@@ -409,6 +406,7 @@ async function login(req, res) {
 
     await clearLoginAttempts(ip);
 
+    const matchedUser = adminUsers.find((user) => safeEqual(user.username, u)) || adminUsers[0];
     const role = matchedUser.role || 'SuperAdmin';
     const scopes = getScopesForRole(role);
     const securityAccount = await getOrCreateAdminSecurityAccount(u, matchedUser.email || u);
@@ -453,7 +451,7 @@ async function login(req, res) {
       suspicious,
     });
 
-    return res.status(202).json({
+    return res.status(200).json({
       requiresTwoFactor: true,
       challengeToken,
       expiresAt: Date.now() + PENDING_2FA_TTL_MS,

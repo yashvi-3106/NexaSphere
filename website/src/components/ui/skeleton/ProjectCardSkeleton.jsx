@@ -16,7 +16,7 @@ export function ProjectCardSkeleton({ count = 6 }) {
     >
       {Array.from({ length: count }, (_, i) => (
         <div
-          key={`project-card-skeleton-${i}`}
+          key={i}
           style={{
             padding: '22px',
             borderRadius: 'var(--r2, 14px)',

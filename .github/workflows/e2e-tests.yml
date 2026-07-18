@@ -100,7 +100,7 @@ jobs:
           FRONTEND_URL: http://localhost:5175,http://127.0.0.1:5175
           CORS_ORIGIN: http://localhost:5175,http://127.0.0.1:5175
           ADMIN_USERS_JSON: '[{"username":"admin","password":"admin123","role":"SuperAdmin"}]'
-          ADMIN_EVENT_PASSWORD: ${{ secrets.E2E_ADMIN_EVENT_PASSWORD || 'ChangeMe123!Event' }}
+          ADMIN_EVENT_PASSWORD: StrongEventPassword123!
         timeout-minutes: 5
 
       - name: Wait for server

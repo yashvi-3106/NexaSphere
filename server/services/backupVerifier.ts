@@ -65,17 +65,19 @@ export class BackupVerifierService {
     try {
       // The script is located at the root of the server directory
       const scriptPath = path.resolve(__dirname, '../../verify-backup-integrity.sh');
-      
+
       // Use bash explicitly in case it's not executable
       const { stdout, stderr } = await execAsync(`bash "${scriptPath}" "${localFilePath}"`);
-      
       console.log('Integrity check output:', stdout);
       if (stderr) {
         console.warn('Integrity check stderr:', stderr);
       }
       return true;
     } catch (error: any) {
-      console.error('Integrity check failed. The backup is corrupted or empty:', error.message || error);
+      console.error(
+        'Integrity check failed. The backup is corrupted or empty:',
+        error.message || error
+      );
       return false;
     }
   }

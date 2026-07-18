@@ -1,4 +1,8 @@
 // src/services/moderationService.js
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
 
 // Content categories for moderation
 export const MODERATION_CATEGORIES = {
@@ -59,8 +63,8 @@ class ModerationService {
       result.severity = SEVERITY.MEDIUM;
     }
 
-    // Run NLP detection using server-side AI proxy
-    if (this.isConfigured()) {
+    // Run NLP detection using Gemini
+    if (import.meta.env.VITE_GEMINI_API_KEY) {
       const aiResult = await this.detectWithAI(content);
       if (aiResult.flags.length > 0) {
         result.isAppropriate = false;
@@ -69,7 +73,7 @@ class ModerationService {
       }
       result.confidence = aiResult.confidence;
     } else {
-      console.warn('AI moderation endpoint not available. Using basic detection only.');
+      console.warn('Gemini API key not configured. Using basic detection only.');
     }
 
     // Determine action based on user reputation
@@ -123,30 +127,37 @@ class ModerationService {
     };
   }
 
-  // Check if server-side AI moderation endpoint is available
-  isConfigured() {
-    const base = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
-    return Boolean(base);
-  }
-
-  // AI-based content detection via server-side proxy
+  // AI-based content detection
   async detectWithAI(content) {
     try {
-      const base = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
-      const res = await fetch(`${base}/api/moderation/ai-check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ content }),
-      });
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-      if (!res.ok) return { flags: [], confidence: 0 };
+      const prompt = `
+        Analyze the following content for toxicity, hate speech, harassment, and inappropriate material.
+        Content: "${content}"
+        
+        Return a JSON object with:
+        - isAppropriate: boolean
+        - categories: array of detected issues (spam, hate_speech, harassment, toxic, violence, self_harm, sexual)
+        - severity: low/medium/high/critical
+        - confidence: number between 0-1
+        - explanation: brief reason
+        
+        Only return valid JSON, no other text.
+      `;
 
-      const data = await res.json();
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      // Parse JSON response
+      const parsed = JSON.parse(text);
+
       return {
-        flags: data.flags || [],
-        confidence: data.confidence || 0.7,
-        explanation: data.explanation,
+        flags:
+          parsed.categories?.map((cat) => ({ type: cat, confidence: parsed.confidence })) || [],
+        confidence: parsed.confidence || 0.7,
+        explanation: parsed.explanation,
       };
     } catch (error) {
       console.error('AI moderation failed:', error);

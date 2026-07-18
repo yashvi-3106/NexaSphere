@@ -3,7 +3,7 @@ import { eventSchema } from '../validators/eventSchemas.js';
 import { recordEventCreated } from '../observability/metrics.js';
 import { scheduleReminderJob } from './queueService.js';
 import logger from '../utils/logger.js';
-import { getCachedQuery, clearCache } from '../utils/redis.js';
+
 
 export const eventsService = {
   async listEvents({
@@ -17,23 +17,17 @@ export const eventsService = {
     location,
     search,
   } = {}) {
-    const cacheKey = `events:list:${JSON.stringify({ page, limit, status, studentGroups, startDate, endDate, category, location, search })}`;
-    return getCachedQuery(
-      cacheKey,
-      () =>
-        eventsRepository.list({
-          page,
-          limit,
-          status,
-          studentGroups,
-          startDate,
-          endDate,
-          category,
-          location,
-          search,
-        }),
-      300
-    ); // 5 minutes cache
+    return eventsRepository.list({
+      page,
+      limit,
+      status,
+      studentGroups,
+      startDate,
+      endDate,
+      category,
+      location,
+      search,
+    });
   },
 
   async createEvent(input) {
@@ -78,32 +72,20 @@ export const eventsService = {
     }
     
     recordEventCreated();
-    import('../utils/redis.js').then(m => m.clearCache('events:list:*'));
 
-    // Emit real-time notification to all connected clients
+    // Attempt to schedule a reminder if date is parseable
     try {
-      emitToRoom('notifications-room', 'event-published', {
-        eventId: created.id,
-        eventName: created.name,
-      });
-    } catch (socketErr) {
-      logger.warn(`Could not emit event-published notification: ${socketErr.message}`);
-    }
-
-    // Schedule reminders for all created events
-    for (const evt of createdEvents) {
-      try {
-        const eventDate = new Date(evt.date);
-        if (!isNaN(eventDate.getTime())) {
-          const reminderTime = eventDate.getTime() - 60 * 60 * 1000;
-          const delay = reminderTime - Date.now();
-          if (delay > 0) {
-            await scheduleReminderJob({ eventId: evt.id, delayMs: delay });
-          }
+      const eventDate = new Date(created.date);
+      if (!isNaN(eventDate.getTime())) {
+        // Schedule reminder 1 hour before the event
+        const reminderTime = eventDate.getTime() - 60 * 60 * 1000;
+        const delay = reminderTime - Date.now();
+        if (delay > 0) {
+          await scheduleReminderJob({ eventId: created.id, delayMs: delay });
         }
-      } catch (err) {
-        logger.warn(`Could not schedule reminder for event ${evt.id}: ${err.message}`);
       }
+    } catch (err) {
+      logger.warn(`Could not schedule reminder for event ${created.id}: ${err.message}`);
     }
 
     return created;
@@ -111,29 +93,22 @@ export const eventsService = {
 
   async updateEvent(id, input, updateSeries = false) {
     const patch = eventSchema.partial().parse({ ...input, id });
-    let updated;
+    const updated = await eventsRepository.update(id, patch);
 
-    if (updateSeries && patch.seriesId) {
-      updated = await eventsRepository.updateSeries(patch.seriesId, patch);
-      // Pick first element to return
-      if (Array.isArray(updated) && updated.length > 0) updated = updated[0];
-    } else {
-      updated = await eventsRepository.update(id, patch);
-    }
-    
     if (updated) {
-      import('../utils/redis.js').then(m => m.clearCache('events:list:*'));
       try {
         const eventDate = new Date(updated.date);
         if (!isNaN(eventDate.getTime())) {
           const reminderTime = eventDate.getTime() - 60 * 60 * 1000;
           const delay = reminderTime - Date.now();
           if (delay > 0) {
+            // Note: In a complete system we might cancel the old job and schedule a new one,
+            // but for now we simply schedule the new reminder time.
             await scheduleReminderJob({ eventId: updated.id, delayMs: delay });
           }
         }
       } catch (err) {
-        logger.warn(`Could not update reminders for event ${updated.id}: ${err.message}`);
+        logger.warn(`Could not update reminder for event ${updated.id}: ${err.message}`);
       }
     }
 

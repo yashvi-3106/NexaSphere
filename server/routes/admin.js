@@ -302,7 +302,6 @@ router.post('/api/admin/sso-invite', adminAuth, (req, res) => {
 
   return res.json({ token, inviteUrl });
 });
-
 router.get('/sessions', adminAuth, adminAuthMiddleware.getSecurityOverview);
 router.delete('/sessions/:sessionId', adminAuth, adminAuthMiddleware.revokeSession);
 router.delete('/sessions', adminAuth, adminAuthMiddleware.logoutOtherSessions);

@@ -1,58 +1,15 @@
-const BOOLEAN_OPERATOR_PATTERN = /(\b(OR|AND)\b\s+\d+\s*[=<>])/i;
-
 const SQL_INJECTION_PATTERNS = [
+  /(\b(union|select|insert|update|delete|drop|alter|create|truncate|exec|execute)\b[\s\S]*?\b(from|into|set|table|database|procedure)\b)/i,
+  /(\b(OR|AND)\b\s+\d+\s*[=<>])/i,
   /([';])\s*(--|#|\/\*)/,
   /(\b(LOAD_FILE|INTO_OUTFILE|INTO_DUMPFILE|BENCHMARK|SLEEP|WAITFOR)\b)/i,
   /(\bINFORMATION_SCHEMA\b)/i,
+  /(\b0x[0-9a-fA-F]+\b)/i,
 ];
-
-function maskQuotedLiterals(value) {
-  let masked = '';
-
-  for (let i = 0; i < value.length; i += 1) {
-    const quote = value[i];
-
-    if (quote !== "'" && quote !== '"' && quote !== '`') {
-      masked += quote;
-      continue;
-    }
-
-    let end = -1;
-    for (let j = i + 1; j < value.length; j += 1) {
-      if (value[j] === '\\') {
-        j += 1;
-        continue;
-      }
-
-      if (value[j] === quote && value[j + 1] === quote) {
-        j += 1;
-        continue;
-      }
-
-      if (value[j] === quote) {
-        end = j;
-        break;
-      }
-    }
-
-    if (end === -1) {
-      masked += quote;
-      continue;
-    }
-
-    masked += ' '.repeat(end - i + 1);
-    i = end;
-  }
-
-  return masked;
-}
 
 function hasSqliPattern(value) {
   if (typeof value === 'string') {
-    return (
-      BOOLEAN_OPERATOR_PATTERN.test(maskQuotedLiterals(value)) ||
-      SQL_INJECTION_PATTERNS.some((pattern) => pattern.test(value))
-    );
+    return SQL_INJECTION_PATTERNS.some((pattern) => pattern.test(value));
   }
   if (typeof value === 'object' && value !== null) {
     return Object.values(value).some((v) => hasSqliPattern(v));

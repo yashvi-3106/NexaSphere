@@ -136,7 +136,7 @@ const activeTransports = [
 if (process.env.SENTRY_DSN) {
   activeTransports.push(
     new SentryTransport({
-      level: 'warn' // This will process warn and error levels
+      level: 'warn', // This will process warn and error levels
     })
   );
 }

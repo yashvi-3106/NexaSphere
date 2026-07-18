@@ -75,12 +75,6 @@ export function useAppActions(nav, setPage, setActiveTab, mobile) {
     });
   }, [nav, setPage, setActiveTab]);
 
-  const openSettings = useCallback(() => {
-    nav(() => {
-      setPage({ type: 'settings' });
-      scrollTop();
-    });
-  }, [nav, setPage]);
 
   return {
     onNavigate,
@@ -91,6 +85,6 @@ export function useAppActions(nav, setPage, setActiveTab, mobile) {
     onBackHome,
     openApply,
     openJoin,
-    openSettings,
+
   };
 }

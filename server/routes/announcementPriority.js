@@ -40,3 +40,9 @@ router.get(
 );
 
 export default router;
+router.get('/', announcementPriorityController.getAnnouncements);
+router.post('/', announcementPriorityController.createAnnouncement);
+router.patch('/:id/priority', announcementPriorityController.updatePriority);
+router.patch('/:id/pin', announcementPriorityController.pinAnnouncement);
+router.post('/:id/read', announcementPriorityController.markRead);
+router.get('/analytics', announcementPriorityController.analytics);

@@ -13,7 +13,12 @@ const EventCard = React.memo(function EventCard({ event, onClick, id, isFirstFor
 
   return (
     <>
-      <div ref={ref} className="event-card" onClick={() => onClick(id)} style={{ cursor: 'pointer' }}>
+      <div
+        ref={ref}
+        className="event-card"
+        onClick={() => onClick(id)}
+        style={{ cursor: 'pointer' }}
+      >
         <h3>{event.title}</h3>
         <p>{event.date}</p>
         <p>{event.description}</p>

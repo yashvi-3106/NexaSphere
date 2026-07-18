@@ -463,7 +463,7 @@ export default function EventDetailPage({ event, activityColor, activityIcon, on
         event.videoPresenter?.length > 0 ||
         event.anchor,
     },
-    { id: 'whiteboard', label: 'Whiteboard', show: true },
+
     { id: 'media', label: 'Media', show: true },
   ].filter((t) => t.show);
 
@@ -940,29 +940,6 @@ export default function EventDetailPage({ event, activityColor, activityIcon, on
             </div>
           )}
 
-          {activeSubTab === 'whiteboard' && (
-            <div
-              className="pop-in"
-              style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}
-            >
-              <section>
-                <SectionHeader icon="ClipboardList" title="Event Whiteboard" color={color} />
-                <div
-                  style={{
-                    background: 'var(--bg-card)',
-                    borderRadius: 16,
-                    padding: 18,
-                    border: '1px solid var(--border-subtle)',
-                  }}
-                >
-                  {/* Whiteboard is collaborative & event-scoped */}
-                  <WhiteboardEventSection
-                    eventId={event.id ?? event.eventId ?? event.slug ?? event.name}
-                  />
-                </div>
-              </section>
-            </div>
-          )}
 
           {activeSubTab === 'media' && (
             <div

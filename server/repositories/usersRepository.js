@@ -56,7 +56,7 @@ export const usersRepository = {
   async getUserById(id) {
     return withDb(async (client) => {
       const { rows } = await client.query(
-        'SELECT id, username, display_name, email, phone_number, admin_roles, created_at FROM users WHERE id = $1',
+        'SELECT id, username, display_name, email, admin_roles, created_at FROM users WHERE id = $1',
         [id]
       );
       return rows[0] || null;
@@ -86,7 +86,7 @@ export const usersRepository = {
       }
       if (fields.length === 0) return null;
       values.push(id);
-      const queryText = `UPDATE users SET ${fields.join(', ')} WHERE id = $${i} RETURNING id, username, display_name, email, phone_number, admin_roles, created_at as joined_at`;
+      const queryText = `UPDATE users SET ${fields.join(', ')} WHERE id = $${i} RETURNING id, username, display_name, email, admin_roles, created_at as joined_at`;
       const { rows } = await client.query(queryText, values);
       return rows[0] || null;
     });

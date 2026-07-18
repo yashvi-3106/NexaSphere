@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import apiClient from '../../utils/apiClient.js';
 import { getApiBase } from '../../utils/runtimeConfig';
 import { projectsData } from '../../data/projectsData';
 import { roadmapData } from '../../data/roadmapData';
 import { RepoCardSkeleton } from '../ui/skeleton/RepoCardSkeleton';
 import AdvancedCustomizer from './AdvancedCustomizer';
-import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
+
 
 export default function PortfolioBuilder() {
   const [username, setUsername] = useState('');
@@ -88,34 +88,23 @@ export default function PortfolioBuilder() {
     title: p.title,
   }));
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const githubParam = params.get('github');
-    if (githubParam) {
-      setGhUsername(githubParam);
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, []);
-
   const loadControllerRef = useRef(null);
-  const loadGenRef = useRef(0);
 
   const handleLoadConfig = async () => {
     if (!username || username.length < 3) return;
     setErrorMsg('');
     setSuccessMsg('');
 
-    const gen = ++loadGenRef.current;
-    loadControllerRef.current?.abort();
+    if (loadControllerRef.current) {
+      loadControllerRef.current.abort();
+    }
     const controller = new AbortController();
     loadControllerRef.current = controller;
 
     try {
       const base = getApiBase();
-      const encodedUsername = encodeURIComponent(username);
-      const url = base ? `${base}/api/portfolio/${encodedUsername}` : `/api/portfolio/${encodedUsername}`;
+      const url = base ? `${base}/api/portfolio/${username}` : `/api/portfolio/${username}`;
       const data = await apiClient(url, { signal: controller.signal });
-      if (gen !== loadGenRef.current) return;
       if (data) {
         setTitle(data.title || '');
         setBio(data.bio || '');
@@ -142,7 +131,7 @@ export default function PortfolioBuilder() {
       }
     } catch (err) {
       if (err.name === 'AbortError') return;
-      if (gen !== loadGenRef.current) return;
+
       if (err.status === 404) {
         return;
       }
@@ -247,17 +236,15 @@ export default function PortfolioBuilder() {
     setIsFetchingGh(true);
     setGhError('');
     try {
-      const response = await fetch(buildGithubReposUrl(ghUsername), { signal: controller.signal });
+      const response = await fetch(
+        `https://api.github.com/users/${ghUsername.trim()}/repos?sort=updated&per_page=30`,
+        { signal: controller.signal }
+      );
 
       if (response.status === 403 || response.status === 429) {
-        let errorDetail = {};
-        try {
-          errorDetail = await response.json();
-        } catch {
-          // Keep default rate-limit message below.
-        }
-        const resetTime = errorDetail.rateLimitReset
-          ? new Date(errorDetail.rateLimitReset).toLocaleTimeString()
+        const resetHeader = response.headers.get('X-RateLimit-Reset');
+        const resetTime = resetHeader
+          ? new Date(parseInt(resetHeader, 10) * 1000).toLocaleTimeString()
           : 'soon';
         setGhError(
           `GitHub rate limit reached. Too many requests from this network. Please try again after ${resetTime}.`
@@ -321,7 +308,7 @@ export default function PortfolioBuilder() {
 
   const getPortfolioUrl = () => {
     const base = typeof window !== 'undefined' ? window.location.origin : '';
-    return `${base}/p/${encodeURIComponent(username)}`;
+    return `${base}/p/${username}`;
   };
 
   const handleCopyLink = () => {
@@ -356,41 +343,7 @@ export default function PortfolioBuilder() {
       setErrorMsg('Unable to copy link. Please copy it manually from the address bar.');
     }
     document.body.removeChild(textarea);
-  };
-  const handleResumeUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
 
-    setIsParsing(true);
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    // Simulate AI parsing delay
-    setTimeout(() => {
-      setTitle("Full-Stack AI Developer");
-      setBio("Extracted from Resume: Passionate engineer with 3 years of experience building scalable web applications. Proficient in React, Node.js, and cloud infrastructure. Strong focus on AI integration and performance optimization.");
-      
-      setSocialLinks(prev => ({
-        ...prev,
-        linkedin: "https://linkedin.com/in/johndoe",
-        github: "https://github.com/johndoe",
-        resume: "https://johndoe.com/resume.pdf"
-      }));
-
-      // Find valid skills matching our internal roadmap mapping
-      const mockParsedSkills = ["React", "Node.js", "Docker", "AWS", "MongoDB"];
-      const validSkills = mockParsedSkills.filter(s => availableSkills.includes(s));
-      
-      setSelectedSkills(validSkills.length > 0 ? validSkills : (availableSkills.slice(0, 5) || []));
-
-      setIsParsing(false);
-      setSuccessMsg("Resume successfully parsed! Profile fields updated.");
-      
-      // Reset input so they can upload again if needed
-      if (resumeInputRef.current) {
-        resumeInputRef.current.value = '';
-      }
-    }, 2000);
   };
 
   return (

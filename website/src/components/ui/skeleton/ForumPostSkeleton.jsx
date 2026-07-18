@@ -7,7 +7,7 @@ export function ForumPostSkeleton({ count = 5 }) {
     <div role="status" aria-label="Loading forum posts..." aria-busy="true">
       {Array.from({ length: count }, (_, i) => (
         <div
-          key={`forum-post-skeleton-${i}`}
+          key={i}
           style={{
             padding: '20px 24px',
             borderBottom: '1px solid var(--bdr, rgba(255,255,255,0.06))',

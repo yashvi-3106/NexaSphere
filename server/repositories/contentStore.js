@@ -112,21 +112,6 @@ export function normalizePhone(value) {
   return String(value || '').replace(/[^\d]/g, '');
 }
 
-export async function assertCoreTeamMember(name, email, phone) {
-  const n = String(name || '')
-    .trim()
-    .toLowerCase();
-  const e = String(email || '')
-    .trim()
-    .toLowerCase();
-  const p = normalizePhone(phone);
-
-  const members = await listCoreTeamStore();
-  return members.some(
-    (m) =>
-      m.name.toLowerCase() === n && m.email.toLowerCase() === e && normalizePhone(m.whatsapp) === p
-  );
-}
 
 export async function listEventsStore({ page = 1, limit = 20 } = {}) {
   if (HAS_SUPABASE) {

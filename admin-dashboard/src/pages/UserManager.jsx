@@ -23,8 +23,7 @@ export default function UserManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState(null);
+
   const [awardBadgeUser, setAwardBadgeUser] = useState(null);
   const [badgeForm, setBadgeForm] = useState({
     name: '',
@@ -43,12 +42,6 @@ export default function UserManager() {
     admin_roles: 'member',
   });
 
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [csvText, setCsvText] = useState('');
-  const [importPreview, setImportPreview] = useState(null);
-  const [importJobId, setImportJobId] = useState(null);
-  const [importProgress, setImportProgress] = useState(null);
-  const [importErrors, setImportErrors] = useState([]);
 
   async function fetchUsers() {
     setLoading(true);
@@ -148,67 +141,70 @@ export default function UserManager() {
   }
 
   async function handleCreate() {
-    setSubmitting(true);
-    try {
-      const res = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(form),
-      });
-      if (res.ok) {
-        setShowAddModal(false);
-        setForm({ username: '', display_name: '', email: '', admin_roles: 'member' });
-        fetchUsers();
-      } else {
-        const d = await res.json();
-        alert(d.error);
-      }
-    } finally {
-      setSubmitting(false);
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(form),
+    });
+    if (res.ok) {
+      setShowAddModal(false);
+      setForm({ username: '', display_name: '', email: '', admin_roles: 'member' });
+      fetchUsers();
+    } else {
+      const d = await res.json();
+      alert(d.error);
     }
   }
 
   async function handleUpdate() {
-    setSubmitting(true);
-    try {
-      const res = await fetch(`/api/admin/users/${editUser.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          display_name: form.display_name,
-          email: form.email,
-          admin_roles: form.admin_roles,
-        }),
-      });
-      if (res.ok) {
-        setEditUser(null);
-        fetchUsers();
-      } else {
-        const d = await res.json();
-        alert(d.error);
-      }
-    } finally {
-      setSubmitting(false);
+    const res = await fetch(`/api/admin/users/${editUser.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        display_name: form.display_name,
+        email: form.email,
+        admin_roles: form.admin_roles,
+      }),
+    });
+    if (res.ok) {
+      setEditUser(null);
+      fetchUsers();
+    } else {
+      const d = await res.json();
+      alert(d.error);
     }
   }
 
   async function handleDeactivate(id) {
     if (!confirm('Deactivate this user?')) return;
-    setDeleting(id);
-    try {
-      const res = await fetch(`/api/admin/users/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (res.ok) fetchUsers();
-      else {
-        const d = await res.json();
-        alert(d.error);
-      }
-    } finally {
-      setDeleting(null);
+    const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (res.ok) fetchUsers();
+    else {
+      const d = await res.json();
+      alert(d.error);
+    }
+  }
+
+  async function handleAwardBadge() {
+    const res = await fetch(`/api/admin/users/${awardBadgeUser.id}/badges`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        ...badgeForm,
+        isCustom: true,
+        earnedAt: new Date(),
+      }),
+    });
+    if (res.ok) {
+      setAwardBadgeUser(null);
+      setBadgeForm({ name: '', description: '', icon: 'Award' });
+      fetchUsers();
+    } else {
+      const d = await res.json();
+      alert(d.error || 'Failed to award badge');
     }
   }
 
@@ -352,10 +348,22 @@ export default function UserManager() {
                 {user.joined_at ? new Date(user.joined_at).toLocaleDateString() : '-'}
               </td>
               <td style={{ padding: '8px', display: 'flex', gap: '8px' }}>
-                <button onClick={() => openEdit(user)}>Edit</button>
-                <button onClick={() => handleDeactivate(user.id)}>Deactivate</button>
-                <button onClick={() => handleUnlock(user.id)}>Unlock</button>
-                <button onClick={() => openResetPassword(user)}>Reset Password</button>
+                <button
+                  onClick={() => openEdit(user)}
+                  disabled={deleting === user.id || submitting}
+                >
+                  Edit
+                </button>
+                <button onClick={() => handleDeactivate(user.id)} disabled={submitting}>
+                  Deactivate
+                </button>
+                <button
+                  onClick={() => setAwardBadgeUser(user)}
+                  disabled={submitting}
+                  style={{ background: '#8B5CF6', color: 'white' }}
+                >
+                  Award Badge
+                </button>
               </td>
             </tr>
           ))}
@@ -420,6 +428,66 @@ export default function UserManager() {
                 onClick={() => {
                   setShowAddModal(false);
                   setEditUser(null);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {awardBadgeUser && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              padding: '24px',
+              borderRadius: '8px',
+              minWidth: '320px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <h3>Award Badge to {awardBadgeUser.username}</h3>
+            <input
+              placeholder="Badge Name (e.g., Top Contributor)"
+              value={badgeForm.name}
+              onChange={(e) => setBadgeForm((f) => ({ ...f, name: e.target.value }))}
+            />
+            <input
+              placeholder="Description"
+              value={badgeForm.description}
+              onChange={(e) => setBadgeForm((f) => ({ ...f, description: e.target.value }))}
+            />
+            <select
+              value={badgeForm.icon}
+              onChange={(e) => setBadgeForm((f) => ({ ...f, icon: e.target.value }))}
+            >
+              <option value="Award">Award</option>
+              <option value="Star">Star</option>
+              <option value="Shield">Shield</option>
+              <option value="Zap">Zap</option>
+              <option value="Target">Target</option>
+            </select>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={handleAwardBadge} style={{ background: '#8B5CF6', color: 'white' }}>
+                Award
+              </button>
+              <button
+                onClick={() => {
+                  setAwardBadgeUser(null);
+                  setBadgeForm({ name: '', description: '', icon: 'Award' });
                 }}
               >
                 Cancel

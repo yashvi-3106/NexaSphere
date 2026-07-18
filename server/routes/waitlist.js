@@ -12,6 +12,7 @@ router.post(
   adminAuthMiddleware.requireAdmin,
   waitlistController.joinWaitlist
 );
+router.post('/join', adminAuthMiddleware.requireAdmin, waitlistController.joinWaitlist);
 
 /**
  * Get user's waitlist position
@@ -23,6 +24,7 @@ router.get(
   adminAuthMiddleware.requireAdmin,
   waitlistController.getPosition
 );
+router.get('/position', adminAuthMiddleware.requireAdmin, waitlistController.getPosition);
 
 /**
  * Auto-enroll next user
@@ -32,6 +34,7 @@ router.post(
   adminAuthMiddleware.requireAdmin,
   waitlistController.autoEnroll
 );
+router.post('/auto-enroll', adminAuthMiddleware.requireAdmin, waitlistController.autoEnroll);
 
 /**
  * Get notification list
@@ -41,6 +44,7 @@ router.get(
   adminAuthMiddleware.requireAdmin,
   waitlistController.getNotifications
 );
+router.get('/notifications', adminAuthMiddleware.requireAdmin, waitlistController.getNotifications);
 
 /**
  * Waitlist analytics
@@ -50,6 +54,7 @@ router.get(
   adminAuthMiddleware.requireAdmin,
   waitlistController.getAnalytics
 );
+router.get('/analytics', adminAuthMiddleware.requireAdmin, waitlistController.getAnalytics);
 
 /**
  * Set registration deadline
@@ -61,3 +66,4 @@ router.post(
 );
 
 export default router;
+router.post('/deadline', adminAuthMiddleware.requireAdmin, waitlistController.setDeadline);

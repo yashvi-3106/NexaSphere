@@ -55,7 +55,7 @@ export const useAnalyticsData = () => {
     const token = localStorage.getItem('ns_student_token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    Promise.allSettled([
+    Promise.all([
       apiClient(`${base}/api/admin/analytics/stats`, { headers }),
       apiClient(`${base}/api/admin/analytics/growth`, { headers }),
       apiClient(`${base}/api/admin/analytics/events`, { headers }),

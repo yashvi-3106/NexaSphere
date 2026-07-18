@@ -43,7 +43,7 @@ export default function Wipe({ on, ph }) {
             animation: 'splashIn .16s .1s ease forwards',
           }}
         >
-          <img loading="lazy"
+          <img
             src={nexasphereLogo}
             style={{
               height: '46px',

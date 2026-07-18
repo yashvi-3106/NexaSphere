@@ -36,10 +36,9 @@ export const customEventRepository = {
   /** Get a single event definition by id */
   async getDefinition(id) {
     return withDb(async (client) => {
-      const { rows } = await client.query(
-        'SELECT * FROM custom_event_definitions WHERE id = $1',
-        [id]
-      );
+      const { rows } = await client.query('SELECT * FROM custom_event_definitions WHERE id = $1', [
+        id,
+      ]);
       return rows[0] || null;
     });
   },
@@ -90,12 +89,7 @@ export const customEventRepository = {
         `INSERT INTO custom_event_logs (event_definition_id, user_id, session_id, properties, occurred_at)
          VALUES ($1, $2, $3, $4, NOW())
          RETURNING *`,
-        [
-          eventDefinitionId,
-          userId || null,
-          sessionId || null,
-          JSON.stringify(properties || {}),
-        ]
+        [eventDefinitionId, userId || null, sessionId || null, JSON.stringify(properties || {})]
       );
       return rows[0];
     });

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { STORAGE_KEYS } from '../utils/storageKeys.js';
 
 /**
@@ -23,8 +23,7 @@ export const useGlobalSearch = () => {
   const [facets, setFacets] = useState({});
   const [activeFilters, setActiveFilters] = useState({});
   const [suggestions, setSuggestions] = useState([]);
-  const activeRequestRef = useRef(null);
-  const requestIdRef = useRef(0);
+
 
   // Safe lazy initializer protecting against malformed JSON crashes
   const [recentSearches, setRecentSearches] = useState(() => {
@@ -40,75 +39,46 @@ export const useGlobalSearch = () => {
     }
   });
 
-  const fetchResultsRef = useRef();
-
-  useEffect(() => {
-    fetchResultsRef.current = debounce(async (searchQuery, filters) => {
-      activeRequestRef.current?.abort();
-
-      if (searchQuery.length < 2) {
-        setResults([]);
-        setSuggestions([]);
-        setFacets({});
-        setLoading(false);
-        return;
-      }
-
-      const requestId = requestIdRef.current + 1;
-      requestIdRef.current = requestId;
-      const controller = new AbortController();
-      activeRequestRef.current = controller;
-      setLoading(true);
-      try {
-        // Build query string with facets
-        const filterParams = new URLSearchParams({
-          q: searchQuery,
-          ...filters,
-        }).toString();
-
-        const response = await fetch(`/api/search?${filterParams}`, {
-          signal: controller.signal,
-        });
-        const data = await response.json();
-        if (requestId !== requestIdRef.current || controller.signal.aborted) {
+  const fetchResults = useMemo(
+    () =>
+      debounce(async (searchQuery, filters) => {
+        if (searchQuery.length < 2) {
+          setResults([]);
+          setSuggestions([]);
           return;
         }
 
-        const nextResults = Array.isArray(data.results) ? data.results : [];
-        setResults(nextResults);
-        setFacets(data.facets || {});
-        if (data.suggestions) setSuggestions([data.suggestions]);
+        setLoading(true);
+        try {
+          // Build query string with facets
+          const filterParams = new URLSearchParams({
+            q: searchQuery,
+            ...filters,
+          }).toString();
 
-        // Update recent searches if results found
-        if (nextResults.length > 0) {
-          updateRecentSearches(searchQuery);
-        }
-      } catch (error) {
-        if (error?.name === 'AbortError') return;
-        console.error('Search API Error:', error);
-      } finally {
-        if (requestId === requestIdRef.current) {
-          activeRequestRef.current = null;
+          const response = await fetch(`/api/search?${filterParams}`);
+          const data = await response.json();
+
+          setResults(data.results);
+          setFacets(data.facets);
+          if (data.suggestions) setSuggestions([data.suggestions]);
+
+          // Update recent searches if results found
+          if (data.results.length > 0) {
+            updateRecentSearches(searchQuery);
+          }
+        } catch (error) {
+          console.error('Search API Error:', error);
+        } finally {
           setLoading(false);
         }
-      }
-    }, 300);
-
-    return () => {
-      fetchResultsRef.current?.cancel();
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+      }, 300),
+    []
+  );
 
   useEffect(() => {
-    activeRequestRef.current?.abort();
-    fetchResultsRef.current?.(query, activeFilters);
-  }, [query, activeFilters]);
-
-  useEffect(() => {
-    return () => {
-      activeRequestRef.current?.abort();
-    };
-  }, []);
+    fetchResults(query, activeFilters);
+  }, [query, activeFilters, fetchResults]);
 
   // Combined tracking tracking mechanism with functional updates and protection
   const updateRecentSearches = (q) => {

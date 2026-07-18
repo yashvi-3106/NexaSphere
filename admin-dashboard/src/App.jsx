@@ -1,4 +1,4 @@
-import RateLimitMonitor from './pages/dashboard/RateLimitMonitor';
+import PlatformSettings from './pages/dashboard/PlatformSettings';
 import AuditLogViewer from './pages/dashboard/AuditLogViewer';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
@@ -19,7 +19,7 @@ import { EventsManager } from './pages/EventsManager';
 import { ActivityEventsManager } from './pages/ActivityEventsManager';
 import { ScheduledTasksManager } from './pages/ScheduledTasksManager';
 import UserGroups from './pages/UserGroups';
-import { RolesManager } from './pages/RolesManager';
+
 import { CoreTeamManager } from './pages/CoreTeamManager';
 import { MembershipResponsesManager } from './pages/MembershipResponsesManager';
 import { RecruitmentResponsesManager } from './pages/RecruitmentResponsesManager';
@@ -29,17 +29,7 @@ import { PortfolioManager } from './pages/PortfolioManager';
 import { StreamManager } from './pages/StreamManager';
 import { CircuitBreakerManager } from './pages/CircuitBreakerManager';
 import { WaitingRoomManager } from './pages/WaitingRoomManager';
-import { SponsorshipsManager } from './pages/SponsorshipsManager';
-import { UserSegmentation } from './pages/UserSegmentation';
-import PlatformSettings from './pages/dashboard/PlatformSettings';
-import { SsoInvitePage } from './pages/SsoInvitePage';
-import { ModerationManager } from './pages/ModerationManager';
-import { RBACManager } from './pages/RBACManager';
-import { BackupsManager } from './pages/BackupsManager';
-import { UserEngagementReport } from './pages/UserEngagementReport';
-import ScheduledReports from './pages/dashboard/ScheduledReports';
-import UserManager from './pages/UserManager';
-import { OnboardingTour } from './components/OnboardingTour';
+import { ImpersonationBanner } from './components/ImpersonationBanner';
 import './styles/admin.css';
 
 function RequireAuth() {
@@ -87,7 +77,8 @@ export default function App() {
             <Route path="/dashboard/settings" element={<PlatformSettings />} />
             <Route path="/dashboard" element={<DashboardHome />} />
             <Route path="/dashboard/analytics" element={<ComprehensiveAnalytics />} />
-            <Route path="/dashboard/segments" element={<UserSegmentation />} />
+            <Route path="/dashboard/analytics/funnel" element={<FunnelAnalysis />} />
+            <Route path="/dashboard/analytics/custom-events" element={<CustomEventTracking />} />
             <Route path="/dashboard/events" element={<EventsManager />} />
             <Route path="/dashboard/activity-events" element={<ActivityEventsManager />} />
             <Route path="/dashboard/core-team" element={<CoreTeamManager />} />
@@ -102,17 +93,11 @@ export default function App() {
             <Route path="/dashboard/circuit-breaker" element={<CircuitBreakerManager />} />
             <Route path="/dashboard/waiting-room" element={<WaitingRoomManager />} />
             <Route path="/dashboard/groups" element={<UserGroups />} />
-            <Route path="/dashboard/roles" element={<RolesManager />} />
-            <Route path="/dashboard/users" element={<UserManager />} />
             <Route path="/dashboard/tasks" element={<ScheduledTasksManager />} />
             <Route path="/dashboard/backups" element={<BackupsManager />} />
             <Route path="/dashboard/sponsorships" element={<SponsorshipsManager />} />
-            <Route path="/dashboard/moderation" element={<ModerationManager />} />
-            <Route path="/dashboard/rbac" element={<RBACManager />} />
             <Route path="/dashboard/audit-logs" element={<AuditLogViewer />} />
             <Route path="/dashboard/reports" element={<UserEngagementReport />} />
-            <Route path="/dashboard/scheduled-reports" element={<ScheduledReports />} />
-            <Route path="/dashboard/sso-invites" element={<SsoInvitePage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />

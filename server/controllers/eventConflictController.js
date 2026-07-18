@@ -1,4 +1,4 @@
-import { eventConflictService } from "../services/eventConflictService.js";
+import { eventConflictService } from '../services/eventConflictService.js';
 
 export const getConflicts = async (req, res) => {
   try {
@@ -14,7 +14,7 @@ export const getConflicts = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to check event conflicts.",
+      message: 'Failed to check event conflicts.',
     });
   }
 };
@@ -26,14 +26,11 @@ export const getVenueAvailability = async (req, res) => {
     if (!venue || !date) {
       return res.status(400).json({
         success: false,
-        message: "Venue and date are required.",
+        message: 'Venue and date are required.',
       });
     }
 
-    const result = await eventConflictService.checkVenueAvailability(
-      venue,
-      date
-    );
+    const result = await eventConflictService.checkVenueAvailability(venue, date);
 
     return res.json({
       success: true,
@@ -44,7 +41,7 @@ export const getVenueAvailability = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to check venue availability.",
+      message: 'Failed to check venue availability.',
     });
   }
 };
@@ -62,15 +59,14 @@ export const getAttendanceImpact = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to generate attendance analysis.",
+      message: 'Failed to generate attendance analysis.',
     });
   }
 };
 
 export const getScheduleRecommendations = async (req, res) => {
   try {
-    const recommendations =
-      await eventConflictService.scheduleRecommendation();
+    const recommendations = await eventConflictService.scheduleRecommendation();
 
     return res.json({
       success: true,
@@ -81,7 +77,7 @@ export const getScheduleRecommendations = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to generate recommendations.",
+      message: 'Failed to generate recommendations.',
     });
   }
 };
@@ -99,7 +95,7 @@ export const getCalendarEvents = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to load calendar events.",
+      message: 'Failed to load calendar events.',
     });
   }
 };
@@ -118,7 +114,7 @@ export const getOrganizerAlerts = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to load organizer alerts.",
+      message: 'Failed to load organizer alerts.',
     });
   }
 };

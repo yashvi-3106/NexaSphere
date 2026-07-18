@@ -787,7 +787,7 @@ function QRTicketCard({ event, ticket, color, rgb, onCalendarDownload }) {
             }}
           >
             {ticket.qrDataUrl ? (
-              <img loading="lazy" src={ticket.qrDataUrl} alt="Entry QR" width={160} height={160} />
+              <img src={ticket.qrDataUrl} alt="Entry QR" width={160} height={160} />
             ) : (
               <canvas ref={canvasRef} width={160} height={160} style={{ display: 'block' }} />
             )}
@@ -957,7 +957,9 @@ export default function EventDetailPage({ event, activityColor, activityIcon, on
   };
 
   const handleCalendarDownload = () => {
-    downloadICS(event);
+    const base = getApiBase();
+    const url = `${base}/api/content/events/${event.id}/calendar`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const color = activityColor || '#a855f7';

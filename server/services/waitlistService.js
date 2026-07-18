@@ -14,7 +14,7 @@ export const waitlistService = {
     const existing = queue.find((user) => user.userId === userId);
     if (existing) {
       return {
-        message: "User is already in the waitlist.",
+        message: 'User is already in the waitlist.',
         position: queue.indexOf(existing) + 1,
       };
     }
@@ -51,7 +51,7 @@ export const waitlistService = {
 
     if (queue.length === 0) {
       return {
-        message: "No users in waitlist.",
+        message: 'No users in waitlist.',
       };
     }
 
