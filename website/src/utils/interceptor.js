@@ -12,6 +12,7 @@ export function setupFetchInterceptor() {
         window.dispatchEvent(new CustomEvent('session-expired'));
       }
     }
+
     return response;
   };
 }

@@ -36,6 +36,7 @@ import CinematicOpening from './shared/CinematicOpening';
 import OfflineBanner from './components/pwa/OfflineBanner.jsx';
 import InstallPrompt from './components/pwa/InstallPrompt.jsx';
 import UpdatePrompt from './components/pwa/UpdatePrompt.jsx';
+import EnablePushPrompt from './components/pwa/EnablePushPrompt.jsx';
 
 import {
   AmbientOrbs,
@@ -123,8 +124,10 @@ function AppShell() {
       <OfflineBanner />
       <InstallPrompt />
       {swUpdateFn && <UpdatePrompt updateSW={swUpdateFn} />}
+      <EnablePushPrompt />
 
       <Chatbot />
+
       <WalkthroughOverlay />
 
       {/* Loading cover to prevent flash during intro sequence */}
