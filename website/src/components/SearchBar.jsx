@@ -17,13 +17,11 @@ import {
 // TODO: useSearch hook not implemented yet
 // import { useSearch } from '../hooks/useSearch';
 
-import DOMPurify from 'dompurify';
 
 function Highlight({ text, query }) {
   if (!text) return null;
 
-  // If the text contains Typesense highlight <mark> tags, sanitize before rendering as HTML.
-  // Only <mark> is allowed through — everything else (scripts, event handlers, other tags) is stripped.
+  // If the text contains Typesense highlight <mark> tags, render it as HTML safely
   if (String(text).includes('<mark>')) {
     const clean = DOMPurify.sanitize(text, { ALLOWED_TAGS: ['mark'] });
     return <span dangerouslySetInnerHTML={{ __html: clean }} />;

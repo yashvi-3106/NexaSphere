@@ -52,8 +52,11 @@ const isPlaywright =
 
 import { BookmarkProvider } from './context/BookmarkContext';
 import { StudentAuthProvider, useStudentAuth } from './context/StudentAuthContext';
-import ErrorBoundary from './components/ErrorBoundary';
-import SkipLink from './components/common/SkipLink';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import { WalkthroughOverlay } from './components/walkthrough/WalkthroughOverlay';
+import { useWalkthroughStore } from './store/useWalkthroughStore';
+import { useAnalytics } from './hooks/useAnalytics';
+import { SessionRecordingProvider } from './context/SessionRecordingProvider';
 
 const MNH = 88;
 const DNH = 64;
