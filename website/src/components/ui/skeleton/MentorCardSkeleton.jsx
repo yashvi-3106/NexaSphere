@@ -16,7 +16,7 @@ export function MentorCardSkeleton({ count = 6 }) {
     >
       {Array.from({ length: count }, (_, i) => (
         <div
-          key={i}
+          key={`mentor-card-skeleton-${i}`}
           style={{
             padding: '24px',
             borderRadius: 'var(--r2, 14px)',
