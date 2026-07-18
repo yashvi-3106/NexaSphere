@@ -31,6 +31,8 @@ router.post('/', validate(createWebhookSchema), protectedActionRateLimiter, admi
   try {
     const webhook = await webhookService.createWebhook(req.body, req.user);
     sendSuccess(res, { data: webhook }, 201);
+    const webhook = await webhookService.createWebhook(req.body, req.adminSession);
+    res.status(201).json({ success: true, data: webhook });
   } catch (error) {
     const status = error.message.includes('HTTPS') || error.message.includes('event') ? 400 : 500;
     sendError(req, res, error.message, status, status === 400 ? 'VALIDATION_ERROR' : 'INTERNAL_ERROR');
@@ -61,6 +63,8 @@ router.put('/:webhookId', validate(updateWebhookSchema), protectedActionRateLimi
   try {
     const webhook = await webhookService.updateWebhook(req.params.webhookId, req.body, req.user);
     sendSuccess(res, { data: webhook });
+    const webhook = await webhookService.updateWebhook(req.params.webhookId, req.body, req.adminSession);
+    res.json({ success: true, data: webhook });
   } catch (error) {
     const status = error.message.includes('not found')
       ? 404
