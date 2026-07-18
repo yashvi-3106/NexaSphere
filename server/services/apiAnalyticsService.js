@@ -6,36 +6,36 @@
 const apiKeys = [
   {
     id: 1,
-    name: "Default API Key",
-    key: "NSX_123456789",
+    name: 'Default API Key',
+    key: 'NSX_123456789',
     createdAt: new Date().toISOString(),
-    status: "Active",
+    status: 'Active',
   },
 ];
 
 const announcements = [
   {
     id: 1,
-    title: "API v2 Released",
-    message: "New API version is now available.",
+    title: 'API v2 Released',
+    message: 'New API version is now available.',
     date: new Date().toISOString(),
   },
 ];
 
 const changelog = [
   {
-    version: "v2.0.0",
-    changes: ["Added analytics endpoints", "Improved performance"],
+    version: 'v2.0.0',
+    changes: ['Added analytics endpoints', 'Improved performance'],
   },
 ];
 
-const versions = ["v1", "v2"];
+const versions = ['v1', 'v2'];
 
 const dashboard = {
   totalRequests: 105432,
   activeKeys: apiKeys.length,
-  averageResponseTime: "180 ms",
-  errorRate: "0.8%",
+  averageResponseTime: '180 ms',
+  errorRate: '0.8%',
 };
 
 const requestAnalytics = {
@@ -45,9 +45,9 @@ const requestAnalytics = {
 };
 
 const responseTimes = {
-  average: "180 ms",
-  fastest: "40 ms",
-  slowest: "910 ms",
+  average: '180 ms',
+  fastest: '40 ms',
+  slowest: '910 ms',
 };
 
 const errorAnalytics = {
@@ -57,14 +57,14 @@ const errorAnalytics = {
 };
 
 const documentation = {
-  title: "NexaSphere API Documentation",
-  version: "v2",
+  title: 'NexaSphere API Documentation',
+  version: 'v2',
 };
 
 const sdkDocs = {
-  javascript: "/docs/sdk/javascript",
-  python: "/docs/sdk/python",
-  java: "/docs/sdk/java",
+  javascript: '/docs/sdk/javascript',
+  python: '/docs/sdk/python',
+  java: '/docs/sdk/java',
 };
 
 const rateLimits = {
@@ -74,7 +74,7 @@ const rateLimits = {
 
 const sandbox = {
   enabled: true,
-  endpoint: "/sandbox",
+  endpoint: '/sandbox',
 };
 
 // Dashboard
@@ -108,9 +108,9 @@ const getApiKeys = async () => apiKeys;
 const generateApiKey = async (data) => {
   const key = {
     id: apiKeys.length + 1,
-    name: data.name || "New API Key",
+    name: data.name || 'New API Key',
     key: `NSX_${Math.random().toString(36).substring(2, 15)}`,
-    status: "Active",
+    status: 'Active',
     createdAt: new Date().toISOString(),
   };
 
@@ -124,7 +124,7 @@ const revokeApiKey = async (id) => {
 
   if (!key) return null;
 
-  key.status = "Revoked";
+  key.status = 'Revoked';
   return key;
 };
 
@@ -137,7 +137,7 @@ const getSandbox = async () => sandbox;
 // Developer Announcements
 const getAnnouncements = async () => announcements;
 
-module.exports = {
+export {
   getDashboard,
   getRequestAnalytics,
   getResponseTimes,

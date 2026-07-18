@@ -115,8 +115,6 @@ import { schedulerService } from './services/schedulerService.js';
 import feedbackRouter from './routes/feedbackRoutes.js';
 import * as slackController from './controllers/slackController.js';
 import activityTimelineRoutes from './routes/activityTimeline.js';
-import notificationPreferenceRoutes from './routes/notificationPreference.js';
-import { readOnlyGuard } from './services/readOnlyService.js';
 
 import { initializeTypesenseCollections } from './config/typesense.js';
 import moderationRouter from './routes/moderation.js';

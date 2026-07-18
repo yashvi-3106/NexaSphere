@@ -6,6 +6,7 @@ import { EVENTS } from '../services/eventEmitter';
 import { EventForm } from '../components/EventForm';
 import { Skeleton } from '../components/Skeleton';
 import { AdminIcon } from '../components/AdminIcon';
+import { HelpTooltip } from '../components/HelpTooltip';
 
 const STATUS_COLORS = {
   upcoming: '#3b82f6',
@@ -74,7 +75,15 @@ export function EventsManager() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2 className="page-title">Events</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 className="page-title" style={{ margin: 0 }}>
+            Events
+          </h2>
+          <HelpTooltip
+            content="Schedule and manage upcoming events. Add locations, dates, descriptions, ticketing options, and monitor live status."
+            position="right"
+          />
+        </div>
         <button className="btn-primary" onClick={() => setShowForm(true)}>
           + Add Event
         </button>

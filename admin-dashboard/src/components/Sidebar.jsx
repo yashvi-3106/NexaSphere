@@ -55,6 +55,12 @@ const links = [
     icon: 'Shield',
     requiredScope: 'settings:admin',
   },
+  {
+    to: '/dashboard/users',
+    label: 'Users',
+    icon: 'Users',
+    requiredScope: 'settings:admin',
+  },
   { to: '/dashboard/membership', label: 'Membership', icon: 'FileText' },
   { to: '/dashboard/recruitment', label: 'Recruitment', icon: 'UserPlus' },
   { to: '/dashboard/certificates', label: 'Certificates', icon: 'Award' },
@@ -317,6 +323,7 @@ export function Sidebar() {
                 className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
                 aria-current={({ isActive }) => (isActive ? 'page' : undefined)}
                 onClick={close}
+                data-tour={label.toLowerCase()}
               >
                 <AdminIcon name={icon} size={16} aria-hidden="true" />
                 {label}
@@ -347,6 +354,15 @@ export function Sidebar() {
             style={{ marginBottom: '10px' }}
           >
             Switch to {theme === 'dark' ? 'Light' : 'Dark'} Mode
+          </button>
+
+          <button
+            className="btn-logout"
+            onClick={() => window.dispatchEvent(new CustomEvent('start-ns-tour'))}
+            aria-label="Replay onboarding tour"
+            style={{ marginBottom: '10px' }}
+          >
+            Replay Tour
           </button>
 
           <button

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import UserTimelineModal from '../components/UserTimelineModal';
+import { HelpTooltip } from '../components/HelpTooltip';
 
 const ROLES = ['member', 'moderator', 'admin'];
 const PASSWORD_REQUIREMENTS = [
@@ -71,7 +72,9 @@ export default function UserManager() {
     if (importJobId && importProgress !== 100) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch(`/api/admin/bulk/jobs/${importJobId}`, { credentials: 'include' });
+          const res = await fetch(`/api/admin/bulk/jobs/${importJobId}`, {
+            credentials: 'include',
+          });
           if (res.ok) {
             const job = await res.json();
             setImportProgress(job.progress);
@@ -90,7 +93,8 @@ export default function UserManager() {
   }, [importJobId, importProgress]);
 
   function downloadCsvTemplate() {
-    const template = 'email,username,displayname,role,major,year,tags\njohn@college.edu,johndoe,John Doe,user,Computer Science,2028,tech;sports\n';
+    const template =
+      'email,username,displayname,role,major,year,tags\njohn@college.edu,johndoe,John Doe,user,Computer Science,2028,tech;sports\n';
     const blob = new Blob([template], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -314,7 +318,13 @@ export default function UserManager() {
           marginBottom: '16px',
         }}
       >
-        <h2>User Management</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 style={{ margin: 0 }}>User Management</h2>
+          <HelpTooltip
+            content="Register new users, assign administrator permissions (member, moderator, admin), unlock security locks, and reset passwords."
+            position="right"
+          />
+        </div>
         <button onClick={() => setShowAddModal(true)}>+ Add User</button>
       </div>
 

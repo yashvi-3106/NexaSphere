@@ -1,44 +1,44 @@
-const express = require("express");
-const router = express.Router();
+import { Router } from 'express';
+import * as apiAnalyticsController from '../controllers/apiAnalyticsController.js';
 
-const apiAnalyticsController = require("../controllers/apiAnalyticsController");
+const router = Router();
 
 // API Usage Dashboard
-router.get("/dashboard", apiAnalyticsController.getDashboard);
+router.get('/dashboard', apiAnalyticsController.getDashboard);
 
 // Request Analytics
-router.get("/requests", apiAnalyticsController.getRequestAnalytics);
+router.get('/requests', apiAnalyticsController.getRequestAnalytics);
 
 // Response Time Monitoring
-router.get("/response-times", apiAnalyticsController.getResponseTimes);
+router.get('/response-times', apiAnalyticsController.getResponseTimes);
 
 // Error Tracking
-router.get("/errors", apiAnalyticsController.getErrorAnalytics);
+router.get('/errors', apiAnalyticsController.getErrorAnalytics);
 
 // Interactive API Documentation
-router.get("/docs", apiAnalyticsController.getDocumentation);
+router.get('/docs', apiAnalyticsController.getDocumentation);
 
 // SDK Documentation
-router.get("/sdk", apiAnalyticsController.getSDKDocs);
+router.get('/sdk', apiAnalyticsController.getSDKDocs);
 
 // Changelog
-router.get("/changelog", apiAnalyticsController.getChangelog);
+router.get('/changelog', apiAnalyticsController.getChangelog);
 
 // API Versions
-router.get("/versions", apiAnalyticsController.getVersions);
+router.get('/versions', apiAnalyticsController.getVersions);
 
 // API Key Management
-router.get("/keys", apiAnalyticsController.getApiKeys);
-router.post("/keys", apiAnalyticsController.generateApiKey);
-router.delete("/keys/:id", apiAnalyticsController.revokeApiKey);
+router.get('/keys', apiAnalyticsController.getApiKeys);
+router.post('/keys', apiAnalyticsController.generateApiKey);
+router.delete('/keys/:id', apiAnalyticsController.revokeApiKey);
 
 // Rate Limit Visualization
-router.get("/rate-limits", apiAnalyticsController.getRateLimits);
+router.get('/rate-limits', apiAnalyticsController.getRateLimits);
 
 // Testing Sandbox
-router.get("/sandbox", apiAnalyticsController.getSandbox);
+router.get('/sandbox', apiAnalyticsController.getSandbox);
 
 // Developer Announcements
-router.get("/announcements", apiAnalyticsController.getAnnouncements);
+router.get('/announcements', apiAnalyticsController.getAnnouncements);
 
-module.exports = router;
+export default router;

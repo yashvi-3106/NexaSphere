@@ -38,12 +38,14 @@ import * as whiteboardController from '../controllers/whiteboardController.js';
 import bookmarkRoutes from './bookmark.js';
 import operationalInsightsRoutes from './operationalInsights.js';
 
+import apiAnalyticsRoutes from './apiAnalytics.js';
+import budgetRoutes from './budget.js';
+
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
 import multer from 'multer';
 import * as analyticsController from '../controllers/analyticsController.js';
 const router = Router();
-const apiAnalyticsRoutes = require("./apiAnalytics");
 
 router.use(rateLimitAdminRoutes);
 router.use(throttleMiddleware);
@@ -51,8 +53,6 @@ router.use(throttleMiddleware);
 const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
-const budgetRoutes = require("./budget");
-const router = Router();
 
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
@@ -431,7 +431,7 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
 
-router.use("/budgets", budgetRoutes);
+router.use('/budgets', budgetRoutes);
 router.use('/api/announcements', announcementPriorityRouter);
 
 router.use('/api/events', eventConflictRouter);
@@ -504,6 +504,6 @@ router.get(
 // Platform Analytics APIs
 router.use('/api/analytics', platformAnalyticsRoutes);
 
-router.use("/api-analytics", apiAnalyticsRoutes);
+router.use('/api-analytics', apiAnalyticsRoutes);
 
 export default router;

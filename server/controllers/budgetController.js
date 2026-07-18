@@ -1,4 +1,4 @@
-const budgetService = require("../services/budgetService");
+import * as budgetService from '../services/budgetService.js';
 
 // Get All Budgets
 const getAllBudgets = async (req, res) => {
@@ -12,7 +12,7 @@ const getAllBudgets = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch budgets.",
+      message: 'Failed to fetch budgets.',
       error: error.message,
     });
   }
@@ -26,7 +26,7 @@ const getBudgetById = async (req, res) => {
     if (!budget) {
       return res.status(404).json({
         success: false,
-        message: "Budget not found.",
+        message: 'Budget not found.',
       });
     }
 
@@ -37,7 +37,7 @@ const getBudgetById = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch budget.",
+      message: 'Failed to fetch budget.',
       error: error.message,
     });
   }
@@ -50,13 +50,13 @@ const createBudget = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Budget created successfully.",
+      message: 'Budget created successfully.',
       data: budget,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to create budget.",
+      message: 'Failed to create budget.',
       error: error.message,
     });
   }
@@ -70,19 +70,19 @@ const updateBudget = async (req, res) => {
     if (!budget) {
       return res.status(404).json({
         success: false,
-        message: "Budget not found.",
+        message: 'Budget not found.',
       });
     }
 
     res.status(200).json({
       success: true,
-      message: "Budget updated successfully.",
+      message: 'Budget updated successfully.',
       data: budget,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to update budget.",
+      message: 'Failed to update budget.',
       error: error.message,
     });
   }
@@ -96,19 +96,19 @@ const deleteBudget = async (req, res) => {
     if (!budget) {
       return res.status(404).json({
         success: false,
-        message: "Budget not found.",
+        message: 'Budget not found.',
       });
     }
 
     res.status(200).json({
       success: true,
-      message: "Budget deleted successfully.",
+      message: 'Budget deleted successfully.',
       data: budget,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to delete budget.",
+      message: 'Failed to delete budget.',
       error: error.message,
     });
   }
@@ -121,13 +121,13 @@ const addExpense = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Expense added successfully.",
+      message: 'Expense added successfully.',
       data: expense,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to add expense.",
+      message: 'Failed to add expense.',
       error: error.message,
     });
   }
@@ -145,7 +145,7 @@ const getExpenses = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch expenses.",
+      message: 'Failed to fetch expenses.',
       error: error.message,
     });
   }
@@ -158,13 +158,13 @@ const uploadInvoice = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Invoice uploaded successfully.",
+      message: 'Invoice uploaded successfully.',
       data: invoice,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to upload invoice.",
+      message: 'Failed to upload invoice.',
       error: error.message,
     });
   }
@@ -177,13 +177,13 @@ const approveExpense = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Expense approved successfully.",
+      message: 'Expense approved successfully.',
       data: approval,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to approve expense.",
+      message: 'Failed to approve expense.',
       error: error.message,
     });
   }
@@ -201,7 +201,7 @@ const getRemainingBudget = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to calculate remaining budget.",
+      message: 'Failed to calculate remaining budget.',
       error: error.message,
     });
   }
@@ -219,7 +219,7 @@ const getCategorySpending = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch category spending.",
+      message: 'Failed to fetch category spending.',
       error: error.message,
     });
   }
@@ -237,7 +237,7 @@ const getVendors = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch vendors.",
+      message: 'Failed to fetch vendors.',
       error: error.message,
     });
   }
@@ -249,13 +249,13 @@ const addVendor = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Vendor added successfully.",
+      message: 'Vendor added successfully.',
       data: vendor,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to add vendor.",
+      message: 'Failed to add vendor.',
       error: error.message,
     });
   }
@@ -273,7 +273,7 @@ const getFinancialReports = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch financial reports.",
+      message: 'Failed to fetch financial reports.',
       error: error.message,
     });
   }
@@ -291,7 +291,7 @@ const getBudgetAlerts = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch budget alerts.",
+      message: 'Failed to fetch budget alerts.',
       error: error.message,
     });
   }
@@ -309,7 +309,7 @@ const exportStatements = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to export statements.",
+      message: 'Failed to export statements.',
       error: error.message,
     });
   }
@@ -327,13 +327,13 @@ const getBudgetHistory = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch budget history.",
+      message: 'Failed to fetch budget history.',
       error: error.message,
     });
   }
 };
 
-module.exports = {
+export {
   getAllBudgets,
   getBudgetById,
   createBudget,
