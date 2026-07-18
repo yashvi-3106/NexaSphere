@@ -111,6 +111,7 @@ class NotificationsService {
   async processDigests(frequency) {
     const digests = await supabaseRequest(`pending_digests?frequency=eq.${frequency}`);
     if (!digests || digests.length === 0) return;
+    const digestIds = digests.map((digest) => digest.id).filter(Boolean);
 
     const userGroups = digests.reduce((acc, d) => {
       acc[d.user_id] = acc[d.user_id] || [];
@@ -131,9 +132,42 @@ class NotificationsService {
       });
     }
     // Cleanup processed digests
-    const digestIds = digests.map((d) => d.id).filter(Boolean);
     if (digestIds.length > 0) {
-      await supabaseRequest(`pending_digests?id=in.(${digestIds.join(',')})`, { method: 'DELETE' });
+      await supabaseRequest(`pending_digests?id=in.(${digestIds.join(',')})`, {
+        method: 'DELETE',
+      });
+    }
+  }
+
+  computePriority({ type, title, message, richData }) {
+    // Maintainer rules (rules-based baseline)
+    // urgent: cancelled, deadline approaching (<24h), security alert
+    // high: reminder tomorrow, new message from mentor, assignment due
+    // medium: matches interests, friend registered, achievement unlocked
+    // low: weekly digest, recommendation, community update
+
+    const text =
+      `${type || ''} ${title || ''} ${message || ''} ${richData?.title || ''} ${richData?.message || ''}`.toLowerCase();
+
+    // Attempt to read canonical hints from rich data if present
+    const flags = {
+      cancelled: Boolean(richData?.cancelled),
+      security: Boolean(richData?.security),
+      deadlineAt: richData?.deadlineAt || richData?.dueAt || richData?.startAt || null,
+      isReminder: Boolean(richData?.reminder),
+      mentorMessage: Boolean(richData?.mentorMessage),
+      assignmentDue: Boolean(richData?.assignmentDue),
+      friendRegistered: Boolean(richData?.friendRegistered),
+      achievementUnlocked: Boolean(richData?.achievementUnlocked),
+      weeklyDigest: Boolean(richData?.weeklyDigest),
+      recommendation: Boolean(richData?.recommendation),
+      communityUpdate: Boolean(richData?.communityUpdate),
+    };
+
+    let deadlineSoon = false;
+    if (flags.deadlineAt) {
+      const ms = new Date(flags.deadlineAt).getTime() - Date.now();
+      deadlineSoon = Number.isFinite(ms) && ms >= 0 && ms < 24 * 60 * 60 * 1000;
     }
   }
 
