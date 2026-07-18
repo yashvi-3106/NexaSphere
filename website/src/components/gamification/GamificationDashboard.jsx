@@ -1,4 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
+
+// Validates a date value before formatting — avoids rendering literal
+// "Invalid Date" text when the API returns a null or malformed timestamp.
+function formatAchievementDate(value) {
+  if (!value) return 'Unknown date';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'Unknown date';
+  return d.toLocaleDateString();
+}
 import { gamificationService, ACHIEVEMENTS } from '../../services/gamification/gamificationService';
 import { DynamicIcon } from '../../shared/Icons';
 
@@ -329,7 +338,7 @@ export default function GamificationDashboard() {
                     <div style={{ fontSize: '13px', color: '#9CA3AF' }}>{ach.description}</div>
                   </div>
                   <div style={{ fontSize: '12px', color: '#6B7280' }}>
-                    {new Date(ach.unlockedAt).toLocaleDateString()}
+                    {formatAchievementDate(ach.unlockedAt)}
                   </div>
                 </div>
               ))}
