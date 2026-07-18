@@ -50,6 +50,7 @@ export default function DashboardPage({ onBack }) {
     ]);
   }, []);
 
+  useEffect(() => {
     setLeaderboard(
       [
         {

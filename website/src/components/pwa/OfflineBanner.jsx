@@ -177,6 +177,20 @@ export default function OfflineBanner() {
             </span>
           )}
 
+          {!isOnline &&
+            queuedCount > 0 &&
+            'Notification' in window &&
+            Notification.permission === 'default' && (
+              <button
+                className="pwa-banner__sync-btn"
+                style={{ marginLeft: '8px' }}
+                onClick={() => Notification.requestPermission()}
+                aria-label="Notify me when synced"
+              >
+                Notify when synced
+              </button>
+            )}
+
           {isOnline && !isSyncing && queuedCount > 0 && (
             <button
               className="pwa-banner__sync-btn"
@@ -189,67 +203,35 @@ export default function OfflineBanner() {
         </div>
       </div>
 
-      <div className="pwa-banner__right">
-        {isSyncing && <span className="pwa-spinner" aria-hidden="true" />}
-
-        {!isOnline && queuedCount > 0 && (
-          <span className="pwa-banner__badge" aria-label={`${queuedCount} actions queued`}>
-            <span className="pwa-dot" aria-hidden="true" />
-            {queuedCount} queued
-          </span>
-        )}
-
-        {!isOnline && queuedCount > 0 && 'Notification' in window && Notification.permission === 'default' && (
-          <button
-            className="pwa-banner__sync-btn"
-            style={{ marginLeft: '8px' }}
-            onClick={() => Notification.requestPermission()}
-            aria-label="Notify me when synced"
-          >
-            Notify when synced
-          </button>
-        )}
-
-        {isOnline && !isSyncing && queuedCount > 0 && (
-          <button
-            className="pwa-banner__sync-btn"
-            onClick={syncNow}
-            aria-label="Sync queued changes now"
-          >
-            <div className="pwa-toast-header">
-              <div
-                className={`pwa-toast-icon ${toast.variant === 'error' ? 'warning' : 'success'}`}
-              >
-                {toast.variant === 'error' ? (
-                  <AlertTriangle size={20} />
-                ) : (
-                  <CheckCircle2 size={20} />
-                )}
-              </div>
-              <div className="pwa-toast-body">
-                <h4 className="pwa-toast-title">{toast.title}</h4>
-                <p className="pwa-toast-description">{toast.message}</p>
-              </div>
-              <button
-                type="button"
-                className="pwa-btn-close"
-                onClick={() => {
-                  clearToastTimer();
-                  setToast(null);
-                }}
-                aria-label="Dismiss sync notification"
-              >
-                <X size={14} />
+      {toast && (
+        <div className={`pwa-toast pwa-toast--${toast.variant}`} role="alert">
+          <div className="pwa-toast-header">
+            <div className={`pwa-toast-icon ${toast.variant === 'error' ? 'warning' : 'success'}`}>
+              {toast.variant === 'error' ? <AlertTriangle size={20} /> : <CheckCircle2 size={20} />}
+            </div>
+            <div className="pwa-toast-body">
+              <h4 className="pwa-toast-title">{toast.title}</h4>
+              <p className="pwa-toast-description">{toast.message}</p>
+            </div>
+            <button
+              type="button"
+              className="pwa-btn-close"
+              onClick={() => {
+                clearToastTimer();
+                setToast(null);
+              }}
+              aria-label="Dismiss sync notification"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          {toast.variant === 'error' && queuedCount > 0 && isOnline && (
+            <div className="pwa-toast-actions">
+              <button className="pwa-banner__sync-btn" onClick={syncNow}>
+                Retry Now
               </button>
             </div>
-            {toast.variant === 'error' && queuedCount > 0 && isOnline && (
-              <div className="pwa-toast-actions">
-                <button className="pwa-banner__sync-btn" onClick={syncNow}>
-                  Retry Now
-                </button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
     </>

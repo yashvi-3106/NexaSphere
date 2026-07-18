@@ -350,7 +350,7 @@ function shouldIncludeCsrf(method) {
   return method && !['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase());
 }
 
-async function fetchWithAuth(url, options = {}) {
+export async function fetchWithAuth(url, options = {}) {
   const isOffline = auth.isOfflineMode();
 
   if (!isOffline) {
@@ -1743,7 +1743,6 @@ export const api = {
     },
     getBillingHistory: (userId) => fetchWithAuth(`/api/admin/subscriptions/${userId}/billing`),
   },
-
 
   reports: {
     getEngagement: () => fetchWithAuth('/api/admin/reports/engagement'),

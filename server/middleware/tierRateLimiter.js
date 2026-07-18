@@ -51,6 +51,11 @@ function resolveEndpointConfig(path, tier) {
   return matched ? ENDPOINT_LIMITS[matched][tier] : {};
 }
 
+export function resolveRateLimitConfig(path, tier) {
+  const actualTier = CONFIG[tier] ? tier : 'guest';
+  const endpointCfg = resolveEndpointConfig(path, actualTier);
+  return { ...CONFIG[actualTier], ...endpointCfg };
+}
 
 /**
  * Clean up expired memory entries to prevent memory leaks

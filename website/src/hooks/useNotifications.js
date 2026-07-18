@@ -245,6 +245,7 @@ export function useNotifications() {
         createdAt: new Date().toISOString(),
       };
       setNotifications((prev) => [note, ...prev]);
+    };
 
     const handleEventPublished = (data) => {
       const note = {

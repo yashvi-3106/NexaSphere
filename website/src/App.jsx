@@ -61,8 +61,6 @@ import { SessionRecordingProvider } from './context/SessionRecordingProvider';
 
 const MNH = 88;
 const DNH = 64;
-const isPlaywright =
-  typeof window !== 'undefined' && window.navigator.userAgent.includes('Playwright');
 
 export default function App() {
   return (
