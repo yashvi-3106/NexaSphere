@@ -12,7 +12,7 @@
  *   – Auto-block abusive IPs for AUTOBLOCK_TTL_SEC
  */
 
-import Redis from 'ioredis';
+import { getRedisClient } from '../utils/redis.js';
 import logger from '../utils/logger.js';
 
 // ── config ──────────────────────────────────────────────────────────────────
@@ -23,25 +23,8 @@ const DELAY_80_MS = 100;
 const DELAY_90_MS = 500;
 
 // ── redis client (shared singleton) ─────────────────────────────────────────
-let redisClient = null;
-
 async function getRedis() {
-  if (!process.env.REDIS_URL) return null;
-  if (redisClient) return redisClient;
-  try {
-    if (process.env.REDIS_URL) {
-      redisClient = new Redis(process.env.REDIS_URL);
-    } else {
-      redisClient = new Redis();
-    }
-    redisClient.on('error', (err) =>
-      logger.warn('ThrottleMiddleware Redis error', { err: err.message })
-    );
-  } catch (err) {
-    logger.warn('ThrottleMiddleware: Redis unavailable, falling back to in-memory');
-    redisClient = null;
-  }
-  return redisClient;
+  return getRedisClient();
 }
 
 // ── in-memory fallback stores ────────────────────────────────────────────────

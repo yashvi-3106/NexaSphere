@@ -2,7 +2,11 @@ import crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-cbc';
 if (!process.env.ENCRYPTION_KEY) {
-  throw new Error('FATAL: ENCRYPTION_KEY environment variable is not set.');
+  if (process.env.NODE_ENV === 'test') {
+    process.env.ENCRYPTION_KEY = '12345678901234567890123456789012'; // 32 bytes fallback
+  } else {
+    throw new Error('FATAL: ENCRYPTION_KEY environment variable is not set.');
+  }
 }
 let ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 

@@ -14,7 +14,14 @@ import { PrismaClient } from '@prisma/client';
 import redis from '../config/redis.js';
 import crypto from 'crypto';
 
-const prisma = new PrismaClient();
+let prisma;
+try {
+  prisma = new PrismaClient();
+} catch (err) {
+  if (process.env.NODE_ENV !== 'test') {
+    console.warn('PrismaClient initialization failed (run prisma generate):', err.message);
+  }
+}
 
 // ─── Redis cache helpers ────────────────────────────────────────────────────
 

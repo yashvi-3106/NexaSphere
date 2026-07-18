@@ -27,6 +27,7 @@ import { getRedisClient } from '../utils/redis.js';
 import crypto from 'crypto';
 import QRCode from 'qrcode';
 import { getScopesForRole } from '../config/rbac.js';
+import { intrusionDetectionService, EVENT_TYPES } from '../services/intrusionDetectionService.js';
 
 // lgtm[js/weak-cryptographic-algorithm]
 function safeEqual(a, b) {
@@ -340,6 +341,7 @@ function requireRole(allowedRoles) {
     const userRole = req.adminSession.metadata?.role || 'user';
 
     if (!allowedRoles.includes(userRole)) {
+      intrusionDetectionService.reportEvent(EVENT_TYPES.PRIVILEGE_ESCALATION, req.ip, req.adminSession?.username).catch(console.error);
       return res.status(403).json({ error: 'Forbidden: Insufficient privileges' });
     }
 
@@ -360,6 +362,7 @@ function requireScope(requiredScope) {
 
       const sessionScopes = req.adminSession?.metadata?.scopes || [];
       if (!sessionScopes.includes(requiredScope)) {
+        intrusionDetectionService.reportEvent(EVENT_TYPES.PRIVILEGE_ESCALATION, req.ip, req.adminSession?.username).catch(console.error);
         return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
       }
 
@@ -401,6 +404,7 @@ async function login(req, res) {
 
     if (!matchedUser) {
       await recordLoginAttempt(ip);
+      intrusionDetectionService.reportEvent(EVENT_TYPES.AUTH_FAILURE, ip, u).catch(console.error);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 

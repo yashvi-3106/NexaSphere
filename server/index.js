@@ -36,6 +36,14 @@ import monitoringRouter from './routes/monitoring.js';
 import healthRouter from './routes/health.js';
 import dashboardRouter from './routes/dashboard.js';
 import coreTeamRouter from './routes/coreTeam.js';
+import healthDashboardRouter from './routes/healthDashboard.js';
+import complianceRouter from './routes/compliance.js';
+import { logEvent } from './controllers/analyticsController.js';
+import { eventRemindersQueue } from './services/queueService.js';
+import { bulkOperationsQueue } from './services/bulkOperationsService.js';
+import { createBullBoard } from '@bull-board/api';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { ExpressAdapter } from '@bull-board/express';
 import segmentsRouter from './routes/segments.js';
 import formsRouter from './routes/forms.js';
 import portfolioRouter from './routes/portfolio.js';
@@ -64,6 +72,7 @@ import { performanceMonitor } from './middleware/performanceMonitor.js';
 import { enhancedTracingMiddleware } from './middleware/enhancedTracingMiddleware.js';
 import { apiLogger } from './middleware/apiLogger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { intrusionDetectionMiddleware, abnormalRequestDetector } from './middleware/intrusionDetectionMiddleware.js';
 import { notificationAnalyticsRepository } from './repositories/notificationAnalyticsRepository.js';
 import { notificationPreferencesRepository } from './repositories/notificationPreferencesRepository.js';
 import notificationsService from './services/notificationsService.js';
@@ -187,6 +196,9 @@ initializeTypesenseCollections().catch((err) => {
 });
 
 function requiredStrongPassword(name) {
+  if (process.env.NODE_ENV === 'test') {
+    return process.env[name] || 'TestStrongPass123!';
+  }
   const value = String(process.env[name] || '').trim();
   if (!value) {
     throw new Error(`Missing environment variable: ${name}`);
@@ -392,6 +404,8 @@ app.use(
     },
   })
 );
+app.use(intrusionDetectionMiddleware);
+app.use(abnormalRequestDetector);
 
 app.use(
   cors({
@@ -1357,7 +1371,10 @@ app.use('/api/admin/metrics', adminAuth, adminStreamRouter);
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/api/admin/queues');
 createBullBoard({
-  queues: eventRemindersQueue ? [new BullMQAdapter(eventRemindersQueue)] : [],
+  queues: [
+    ...(eventRemindersQueue ? [new BullMQAdapter(eventRemindersQueue)] : []),
+    ...(bulkOperationsQueue ? [new BullMQAdapter(bulkOperationsQueue)] : [])
+  ],
   serverAdapter,
 });
 app.use('/api/admin/queues', adminAuth, serverAdapter.getRouter());

@@ -195,20 +195,21 @@ export const eventRegistrationLimiter = rateLimit({
   },
 });
 
-// Search rate limiter: 30 requests per minute per IP.
-export const searchRateLimiter = rateLimit({
+
+// Sync rate limiter: 5 requests per minute per IP.
+export const syncRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 30, // 30 requests per minute
+  max: 5, // 5 requests per minute
   standardHeaders: true,
-  legacyHeaders: true,
-  store: createRateLimitStore('rate-limit:search:'),
+  legacyHeaders: false,
+  store: createRateLimitStore('rate-limit:sync:'),
   handler: (req, res, next, options) => {
-    logger.warn('Search rate limit exceeded', {
+    logger.warn('Sync rate limit exceeded', {
       ip: req.ip,
       path: req.originalUrl || req.path,
     });
     res.status(options.statusCode).json({
-      error: 'Too many search requests. Please slow down.',
+      error: 'Too many sync requests. Please slow down.',
     });
   },
 });

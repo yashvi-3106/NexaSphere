@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { throttleMiddleware } from '../middleware/throttleMiddleware.js';
 import settingsRouter from './settingsRoutes.js';
 import rateLimitAdminRoutes from './rateLimitAdminRoutes.js';
+import settingsRouter from './settingsRoutes.js';
 import { auditLogController } from '../controllers/auditLogController.js';
 import * as eventsController from '../controllers/eventsController.js';
 import * as activityEventsController from '../controllers/activityEventsController.js';
@@ -52,6 +53,7 @@ import eventRecurringRoutes from "./eventRecurringRoutes.js";
 
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
+
 import multer from 'multer';
 import * as analyticsController from '../controllers/analyticsController.js';
 const router = Router();
@@ -468,6 +470,10 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   const active = impersonationService.getActive(req.adminSession.token);
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
+router.use(
+  "/api/announcements",
+  announcementPriorityRouter
+);
 
 router.use('/budgets', budgetRoutes);
 router.use('/api/announcements', announcementPriorityRouter);
@@ -476,6 +482,11 @@ router.use('/api/events', eventConflictRouter);
 
 router.use('/api/admin/waitlist', waitlistRoutes);
 router.use("/api/events/recurring", eventRecurringRoutes);
+router.use(
+  "/api/admin/waitlist",
+  adminAuthMiddleware.requireAdmin,
+  waitlistRoutes
+);
 // Audit Log Viewer APIs
 router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
 
